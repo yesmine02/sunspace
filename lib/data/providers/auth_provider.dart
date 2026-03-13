@@ -11,8 +11,8 @@ class AuthProvider {
   /// Elle utilise le TOKEN pour prouver que l'utilisateur est authentifié
   Future<dynamic> getCurrentUser(String token) async {
 
-    // Création de l’URL complète → /users/me
-    final url = Uri.parse('$baseUrl/users/me');
+    // Création de l’URL complète → /users/me?populate=role
+    final url = Uri.parse('$baseUrl/users/me?populate=role');
 
     // Envoi d'une requête GET au serveur avec le token dans le header
     final response = await http.get(

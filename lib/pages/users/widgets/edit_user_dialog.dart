@@ -25,7 +25,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
     super.initState();
     _usernameController = TextEditingController(text: widget.user.username);
     _emailController = TextEditingController(text: widget.user.email);
-    _selectedRole = widget.user.role ?? 'Authenticated';
+    _selectedRole = widget.user.roleName.isNotEmpty ? widget.user.roleName : 'Authenticated';
     _isConfirmed = widget.user.confirmed ?? false;
     _isBlocked = widget.user.blocked ?? false;
   }
@@ -230,12 +230,13 @@ class _EditUserDialogState extends State<EditUserDialog> {
   }
 
   void _submit(UsersController controller) {
+    // Vérifier si le formulaire est valide
     if (_formKey.currentState!.validate()) {
       final updatedUser = User(
         id: widget.user.id,
         username: _usernameController.text,
         email: _emailController.text,
-        role: _selectedRole,
+        role: {'name': _selectedRole, 'type': _selectedRole.toLowerCase()},
         confirmed: _isConfirmed,
         blocked: _isBlocked,
         createdAt: widget.user.createdAt,

@@ -126,8 +126,8 @@ class EquipmentsController extends GetxController {
           'Succès',
           'L\'équipement "${equipment.name}" a été créé avec succès.',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFDCFCE7),
-          colorText: const Color(0xFF166534),
+          backgroundColor: Color(0xFFDCFCE7),
+          colorText: Color(0xFF166534),
         );
       } else {
         print('Erreur création équipement: ${response.statusCode} - ${response.body}');
@@ -172,8 +172,8 @@ class EquipmentsController extends GetxController {
           'Succès',
           'L\'équipement "${equipment.name}" a été mis à jour avec succès.',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFDCFCE7),
-          colorText: const Color(0xFF166534),
+          backgroundColor: Color(0xFFDCFCE7),
+          colorText: Color(0xFF166534),
         );
       } else {
         print('Erreur modification équipement: ${response.statusCode} - ${response.body}');
@@ -219,8 +219,8 @@ class EquipmentsController extends GetxController {
           'Succès',
           'L\'équipement "${equipment.name}" a été supprimé.',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFDCFCE7),
-          colorText: const Color(0xFF166534),
+          backgroundColor: Color(0xFFDCFCE7),
+          colorText: Color(0xFF166534),
         );
       } else {
         print('Erreur suppression équipement: ${response.statusCode} - ${response.body}');
@@ -242,8 +242,8 @@ class EquipmentsController extends GetxController {
       'Erreur',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFFEE2E2),
-      colorText: const Color(0xFF991B1B),
+      backgroundColor: Color(0xFFFEE2E2),
+      colorText: Color(0xFF991B1B),
     );
   }
 

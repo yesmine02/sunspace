@@ -307,7 +307,7 @@ class BookingController extends GetxController {
 
       if (response.statusCode == 200) {
         Get.snackbar("Succès", "Statut mis à jour : $status", 
-            backgroundColor: const Color(0xFFDCFCE7), colorText: const Color(0xFF166534));
+            backgroundColor: Color(0xFFDCFCE7), colorText: Color(0xFF166534));
         fetchAllReservations(); // Recharger la liste
       } else {
         print("Update Error Body: ${response.body}");
@@ -339,7 +339,7 @@ class BookingController extends GetxController {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         Get.snackbar("Succès", "Réservation supprimée", 
-            backgroundColor: const Color(0xFFF3F4F6), colorText: Colors.black);
+            backgroundColor: Color(0xFFF3F4F6), colorText: Colors.black);
         fetchAllReservations();
       } else {
         Get.snackbar("Erreur", "Suppression échouée (${response.statusCode})");

@@ -29,6 +29,11 @@ class SessionService extends GetxService {
         auth.currentUser.value = user.toJson(); // Infos utilisateur
         auth.isLoggedIn.value = true;          // Connecté
         auth.token = token;                    // Enregistrer le token
+
+        // # role  :On déclenche le rafraîchissement du rôle en tâche de fond 
+        // pour être toujours à jour avec les permissions serveur
+        auth.refreshRole();
+
         return true;                           // Session valide
       } else {
         // 5️⃣ Si le serveur ne renvoie rien → token invalide

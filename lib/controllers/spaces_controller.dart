@@ -138,8 +138,8 @@ class SpacesController extends GetxController {
           'Succès',
           'L\'espace "${space.name}" a été créé avec succès.',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFDCFCE7),
-          colorText: const Color(0xFF166534),
+          backgroundColor: Color(0xFFDCFCE7),
+          colorText: Color(0xFF166534),
         );
       } else {
         print('Erreur création espace: ${response.statusCode} - ${response.body}');
@@ -184,8 +184,8 @@ class SpacesController extends GetxController {
           'Succès',
           'L\'espace "${space.name}" a été mis à jour avec succès.',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFDCFCE7),
-          colorText: const Color(0xFF166534),
+          backgroundColor: Color(0xFFDCFCE7),
+          colorText: Color(0xFF166534),
         );
       } else {
         print('Erreur modification espace: ${response.statusCode} - ${response.body}');
@@ -233,8 +233,8 @@ class SpacesController extends GetxController {
           'Succès',
           'L\'espace "${space.name}" a été supprimé.',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFDCFCE7),
-          colorText: const Color(0xFF166534),
+          backgroundColor: Color(0xFFDCFCE7),
+          colorText: Color(0xFF166534),
         );
       } else {
         print('Erreur suppression espace: ${response.statusCode} - ${response.body}');
@@ -256,8 +256,8 @@ class SpacesController extends GetxController {
       'Erreur',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFFEE2E2),
-      colorText: const Color(0xFF991B1B),
+      backgroundColor: Color(0xFFFEE2E2),
+      colorText: Color(0xFF991B1B),
     );
   }
 

@@ -208,7 +208,7 @@ class UsersPage extends StatelessWidget {
           children: [
             Icon(Icons.shield_outlined, size: 16, color: Colors.blue[300]),
             const SizedBox(width: 8),
-            Text(user.role ?? 'Authenticated', style: TextStyle(color: Colors.grey[700])),
+            Text(user.roleName.isNotEmpty ? user.roleName : 'Authenticated', style: TextStyle(color: Colors.grey[700])),
           ],
         ),
       ),

@@ -73,57 +73,68 @@ class Sidebar extends StatelessWidget {
 
           const Divider(height: 1),
 
-        // 🔷 NAVIGATION
+          // 🔷 NAVIGATION - Basé sur le rôle DYNAMIQUE de Strapi
           Expanded(
             child: Obx(() {
-              final user = authController.currentUser.value;
-              final email = (user?['email'] ?? '').toString().toLowerCase();
-              
-              // Detection du rôle (flexible : type, name ou string direct)
-              dynamic roleData = user?['role'];
-              String roleName = "";
-              
-              if (roleData != null) {
-                if (roleData is Map) {
-                  roleName = (roleData['type'] ?? roleData['name'] ?? "").toString().toLowerCase();
-                } else {
-                  roleName = roleData.toString().toLowerCase();
-                }
+              // 🔹 Si le rôle est en cours de chargement, on affiche un loader
+              if (authController.isFetchingRole.value) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(strokeWidth: 2),
+                      SizedBox(height: 12),
+                      Text(
+                        'Chargement du rôle...',
+                        style: TextStyle(color: Colors.grey, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                );
               }
 
-              // 🛡️ FALLBACK : Si le role est nul côté serveur, on se base sur l'email
-              // pour garantir que l'admin et l'enseignant voient leurs menus.
-              if (roleName.isEmpty || roleName == "null") {
-                if (email.contains('admin') || email == 'admin@sunspace.app' || email == 'intern@sunevit.tn') {
-                  roleName = 'admin';
-                } else if (email == 'enseignant@sunevit.tn') {
-                  roleName = 'enseignant';
-                } else if (email == 'authenticated@sunevit.tn') {
-                  roleName = 'authenticated';
-                } else if (email == 'gestionnairedespace@sunevit.tn') {
-                  roleName = 'space_manager';
-                } else if (email == 'professionnel@sunevit.tn') {
-                  roleName = 'professionnel';
-                } else if (email == 'association_member@sunevit.tn') {
-                  roleName = 'association';
-                }
-              }
-              
-              final bool isAdmin = roleName == 'admin' || roleName == 'administrator';
-              final bool isInstructor = roleName == 'enseignant' || roleName == 'instructor';
-              final bool isStudent = (roleName == 'etudiant' || roleName == 'student') && 
-                                     email != 'authenticated@sunevit.tn' && 
-                                     email != 'gestionnairedespace@sunevit.tn' && 
-                                     email != 'professionnel@sunevit.tn' &&
-                                     email != 'association_member@sunevit.tn';
-              final bool isPro = roleName == 'professionnel' || roleName == 'professional';
-              final bool isAssoc = roleName == 'association';
-              final bool isAuthenticatedOnly = email == 'authenticated@sunevit.tn' || roleName == 'authenticated';
-              final bool isSpaceManager = email == 'gestionnairedespace@sunevit.tn' || roleName == 'space_manager';
+              // 🔹 Rôle récupéré depuis Strapi
+              final bool isAdmin = authController.isAdmin;
+              final bool isInstructor = authController.isInstructor;
+              final bool isStudent = authController.isStudent;
+              final bool isPro = authController.isProfessional;
+              final bool isAssoc = authController.isAssociation;
+              final bool isSpaceManager = authController.isSpaceManager;
+              final bool isAuthenticatedOnly = authController.isAuthenticatedOnly;
+
+              // Badge du rôle courant (affiché dans le menu pour info)
+              final String roleName = authController.currentRoleName;
 
               return ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 children: [
+                  // Indicateur de rôle courant
+                  if (roleName.isNotEmpty) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.verified_user_outlined, size: 14, color: Color(0xFF3B82F6)),
+                          const SizedBox(width: 6),
+                          Text(
+                            roleName,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1D4ED8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   // --- ACCÈS GÉNÉRAL (Dashboard toujours visible) ---
                   _buildMenuItem(
                     title: 'Tableau de bord',
@@ -446,7 +457,7 @@ class Sidebar extends StatelessWidget {
       );
     });
   }
-
+//fonction privée (✅ “Cette fonctionnalité n’est pas encore prête”.)
   void _showNotImplemented(String feature) {
     Get.snackbar(
       'Information',

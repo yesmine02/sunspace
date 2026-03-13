@@ -214,7 +214,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
         id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
         username: _usernameController.text,
         email: _emailController.text,
-        role: _selectedRole,
+        role: {'name': _selectedRole, 'type': _selectedRole.toLowerCase()},
         confirmed: _isConfirmed,
         blocked: _isBlocked,
         createdAt: DateTime.now().toIso8601String(),

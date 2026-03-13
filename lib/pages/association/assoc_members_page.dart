@@ -176,7 +176,7 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   // ─────────────────────────────────────────────
   Widget _buildStatsCards(List<User> users, bool isMobile) {
     final total  = users.length;
-    final admins = users.where((u) => (u.role ?? '').toLowerCase().contains('admin')).length;
+    final admins = users.where((u) => u.roleType.contains('admin')).length;
     final members = total - admins;
 
     if (isMobile) {
@@ -338,9 +338,9 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
 
     // 3. Filtre par rôle (onglet 'ADMINS' ou 'MEMBRES')
     if (_activeFilter == 'ADMINS') {
-      result = result.where((u) => (u.role ?? '').toLowerCase().contains('admin')).toList();
+      result = result.where((u) => u.roleType.contains('admin')).toList();
     } else if (_activeFilter == 'MEMBRES') {
-      result = result.where((u) => !(u.role ?? '').toLowerCase().contains('admin')).toList();
+      result = result.where((u) => !u.roleType.contains('admin')).toList();
     }
 
     return result;
@@ -391,7 +391,7 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   // CARTE MEMBRE : Individuelle pour chaque utilisateur
   // ─────────────────────────────────────────────
   Widget _memberCard(User user, UsersController controller) {
-    final isAdmin = (user.role ?? '').toLowerCase().contains('admin');
+    final isAdmin = user.roleType.contains('admin');
     final initial = (user.username ?? '?')[0].toUpperCase();
     final avatarColor = isAdmin ? const Color(0xFF7C3AED) : const Color(0xFF2563EB);
 

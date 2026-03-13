@@ -5,7 +5,7 @@ class User {
   final String? provider;
   final bool? confirmed;
   final bool? blocked;
-  final String? role;
+  final dynamic role; // Peut être une chaîne, un ID ou un Objet Map complet
   final String? createdAt;
   final String? updatedAt;
 
@@ -21,21 +21,26 @@ class User {
     this.updatedAt,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    String? roleName;
-    if (json['role'] != null) {
-      if (json['role'] is Map) {
-        roleName = json['role']['name']?.toString() ?? json['role']['type']?.toString();
-      } else {
-        roleName = json['role'].toString();
-      }
-    }
+  /// Nom affiché du rôle (ex: "Administrateur", "Authenticated")
+  String get roleName {
+    if (role == null) return '';
+    if (role is Map) return (role['name'] ?? role['type'] ?? '').toString();
+    return role.toString();
+  }
 
+  /// Type de rôle utile pour le code et les permissions (miniscules, sans espaces ex: "admin", "space_manager")
+  String get roleType {
+    if (role == null) return '';
+    if (role is Map) return (role['type'] ?? role['name'] ?? '').toString().toLowerCase();
+    return role.toString().toLowerCase();
+  }
+
+  factory User.fromJson(Map<String, dynamic> json) {
     if (!json.containsKey('_printed_keys_dev_')) {
       print('USER KEYS: ${json.keys.toList()}');
       json['_printed_keys_dev_'] = true;
     }
-
+//créer un objet User depuis JSON
     return User(
       id: json['id'],
       username: json['username'],
@@ -43,12 +48,12 @@ class User {
       provider: json['provider'],
       confirmed: json['confirmed'],
       blocked: json['blocked'],
-      role: roleName,
+      role: json['role'], // On garde le rôle tel qu’il vient du backend (Strapi)
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
     );
   }
-
+//transformer l’objet User en JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,

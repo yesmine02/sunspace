@@ -1,3 +1,8 @@
+// ===============================================
+// Modèle Association
+// ===============================================
+//représenter une association dans l’application (ses infos comme nom, email, budget…)
+// pour pouvoir les utiliser et les envoyer au serveur.
 class Association {
   final int? id;
   final String? documentId;
@@ -24,7 +29,7 @@ class Association {
     this.admin,
     this.members,
   });
-
+//✅ Crée une instance d'Association à partir d'un JSON.
   factory Association.fromJson(Map<String, dynamic> json) {
     final data = json['data'] ?? json;
     return Association(
@@ -41,7 +46,7 @@ class Association {
       members: data['members'] is List ? data['members'] : [],
     );
   }
-
+//✅ Convertit une Association en JSON pour l'API.
   Map<String, dynamic> toJson() {
     return {
       'name': name,
@@ -54,12 +59,12 @@ class Association {
     };
   }
 }
-
+//✅ Crée une instance d'AssociationAdmin à partir d'un JSON.
 class AssociationAdmin {
   final int? id;
   final String? username;
   final String? email;
-
+//✅ Constructeur de la classe AssociationAdmin.
   AssociationAdmin({this.id, this.username, this.email});
 
   factory AssociationAdmin.fromJson(Map<String, dynamic> json) {

@@ -1,3 +1,8 @@
+// =====================================================
+// FloorPlanWidget — Interface Interactive du Plan
+// Gère les clics, survols et la mise à jour de l'état.
+// =====================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'floor_plan_painter.dart';
@@ -76,11 +81,11 @@ class _FloorPlanWidgetState extends State<FloorPlanWidget> {
   /// Gère le clic (ou tap) sur le plan.
   /// Identifie si la position cliquée appartient à l'une des zones définies.
   void _onTap(TapDownDetails details, double sx, double sy) {
-    final pos = details.localPosition;
+    final pos = details.localPosition;//position du clic
     String? foundSlug;
-    for (final area in areas) {
-      if (area.getPath(sx, sy).contains(pos)) {
-        foundSlug = area.slug;
+    for (final area in areas) {//boucle sur toute les zones
+      if (area.getPath(sx, sy).contains(pos)) {//si la zone contient le clic
+        foundSlug = area.slug;//on récupère le slug de la zone
         break;
       }
     }

@@ -1,3 +1,7 @@
+// ============================================
+// Page Checkout (Paiement)
+// ============================================
+//gère le processus de paiement et de réservation.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';

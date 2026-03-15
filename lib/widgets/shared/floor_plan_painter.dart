@@ -18,16 +18,17 @@ class FloorPlanArea {
   final List<Offset> points;
   final bool isRect;
   final Rect? rect;
-
+//Cette classe représente une zone cliquable du plan
   FloorPlanArea({
     required this.slug,
     this.points = const [],
     this.isRect = false,
     this.rect,
   });
-
+//dessiner la forme de la zone: soit un rectangle/soit un polygone
   Path getPath(double scaleX, double scaleY) {
     final Path path = Path();
+    //dessine les zones interactives (hover / sélection)
     if (isRect && rect != null) {
       path.addRect(Rect.fromLTRB(
         rect!.left * scaleX,
@@ -35,12 +36,12 @@ class FloorPlanArea {
         rect!.right * scaleX,
         rect!.bottom * scaleY,
       ));
-    } else if (points.isNotEmpty) {
-      path.moveTo(points[0].dx * scaleX, points[0].dy * scaleY);
+    } else if (points.isNotEmpty) { 
+      path.moveTo(points[0].dx * scaleX, points[0].dy * scaleY);// On pose le "stylo virtuel" sur le tout premier point
       for (int i = 1; i < points.length; i++) {
-        path.lineTo(points[i].dx * scaleX, points[i].dy * scaleY);
+        path.lineTo(points[i].dx * scaleX, points[i].dy * scaleY);// On trace une ligne droite vers le point suivant
       }
-      path.close();
+      path.close();// On relie le dernier point au premier pour fermer la forme
     }
     return path;
   }
@@ -80,45 +81,45 @@ class FloorPlanPainter extends CustomPainter {
     final double sx = size.width  / W;
     final double sy = size.height / H;
 
-    // 1) Background (corridor floor)
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height),
+    // 1) Background (corridor floor) ,Tout ce qui ne sera pas une salle sera donc de cette couleur
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), //dessine un rectangle qui couvre toute la zone
         Paint()..color = kCorridorBg);
 
     // 2) Draw all rooms
-    _drawAllRooms(canvas, sx, sy);
+    _drawAllRooms(canvas, sx, sy);//dessine toutes les salles
 
     // 3) Draw all furniture decorations
-    _drawAllFurniture(canvas, sx, sy);
+    _drawAllFurniture(canvas, sx, sy);//dessine tout le mobilier
 
-    // 4) Interactive overlays (hover / selected)
-    _drawInteractiveOverlays(canvas, sx, sy);
+    // 4) Interactive overlays (hover=c'est cliquable / selected=c'est sélectionné)
+    _drawInteractiveOverlays(canvas, sx, sy);//dessine les zones interactives (hover / sélection)
 
     // 5) Room labels
-    _drawLabels(canvas, sx, sy);
+    _drawLabels(canvas, sx, sy);//dessine les étiquettes des salles
   }
 
   // ── 1. Rooms ────────────────────────────────────────
   void _drawAllRooms(Canvas canvas, double sx, double sy) {
-    final roomPaint  = Paint()..color = kRoomBg;
-    final borderPaint = Paint()
-      ..color = kRoomBorder
+    final roomPaint  = Paint()..color = kRoomBg;//couleur de remplissage des salles
+    final borderPaint = Paint()//couleur du contour des salles
+      ..color = kRoomBorder//couleur verte
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
 
-    void room(Rect r) {
+    void room(Rect r) {//dessine une salle rectangulaire
       canvas.drawRect(_s(r, sx, sy), roomPaint);
       canvas.drawRect(_s(r, sx, sy), borderPaint);
     }
 
-    void roomPoly(List<Offset> pts) {
+    void roomPoly(List<Offset> pts) {//dessine une salle polygonale
       final p = _poly(pts, sx, sy);
       canvas.drawPath(p, roomPaint);
       canvas.drawPath(p, borderPaint);
     }
 
     // ── Top row (Espace 1 — wide open space) ──────────
-    roomPoly([
-      const Offset(571, 22), const Offset(1598, 20), const Offset(1598, 246),
+    roomPoly([ //Chaque Offset représente un coin 
+      const Offset(571, 22), const Offset(1598, 20), const Offset(1598, 246),//coordonnées des points de la salle
       const Offset(1507, 248), const Offset(1509, 444), const Offset(573, 442),
     ]);
 
@@ -162,16 +163,16 @@ class FloorPlanPainter extends CustomPainter {
 
     // ── Stairs / elevator / WC areas ──────────────────
     // Stairs top-left
-    _drawStairs(canvas, const Rect.fromLTRB(0, 0, 565, 450), sx, sy);
+    _drawStairs(canvas, const Rect.fromLTRB(0, 0, 565, 450), sx, sy);//Escalier en haut à gauche
 
     // ── 2 WC sous Espace 13 (un seul bloc = 2 cabines) ──
-    _drawWCBlock(canvas, const Rect.fromLTRB(1428, 950, 1558, 1070), sx, sy);
+    _drawWCBlock(canvas, const Rect.fromLTRB(1428, 950, 1558, 1070), sx, sy);//2 WC sous l'espace 13
 
     // ── Lave-mains au-dessus de l'Espace 7 ───────────
-    _drawSinks(canvas, const Offset(1428, 1120), 252, 55, sx, sy);
+    _drawSinks(canvas, const Offset(1428, 1120), 252, 55, sx, sy);//Lave-mains au-dessus de l'Espace 7
 
     // ── Cuisine à droite des WC ──────────────────────
-    _drawKitchen(canvas, const Rect.fromLTRB(1680, 855, 1750, 1165), sx, sy);
+    _drawKitchen(canvas, const Rect.fromLTRB(1680, 855, 1750, 1165), sx, sy);//Cuisine à droite des WC
 
     // ── Espaces verts (Hedges) ────────────────────────
     // Hedge around Espace 13 (L-shape)

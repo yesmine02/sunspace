@@ -1,7 +1,7 @@
 // ============================================
 // Modèle Reservation (Réservation d'espace)
 // ============================================
-
+//représenter une réservation (ses infos comme date, espace, statut, paiement…)
 import 'package:intl/intl.dart';
 
 import 'user.dart';
@@ -36,27 +36,27 @@ class Reservation {
     this.spaceName,
     this.user,
   });
-
+//convertit le JSON de Strapi en objet Reservation
   factory Reservation.fromJson(Map<String, dynamic> json) {
     // Dans Strapi v5 avec populate, l'objet est souvent à la racine du JSON data ou dans attributes
     final attrs = json; 
     
     // Parse Space
     String? sName;
-    if (attrs['space'] != null) {
-      if (attrs['space'] is Map) {
-        sName = attrs['space']['name'];
+    if (attrs['space'] != null) { //si l’espace existe
+      if (attrs['space'] is Map) { //Si space est un objet complet
+        sName = attrs['space']['name']; //prend le nom de l’espace
       } else {
-        sName = "Espace #${attrs['space']}";
+        sName = "Espace #${attrs['space']}"; //sinon affiche juste Espace + ID
       }
     }
 
     // Parse User
-    User? uObj;
-    if (attrs['user'] != null && attrs['user'] is Map) {
-      uObj = User.fromJson(attrs['user']);
+    User? uObj; //Variable pour stocker l’utilisateur
+    if (attrs['user'] != null && attrs['user'] is Map) { //si l'utilisateur existe et est un objet 
+      uObj = User.fromJson(attrs['user']);//convertit le JSON en objet User
     }
-
+//crée l’objet Reservation final
     return Reservation(
       id: json['id'].toString(),
       documentId: json['documentId']?.toString(),
@@ -72,7 +72,7 @@ class Reservation {
       user: uObj,
     );
   }
-
+//convertit le statut texte du JSON en statut que l’application comprend.
   static ReservationStatus _parseStatus(String? status) {
     switch (status) {
       case 'Confirmee':
@@ -89,7 +89,7 @@ class Reservation {
         return ReservationStatus.enAttente;
     }
   }
-
+//prend le statut de l’objet Reservation et le transforme en texte lisible.
   String get statusString {
     switch (status) {
       case ReservationStatus.confirmee: return 'Confirmée';

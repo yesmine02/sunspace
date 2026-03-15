@@ -1,3 +1,8 @@
+// ===============================================
+// Modèle StudentEnrollment (Inscription)
+// ===============================================
+//représenter une inscription dans l’application (ses infos comme nom, email, progression…)
+// pour pouvoir les utiliser et les envoyer au serveur.
 class StudentEnrollment {
   final String id;
   final String studentName;
@@ -14,11 +19,11 @@ class StudentEnrollment {
     this.progressPercentage = 0,
     required this.enrollmentDate,
   });
-
+//✅ Crée une instance de StudentEnrollment à partir d'un JSON.
   factory StudentEnrollment.fromJson(Map<String, dynamic> json) {
     final student = json['student'] ?? {};
     final course = json['course'] ?? {};
-    
+
     return StudentEnrollment(
       id: json['id']?.toString() ?? '',
       studentName: student['username'] ?? 'Inconnu',

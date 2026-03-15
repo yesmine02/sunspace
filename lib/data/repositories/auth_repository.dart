@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
-
+//Cette page sert à : parler au provider /récupérer les données /transformer JSON → objet User
+ //envoyer résultat au controller.
 class AuthRepository {
-  // 🔹 Instance du provider qui fait les appels au serveur
+  // Cette variable va servir à appeler le serveur.
   final AuthProvider authProvider;
 
   // 🔹 Constructeur, on doit fournir un AuthProvider
@@ -14,6 +15,7 @@ class AuthRepository {
   Future<User?> fetchCurrentUser(String token) async {
     try {
       // Appel au provider pour obtenir les données utilisateur
+      //"Va au serveur et ramène-moi l’utilisateur"
       final data = await authProvider.getCurrentUser(token);
 
       // Si les données sont présentes, on les convertit en objet User

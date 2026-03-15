@@ -1,7 +1,8 @@
 // ============================================
 // Modèle Course (Formation) - Alignement Complet Strapi v5
 // ============================================
-
+//représenter une formation dans l’application (ses infos comme titre, prix, niveau…) 
+//pour pouvoir les utiliser et les envoyer au serveur.
 import 'package:get/get.dart';
 
 enum CourseLevel { debutant, intermediaire, avance }
@@ -31,21 +32,21 @@ class Course {
     this.publishedAt,
     this.instructorName,
   });
-
+//✅ Vérifie si le cours est publié.
   bool get isPublished => status == CourseStatus.publie;
-
+//✅ Convertit le niveau du cours en String.
   static CourseLevel _parseLevel(String? levelStr) {
     if (levelStr == null) return CourseLevel.debutant;
     if (levelStr == 'Intermédiaire') return CourseLevel.intermediaire;
     if (levelStr == 'Avancé') return CourseLevel.avance;
     return CourseLevel.debutant;
   }
-
+//Elle vérifie si le cours est publié ou brouillon
   static CourseStatus _parseStatus(String? statusStr) {
     if (statusStr == 'Publié' || statusStr == 'publie') return CourseStatus.publie;
     return CourseStatus.brouillon;
   }
-
+//✅ Crée une instance de Course à partir d'un JSON.
   factory Course.fromJson(Map<String, dynamic> json) {
     return Course(
       id: json['id'].toString(),
@@ -60,7 +61,7 @@ class Course {
       instructorName: json['instructor']?['username'] ?? '',
     );
   }
-
+//✅ Convertit un Course en JSON pour l'API.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -73,7 +74,7 @@ class Course {
       'createdAt': createdAt?.toIso8601String(),
     };
   }
-
+//✅ Convertit un Course en JSON pour l'API.
   Map<String, dynamic> toStrapiJson(int? instructorId) {
     return {
       'data': {
@@ -86,7 +87,7 @@ class Course {
       }
     };
   }
-
+//prend le niveau technique du cours le transforme en texte que l’utilisateur comprend.
   String get levelString {
     switch (level) {
       case CourseLevel.intermediaire: return 'Intermédiaire';

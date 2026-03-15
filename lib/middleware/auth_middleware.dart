@@ -4,6 +4,7 @@ import '../controllers/auth_controller.dart';
 import '../services/session_service.dart';
 import '../routing/app_routes.dart';
 
+//Vérifie si l’utilisateur est connecté avant de lui donner accès à une page.
 class AuthMiddleware extends GetMiddleware {
   @override
   int? get priority => 0;

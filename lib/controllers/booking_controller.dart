@@ -20,18 +20,18 @@ class BookingController extends GetxController {
   final RxString selectedResFilter = 'Toutes'.obs; // 'Toutes', 'À venir', 'Passées'
   final RxString searchQuery = ''.obs;
   final RxBool isLoading = false.obs;
-  final RxList<String> selectedServices = <String>[].obs;
+  final RxList<String> selectedServices = <String>[].obs;//✅ Liste des services sélectionnés.
   
   // États spécialisés Checkout Étudiant
   final RxBool isMonthly = true.obs;
-  final RxInt checkoutStep = 1.obs;
+  final RxInt checkoutStep = 1.obs; //Étape actuelle du processus de paiement.
   
   // Controllers pour le formulaire de paiement
   final cardNameController = TextEditingController();
   final cardNumberController = TextEditingController();
   final cardExpiryController = TextEditingController();
   final cardCvcController = TextEditingController();
-
+//supprime les champs de texte quand on n’en a plus besoin
   @override
   void onClose() {
     cardNameController.dispose();
@@ -40,7 +40,7 @@ class BookingController extends GetxController {
     cardCvcController.dispose();
     super.onClose();
   }
-
+//✅ Vérifie que les champs de paiement sont remplis.
   bool validatePayment() {
     if (cardNameController.text.isEmpty ||
         cardNumberController.text.isEmpty ||

@@ -45,7 +45,7 @@ class Payment {
       invoiceNumber: json['invoice_number'],
     );
   }
-
+//convertit le statut texte du paiement en statut que l’application comprend.
   static PaymentStatus _parseStatus(String? status) {
     switch (status) {
       case 'Paye':
@@ -62,7 +62,7 @@ class Payment {
         return PaymentStatus.enAttente;
     }
   }
-
+//prend le statut du paiement et le transforme en texte que l’utilisateur comprend.
   String get statusString {
     switch (status) {
       case PaymentStatus.paye: return 'Payé';
@@ -71,6 +71,6 @@ class Payment {
       case PaymentStatus.enAttente: return 'En attente';
     }
   }
-
+//prend la date du paiement et la transforme en texte lisible.
   String get formattedDate => paidAt != null ? DateFormat('dd/MM/yyyy HH:mm').format(paidAt!) : 'Non payé';
 }

@@ -24,7 +24,7 @@ class AssignmentsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchAssignments();
+    fetchAssignments();//Donc dès que la page s’ouvre →les données sont chargées automatiquement.
     
     // Écouter les changements de recherche
     ever(searchQuery, (_) => _filterAssignments());
@@ -53,8 +53,8 @@ class AssignmentsController extends GetxController {
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         
-        if (data['data'] is List) {
-          final List<dynamic> jsonList = data['data'];
+        if (data['data'] is List) { //On vérifie que :👉 le serveur a envoyé une liste.
+          final List<dynamic> jsonList = data['data']; //On met la liste JSON dans une variable
           print("Found ${jsonList.length} assignments.");
 
           final List<Assignment> loadedAssignments = [];
@@ -66,8 +66,8 @@ class AssignmentsController extends GetxController {
             }
           }
 
-          assignments.value = loadedAssignments;
-          originalAssignments = loadedAssignments;
+          assignments.value = loadedAssignments;//On met à jour la liste reactive affichée dans UI.
+          originalAssignments = loadedAssignments;//On garde une copie originale.👉 utile pour :recherche,filtres,reset.
           
           if (assignments.isEmpty && jsonList.isNotEmpty) {
              errorMessage.value = "Erreur de lecture des données (Parsing).";
@@ -100,13 +100,13 @@ class AssignmentsController extends GetxController {
   }
 
   void _filterAssignments() {
-    if (searchQuery.value.isEmpty) {
+    if (searchQuery.value.isEmpty) { //On affiche tous les assignments.
       assignments.value = originalAssignments;
-    } else {
+    } else {//Sinon on filtre.
       String query = searchQuery.value.toLowerCase();
       assignments.value = originalAssignments.where((assignment) {
-        return assignment.title.toLowerCase().contains(query) ||
-               (assignment.courseName?.toLowerCase().contains(query) ?? false);
+        return assignment.title.toLowerCase().contains(query) || // On cherche dans le titre.
+               (assignment.courseName?.toLowerCase().contains(query) ?? false);//ou dans le nom du cours.
       }).toList();
     }
   }
@@ -139,7 +139,7 @@ class AssignmentsController extends GetxController {
         // Si un fichier est fourni, on l'upload séparément via Strapi Upload API
         if (file != null) {
           final createdData = json.decode(response.body);
-          final createdId = createdData['data']?['id'];
+          final createdId = createdData['data']?['id']; //On récupère l’ID du devoir créé.
           if (createdId != null) {
             await _uploadAttachment(createdId, file, token);
           }
@@ -160,13 +160,13 @@ class AssignmentsController extends GetxController {
   Future<void> _uploadAttachment(dynamic entryId, PlatformFile file, String? token) async {
     try {
       final uploadUrl = Uri.parse('http://193.111.250.244:3046/api/upload');
-      var request = http.MultipartRequest('POST', uploadUrl);
+      var request = http.MultipartRequest('POST', uploadUrl);//car on envoie un fichier
       request.headers['Authorization'] = 'Bearer $token';
 
       request.fields['ref'] = 'api::assignment.assignment';
       request.fields['refId'] = entryId.toString();
       request.fields['field'] = 'attachment';
-
+//Ajouter le fichier
       if (file.bytes != null) {
         request.files.add(http.MultipartFile.fromBytes(
           'files', file.bytes!, filename: file.name,
@@ -176,6 +176,7 @@ class AssignmentsController extends GetxController {
       }
 
       print("Upload fichier: ${file.name} pour entry $entryId");
+      //Envoyer la requête
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       print("Upload response: ${response.statusCode} - ${response.body}");
@@ -186,22 +187,23 @@ class AssignmentsController extends GetxController {
 
   // 4. Modification d'un devoir (PUT)
   Future<void> updateAssignment(Assignment assignment, dynamic courseId) async {
+    //On vérifie que l’ID du devoir n’est pas nul.
     if (assignment.documentId == null) {
       Get.snackbar('Erreur', 'Impossible de modifier : ID manquant');
       return;
     }
-
+//✅ On crée un client HTTP pour envoyer la requête.
     final client = http.Client();
     try {
       final token = await _authController.getToken();
       final url = Uri.parse('$_baseUrl/${assignment.documentId}');
-
+//✅ On prépare les headers avec le token.
       final Map<String, String> headers = {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
-
+//✅ On convertit le devoir en JSON.
       final body = json.encode(assignment.toStrapiJson(courseId));
 
       print("=== MODIFICATION DEVOIR (PUT) ===");

@@ -11,7 +11,7 @@ class AssociationsController extends GetxController {
   final RxBool isLoading = false.obs;
   
   final String apiUrl = 'http://193.111.250.244:3046/api/associations';
-
+//✅ On charge les associations au démarrage.
   @override
   void onInit() {
     super.onInit();
@@ -68,7 +68,7 @@ class AssociationsController extends GetxController {
     isLoading.value = true;
     try {
       final auth = Get.find<AuthController>();
-      String? token = auth.token ?? await SecureStorage.getToken();
+      String? token = auth.token ?? await SecureStorage.getToken();//✅ On récupère le token.
 
       if (token == null) return false;
 

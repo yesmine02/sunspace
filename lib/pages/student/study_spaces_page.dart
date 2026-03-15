@@ -1,3 +1,7 @@
+// ============================================
+// Page Study Spaces (Espaces d'étude)
+// ============================================
+//affiche les espaces disponibles pour la réservation.
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/spaces_controller.dart';

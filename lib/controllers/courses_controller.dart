@@ -30,14 +30,14 @@ class CoursesController extends GetxController {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
-
+//✅ Récupère les formations depuis Strapi.
   // 🔹 GET
   Future<void> loadCourses() async {
     isLoading.value = true;
     try {
       final auth = Get.find<AuthController>();
       String? token = auth.token ?? await SecureStorage.getToken();
-
+//✅ Vérifie que l'utilisateur est connecté.
       if (token != null) {
         final response = await http.get(
           Uri.parse('$_baseUrl?populate=*&pagination[pageSize]=100'),
@@ -58,7 +58,7 @@ class CoursesController extends GetxController {
       isLoading.value = false;
     }
   }
-
+//✅ Ajoute une nouvelle formation.
   // 🔹 POST (ADD)
   Future<void> addCourse(Course course) async {
     isLoading.value = true;

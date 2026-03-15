@@ -1,7 +1,7 @@
 // ============================================
 // Modèle TrainingSession (Session de Formation)
 // ============================================
-
+//représenter une session de formation (titre, date, type, statut, participants…)
 import 'package:intl/intl.dart';
 
 enum SessionType { presentiel, hybride, enLigne }

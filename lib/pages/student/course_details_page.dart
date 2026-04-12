@@ -1,3 +1,7 @@
+// ============================================
+// Page Course Details (Détails du Cours)
+// ============================================
+//affiche les détails d’un cours (leçons, devoirs, etc.).
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../data/models/course.dart';

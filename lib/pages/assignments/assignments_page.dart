@@ -7,16 +7,39 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/assignments_controller.dart';
 import '../../data/models/assignment.dart';
+import '../../controllers/courses_controller.dart';
 import '../../routing/app_routes.dart';
 import './widgets/add_edit_assignment_dialog.dart';
 import './widgets/view_assignment_dialog.dart';
+import './widgets/submit_work_dialog.dart';
+import '../../controllers/auth_controller.dart';
+import '../student/course_details_page.dart'; // Pour d'éventuels helpers si besoin
 
 class AssignmentsPage extends StatelessWidget {
   const AssignmentsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    Get.put(CoursesController()); // S'assurer que le catalogue est chargé
     final controller = Get.put(AssignmentsController());
+    final authController = Get.find<AuthController>();
+
+    // Déterminer le mode (Management vs Étudiant)
+    final bool isManagementArg = Get.arguments is Map ? (Get.arguments['isManagement'] ?? false) : false;
+    // Un instructeur est toujours en mode gestion. Un admin peut choisir via le menu.
+    final bool isManagementMode = authController.isInstructor || (authController.isAdmin && isManagementArg);
+    
+    // Mettre à jour l'état du contrôleur pour l'API
+    if (controller.isManagementMode.value != isManagementMode) {
+      controller.isManagementMode.value = isManagementMode;
+      controller.fetchAssignments(); // Re-charger avec les bons filtres
+    }
+
+    final String pageTitle = isManagementMode ? 'Gestion des Devoirs' : 'Mes Devoirs';
+    final String pageSubtitle = isManagementMode 
+        ? 'Gérez les devoirs et les évaluations de vos cours.' 
+        : 'Gérez vos soumissions et consultez vos notes.';
+
     final bool isMobile = MediaQuery.of(context).size.width < 768;
     final double horizontalPadding = isMobile ? 16.0 : 24.0;
 
@@ -35,16 +58,22 @@ class AssignmentsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // En-tête : Titre + Bouton Nouveau Devoir
-                  isMobile
-                      ? _buildHeaderTitle(isMobile)
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildHeaderTitle(isMobile),
-                            _buildAddButton(),
-                          ],
-                        ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final double buttonWidth = isManagementMode ? (isMobile ? 110 : 200) : 0;
+                      final double titleWidth = constraints.maxWidth - buttonWidth - (isManagementMode ? 16 : 0);
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _buildHeaderTitle(isMobile, titleWidth, pageTitle, pageSubtitle),
+                          if (isManagementMode)
+                            _buildAddButton(isMobile),
+                        ],
+                      );
+                    },
+                  ),
                   const SizedBox(height: 32),
 
                   // Barre de recherche secondaire
@@ -64,11 +93,25 @@ class AssignmentsPage extends StatelessWidget {
                       return _buildEmptyState();
                     }
 
-                    return Column(
-                      children: controller.assignments.map<Widget>((assignment) {
-                        return _buildAssignmentCard(context, controller, assignment, isMobile);
-                      }).toList(),
-                    );
+                    if (isManagementMode) {
+                      // Vue Gestion : Tableau (Desktop) ou Cartes avec outils (Mobile)
+                      if (!isMobile) {
+                        return _buildAssignmentsTableContainer(controller);
+                      } else {
+                        return Column(
+                          children: controller.assignments.map<Widget>((assignment) {
+                            return _buildAssignmentCard(context, controller, assignment, isMobile, true);
+                          }).toList(),
+                        );
+                      }
+                    } else {
+                      // Vue Étudiant : Cartes avec bouton Soumettre
+                      return Column(
+                        children: controller.assignments.map<Widget>((assignment) {
+                          return _buildAssignmentCard(context, controller, assignment, isMobile, false);
+                        }).toList(),
+                      );
+                    }
                   }),
                 ],
               ),
@@ -165,45 +208,53 @@ class AssignmentsPage extends StatelessWidget {
   // WIDGETS DE LA PAGE
   // =============================
 
-  Widget _buildHeaderTitle(bool isMobile) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
-                ],
+  Widget _buildHeaderTitle(bool isMobile, double availableWidth, String title, String subtitle) {
+    return Container(
+      constraints: BoxConstraints(maxWidth: availableWidth),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: const Icon(Icons.assignment_rounded, color: Color(0xFF007AFF), size: 28),
               ),
-              child: const Icon(Icons.assignment_rounded, color: Color(0xFF007AFF), size: 28),
-            ),
-            const SizedBox(width: 16),
-            Text(
-              'Mes Devoirs',
-              style: TextStyle(
-                fontSize: isMobile ? 28 : 36,
-                fontWeight: FontWeight.w900,
-                color: const Color(0xFF0F172A),
-                letterSpacing: -0.5,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: isMobile ? 24 : 32, // Slightly smaller on mobile
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF0F172A),
+                    letterSpacing: -0.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Gérez vos soumissions et consultez vos notes.',
-          style: TextStyle(
-            color: const Color(0xFF64748B), 
-            fontSize: isMobile ? 15 : 18,
-            fontWeight: FontWeight.w500,
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: const Color(0xFF64748B), 
+              fontSize: isMobile ? 14 : 16,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
@@ -228,18 +279,18 @@ class AssignmentsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAddButton() {
+  Widget _buildAddButton(bool isMobile) {
     return ElevatedButton.icon(
       onPressed: () => Get.dialog(
         const AddEditAssignmentDialog(),
         barrierDismissible: true,
       ),
       icon: const Icon(Icons.add, size: 20),
-      label: const Text('Nouveau Devoir', style: TextStyle(fontWeight: FontWeight.bold)),
+      label: Text(isMobile ? 'Nouveau' : 'Nouveau Devoir', style: const TextStyle(fontWeight: FontWeight.bold)),
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF007AFF),
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 18),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 0,
       ),
@@ -272,14 +323,16 @@ class AssignmentsPage extends StatelessWidget {
   // =============================
 
   Widget _buildAssignmentCards(BuildContext context, AssignmentsController controller, bool isMobile) {
+    final bool canManage = Get.find<AuthController>().isAdmin || Get.find<AuthController>().isInstructor;
     return Column(
       children: controller.assignments.map<Widget>((assignment) {
-        return _buildAssignmentCard(context, controller, assignment, isMobile);
+        return _buildAssignmentCard(context, controller, assignment, isMobile, canManage);
       }).toList(),
     );
   }
 
-  Widget _buildAssignmentCard(BuildContext context, AssignmentsController controller, Assignment assignment, bool isMobile) {
+  Widget _buildAssignmentCard(BuildContext context, AssignmentsController controller, Assignment assignment, bool isMobile, bool canManage) {
+    final bool useVerticalLayout = isMobile;
     bool isLate = assignment.dueDate != null && assignment.dueDate!.isBefore(DateTime.now());
     
     return Container(
@@ -296,7 +349,7 @@ class AssignmentsPage extends StatelessWidget {
           ),
         ],
       ),
-      child: isMobile
+      child: useVerticalLayout
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -304,20 +357,20 @@ class AssignmentsPage extends StatelessWidget {
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
                 Padding(
                   padding: const EdgeInsets.all(20),
-                  child: _buildSubmitButton(),
+                  child: _buildCardFooter(assignment, useVerticalLayout, canManage, controller),
                 ),
               ],
             )
-          : IntrinsicHeight(
+          : Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(child: _buildCardContent(assignment, isLate)),
-                  const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(width: 24),
                   Container(
                     width: 200,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Center(child: _buildSubmitButton()),
+                    child: Center(child: _buildCardFooter(assignment, useVerticalLayout, canManage, controller)),
                   ),
                 ],
               ),
@@ -331,8 +384,10 @@ class AssignmentsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Badges
-          Row(
+          // Badges (Using Wrap to prevent overflow on mobile)
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
               _buildStatusBadge(
                 assignment.courseName ?? 'COURS', 
@@ -340,7 +395,6 @@ class AssignmentsPage extends StatelessWidget {
                 const Color(0xFF2563EB),
                 Icons.menu_book_rounded
               ),
-              const SizedBox(width: 12),
               _buildStatusBadge(
                 isLate ? 'En retard' : 'À faire',
                 isLate ? const Color(0xFFFEE2E2) : const Color(0xFFFFF7ED),
@@ -395,22 +449,54 @@ class AssignmentsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSubmitButton() {
+  Widget _buildCardFooter(Assignment assignment, bool isMobile, bool canManage, AssignmentsController controller) {
+    if (canManage) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.visibility_outlined, color: Colors.grey, size: 24),
+            onPressed: () => Get.dialog(ViewAssignmentDialog(assignment: assignment)),
+            tooltip: 'Voir',
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: Color(0xFF1E293B), size: 24),
+            onPressed: () => Get.dialog(AddEditAssignmentDialog(assignment: assignment)),
+            tooltip: 'Modifier',
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 24),
+            onPressed: () => _confirmDelete(controller, assignment),
+            tooltip: 'Supprimer',
+          ),
+        ],
+      );
+    } else {
+      return _buildSubmitButton(assignment, isMobile);
+    }
+  }
+
+  Widget _buildSubmitButton(Assignment assignment, bool isMobile) {
     return ElevatedButton(
-      onPressed: () => Get.toNamed(AppRoutes.COURSE_DETAILS, arguments: {'initialTab': 1}),
+      onPressed: () => Get.toNamed(AppRoutes.COURSE_DETAILS, arguments: {
+        'course': assignment,
+        'initialTab': 1,
+      }),
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF007AFF),
         foregroundColor: Colors.white,
         elevation: 0,
-        minimumSize: const Size(double.infinity, 56),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text("Soumettre", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-          const SizedBox(width: 12),
-          const Icon(Icons.chevron_right_rounded, size: 22),
+          Text("Soumettre", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          SizedBox(width: 12),
+          Icon(Icons.chevron_right_rounded, size: 22),
         ],
       ),
     );
@@ -419,6 +505,7 @@ class AssignmentsPage extends StatelessWidget {
   Widget _buildStatusBadge(String text, Color bgColor, Color textColor, IconData icon) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      constraints: const BoxConstraints(maxWidth: 180), // Limit width to prevent extreme cases
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12),
@@ -428,13 +515,17 @@ class AssignmentsPage extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: textColor),
           const SizedBox(width: 8),
-          Text(
-            text.toUpperCase(),
-            style: TextStyle(
-              color: textColor,
-              fontWeight: FontWeight.w900,
-              fontSize: 11,
-              letterSpacing: 0.5,
+          Flexible(
+            child: Text(
+              text.toUpperCase(),
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+                letterSpacing: 0.5,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],

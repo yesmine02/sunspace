@@ -20,11 +20,15 @@ class _SendInvitationDialogState extends State<SendInvitationDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
-        width: 500,
-        padding: const EdgeInsets.all(32),
+        width: isMobile ? double.infinity : 500,
+        constraints: const BoxConstraints(maxWidth: 500),
+        padding: EdgeInsets.all(isMobile ? 20 : 32),
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(20),

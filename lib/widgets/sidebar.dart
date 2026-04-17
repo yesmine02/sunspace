@@ -222,8 +222,8 @@ class Sidebar extends StatelessWidget {
                     _buildMenuItem(
                       title: 'Devoirs',
                       icon: Icons.assignment_outlined,
-                      isActive: currentRoute == AppRoutes.TASKS,
-                      onTap: () => Get.offAllNamed(AppRoutes.TASKS),
+                      isActive: currentRoute == AppRoutes.TASKS && (Get.arguments is Map ? Get.arguments['isManagement'] == true : false),
+                      onTap: () => Get.offAllNamed(AppRoutes.TASKS, arguments: {'isManagement': true}),
                     ),
                     _buildMenuItem(
                       title: 'Communication',
@@ -246,14 +246,14 @@ class Sidebar extends StatelessWidget {
                     _buildMenuItem(
                       title: 'Mes devoirs',
                       icon: Icons.assignment_outlined,
-                      isActive: currentRoute == AppRoutes.TASKS,
-                      onTap: () => Get.offAllNamed(AppRoutes.TASKS),
+                      isActive: currentRoute == AppRoutes.TASKS && (Get.arguments is Map ? Get.arguments['isManagement'] == false : true),
+                      onTap: () => Get.offAllNamed(AppRoutes.TASKS, arguments: {'isManagement': false}),
                     ),
                     _buildMenuItem(
                       title: 'Catalogue Cours',
                       icon: Icons.school_outlined,
-                      isActive: currentRoute == AppRoutes.MY_COURSES,
-                      onTap: () => Get.offAllNamed(AppRoutes.MY_COURSES),
+                      isActive: currentRoute == AppRoutes.COURSE_CATALOG,
+                      onTap: () => Get.offAllNamed(AppRoutes.COURSE_CATALOG),
                     ),
                     _buildMenuItem(
                       title: "Espaces d'étude",

@@ -61,15 +61,20 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: const Color(0xFFF8FAFC),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
-        width: 550,
-        padding: const EdgeInsets.all(24),
+        width: isMobile ? double.infinity : 550,
+        constraints: const BoxConstraints(maxWidth: 550),
+        padding: EdgeInsets.all(isMobile ? 20 : 24),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,30 +82,35 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                 // HEADER
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.association == null ? 'Nouvelle association' : 'Modifier l\'association',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.association == null ? 'Nouvelle association' : 'Modifier l\'association',
+                            style: TextStyle(
+                              fontSize: isMobile ? 20 : 22,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF0F172A),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.association == null 
-                            ? 'Ajoutez une nouvelle association au système.' 
-                            : 'Modifiez les informations de l\'association ici.',
-                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.association == null 
+                              ? 'Ajoutez une nouvelle association au système.' 
+                              : 'Modifiez les informations de l\'association ici.',
+                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                          ),
+                        ],
+                      ),
                     ),
                     IconButton(
                       onPressed: () => Get.back(),
                       icon: const Icon(Icons.close, color: Color(0xFF64748B), size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
@@ -120,30 +130,37 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                 _buildTextField(_descCtrl, hint: 'Description de l\'association...', maxLines: 3),
                 const SizedBox(height: 16),
 
-                // LIGNE : EMAIL + TELEPHONE
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('Email'),
-                          _buildTextField(_emailCtrl, hint: 'contact@assoc.com'),
-                        ],
+                // LIGNE : EMAIL + TELEPHONE (Responsive Row/Column)
+                if (isMobile) ...[
+                  _buildLabel('Email'),
+                  _buildTextField(_emailCtrl, hint: 'contact@assoc.com'),
+                  const SizedBox(height: 16),
+                  _buildLabel('Téléphone'),
+                  _buildTextField(_phoneCtrl, hint: '+212...'),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('Email'),
+                            _buildTextField(_emailCtrl, hint: 'contact@assoc.com'),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('Téléphone'),
-                          _buildTextField(_phoneCtrl, hint: '+212...'),
-                        ],
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('Téléphone'),
+                            _buildTextField(_phoneCtrl, hint: '+212...'),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 const SizedBox(height: 16),
 
                 // CHAMP : SITE WEB
@@ -151,30 +168,37 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                 _buildTextField(_websiteCtrl, hint: 'https://...'),
                 const SizedBox(height: 16),
 
-                // LIGNE : BUDGET + ADMIN
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('Budget initial'),
-                          _buildTextField(_budgetCtrl, hint: '0', keyboardType: TextInputType.number),
-                        ],
+                // LIGNE : BUDGET + ADMIN (Responsive Row/Column)
+                if (isMobile) ...[
+                  _buildLabel('Budget initial'),
+                  _buildTextField(_budgetCtrl, hint: '0', keyboardType: TextInputType.number),
+                  const SizedBox(height: 16),
+                  _buildLabel('Administrateur principal'),
+                  _buildAdminDropdown(),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('Budget initial'),
+                            _buildTextField(_budgetCtrl, hint: '0', keyboardType: TextInputType.number),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('Administrateur principal'),
-                          _buildAdminDropdown(),
-                        ],
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('Administrateur principal'),
+                            _buildAdminDropdown(),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 const SizedBox(height: 20),
 
                 // SWITCH : VERIFIED
@@ -198,19 +222,22 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Obx(() => ElevatedButton(
-                      onPressed: assocController.isLoading.value ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        elevation: 0,
-                      ),
-                      child: assocController.isLoading.value
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.w800)),
-                    )),
+                    Expanded(
+                      flex: isMobile ? 1 : 0,
+                      child: Obx(() => ElevatedButton(
+                        onPressed: assocController.isLoading.value ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
+                        ),
+                        child: assocController.isLoading.value
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.w800)),
+                      )),
+                    ),
                   ],
                 ),
               ],
@@ -306,6 +333,16 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
     
     if (success) {
       Get.back();
+      Get.snackbar(
+        'Succès',
+        widget.association == null 
+          ? 'L\'association a été créée avec succès.' 
+          : 'L\'association a été mise à jour.',
+        backgroundColor: const Color(0xFFDCFCE7),
+        colorText: const Color(0xFF166534),
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
     }
   }
 }

@@ -10,6 +10,7 @@ class Assignment {
   final String id;
   final String? documentId;
   final String title; // Titre du devoir
+  final String? courseId; // ID du cours
   final String? courseName; // Nom du cours associé
   final DateTime? dueDate; // Date d'échéance
   final double maxPoints; // Points maximum
@@ -29,6 +30,7 @@ class Assignment {
     this.allowLateSubmission = false,
     this.description = '',
     this.attachment,
+    this.courseId,
   });
 //✅ Formate la date d'échéance en jj/MM/aaaa.
   String get formattedDueDate {
@@ -39,34 +41,74 @@ class Assignment {
   static String _safeString(dynamic value) {
     if (value == null) return '';
     if (value is String) return value;
-    if (value is List) return value.join('\n'); // Tente de joindre les listes (ex: RichText)
+    if (value is List) {
+      // Gestion des Blocs Strapi (List of Maps with type: paragraph)
+      try {
+        return value.map((block) {
+          if (block is Map && block['type'] == 'paragraph') {
+            final children = block['children'];
+            if (children is List) {
+              return children.map((child) => child['text'] ?? '').join('');
+            }
+          }
+          return block.toString();
+        }).join('\n');
+      } catch (e) {
+        return value.join('\n');
+      }
+    }
     return value.toString();
   }
 //✅ Crée une instance d'Assignment à partir d'un JSON.
-  factory Assignment.fromJson(Map<String, dynamic> json) { //Lire un devoir venant du serveur
-    // Lecture des clés snake_case de Strapi
-    final dateStr = json['due_date'];
+  factory Assignment.fromJson(Map<String, dynamic> json) { 
+    // Détection auto Strapi (si enveloppé dans 'attributes')
+    final Map<String, dynamic> data = (json['attributes'] != null) ? json['attributes'] : json;
+    
+    final dateStr = data['due_date'];
+    final idStr = json['id']?.toString() ?? data['id']?.toString() ?? '';
 
-//✅ Récupère le nom du cours associé.
+    // Extraction robuste du titre du cours (Strapi v5)
     String courseTitle = '-';
-    if (json['course'] != null && json['course'] is Map) {
-      courseTitle = _safeString(json['course']['title']);
-    } else if (json['courseName'] != null) {
-      courseTitle = _safeString(json['courseName']);
+    // On cherche d'abord dans 'data' (le niveau actuel), puis dans les relations
+    final coursePayload = data['course'];
+    if (coursePayload != null) {
+      if (coursePayload is Map) {
+         if (coursePayload['title'] != null) {
+           courseTitle = _safeString(coursePayload['title']);
+         } else if (coursePayload['data'] != null && coursePayload['data'] is Map) {
+           // Strapi v5 structure nested data
+           final innerData = coursePayload['data'];
+           if (innerData['attributes'] != null) {
+             courseTitle = _safeString(innerData['attributes']['title']);
+           } else {
+             courseTitle = _safeString(innerData['title']);
+           }
+         }
+      }
+    }
+    
+    // Extraction robuste de l'ID du cours
+    String? cId;
+    if (coursePayload != null && coursePayload is Map) {
+      if (coursePayload['id'] != null) {
+        cId = coursePayload['id'].toString();
+      } else if (coursePayload['data'] != null && coursePayload['data'] is Map) {
+        cId = coursePayload['data']['id']?.toString();
+      }
     }
 
-//✅ Crée une instance d'Assignment à partir d'un JSON.
     return Assignment(
-      id: json['id']?.toString() ?? '',
-      documentId: json['documentId']?.toString(),
-      title: _safeString(json['title'] ?? 'Sans titre'),
+      id: idStr,
+      documentId: json['documentId']?.toString() ?? data['documentId']?.toString(),
+      title: _safeString(data['title'] ?? 'Sans titre'),
       courseName: courseTitle,
       dueDate: dateStr != null ? DateTime.parse(dateStr) : null,
-      maxPoints: (json['max_points'] ?? 0).toDouble(), //points maximum
-      passingScore: (json['passing_score'] ?? 0).toDouble(),//
-      allowLateSubmission: json['allow_late_submission'] ?? false,//autoriser les retards
-      description: _safeString(json['description']), 
-      attachment: json['attachment'],//piece jointe
+      maxPoints: (data['max_points'] ?? 0).toDouble(),
+      passingScore: (data['passing_score'] ?? 0).toDouble(),
+      allowLateSubmission: data['allow_late_submission'] ?? false,
+      description: _safeString(data['description']), 
+      attachment: data['attachment'],
+      courseId: cId,
     );
   }
 //✅ Convertit un Assignment en JSON pour l'API.

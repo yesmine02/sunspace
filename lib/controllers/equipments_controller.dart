@@ -130,8 +130,18 @@ class EquipmentsController extends GetxController {
           colorText: Color(0xFF166534),
         );
       } else {
-        print('Erreur création équipement: ${response.statusCode} - ${response.body}');
-        _showError('Erreur lors de la création de l\'équipement (${response.statusCode})');
+        String errorDetail = 'Erreur ${response.statusCode}';
+        try {
+          final Map<String, dynamic> errorData = jsonDecode(response.body);
+          if (errorData.containsKey('error') && errorData['error']['message'] != null) {
+            errorDetail = errorData['error']['message'];
+          }
+        } catch (e) {
+          errorDetail = response.body;
+        }
+        
+        print('Erreur création équipement détaillée: $errorDetail');
+        _showError('Erreur de création : $errorDetail');
       }
     } catch (e) {
       print('Erreur réseau création équipement: $e');

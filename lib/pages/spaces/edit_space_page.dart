@@ -147,14 +147,28 @@ class _EditSpacePageState extends State<EditSpacePage> {
                           child: _buildDropdownField<SpaceType>(
                             label: 'Type',
                             value: _selectedType,
-                            items: SpaceType.values.map((type) {
-                              String label = type.name.capitalizeFirst!;
-                              if (type == SpaceType.posteBureautique) label = 'Poste bureautique';
-                              if (type == SpaceType.salleDeReunion) label = 'Salle de réunion';
+                            items: SpaceType.values.where((t) => t != SpaceType.autre).map((type) {
+                              String label = type.name;
+                              switch (type) {
+                                case SpaceType.espaceDeTravail: label = 'Espace de Travail'; break;
+                                case SpaceType.salleDeReunion: label = 'Salle de Réunion'; break;
+                                case SpaceType.salleDeFormation: label = 'Salle de Formation'; break;
+                                case SpaceType.espaceCreatif: label = 'Espace Créatif'; break;
+                                case SpaceType.espaceCollaboratif: label = 'Espace Collaboratif'; break;
+                                case SpaceType.bureauPrive: label = 'Bureau Privé'; break;
+                                case SpaceType.salleDeConference: label = 'Salle de Conférence'; break;
+                                case SpaceType.laboratoire: label = 'Laboratoire'; break;
+                                case SpaceType.espaceDetente: label = 'Espace Détente'; break;
+                                case SpaceType.cuisine: label = 'Cuisine'; break;
+                                case SpaceType.securite: label = 'Sécurité'; break;
+                                case SpaceType.accueil: label = 'Accueil'; break;
+                                case SpaceType.sanitaires: label = 'Sanitaires'; break;
+                                default: label = 'Autre';
+                              }
                               return DropdownMenuItem(
                                 value: type,
                                 child: Text(label),
-                                );
+                              );
                             }).toList(),
                             onChanged: (val) => setState(() => _selectedType = val!),
                           ),

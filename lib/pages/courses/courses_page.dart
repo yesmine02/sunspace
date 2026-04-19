@@ -38,8 +38,34 @@ class CoursesPage extends StatelessWidget {
             _buildInternalSearch(controller),
             const SizedBox(height: 24),
 
-            // Conteneur du tableau des cours
-            _buildCoursesTableContainer(context, controller, isMobile),
+            // Liste des cours (Tableau ou Cartes)
+            Obx(() {
+              if (controller.isLoading.value && controller.courses.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(40.0),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              if (controller.filteredCourses.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(40.0),
+                  child: Center(child: Text('Aucun cours trouvé.')),
+                );
+              }
+
+              if (isMobile) {
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: controller.filteredCourses.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) => _buildCourseCard(context, controller, controller.filteredCourses[index]),
+                );
+              }
+
+              return _buildCoursesTableContainer(context, controller);
+            }),
           ],
         ),
       ),
@@ -129,8 +155,110 @@ class CoursesPage extends StatelessWidget {
     );
   }
 
-  // Widget : Tableau des cours dans un conteneur blanc
-  Widget _buildCoursesTableContainer(BuildContext context, CoursesController controller, bool isMobile) {
+  // Widget : Carte de cours pour mobile
+  Widget _buildCourseCard(BuildContext context, CoursesController controller, Course course) {
+    final fmtDate = course.createdAt != null ? DateFormat('dd/MM/yyyy').format(course.createdAt!) : '-';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  course.title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              _buildStatusBadge(course.isPublished),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            course.levelLabel,
+            style: TextStyle(color: Colors.blue[600], fontWeight: FontWeight.w500, fontSize: 14),
+          ),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('PRIX', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  const SizedBox(height: 4),
+                  Text('${course.price.toInt()} TND', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text('CRÉÉ LE', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  const SizedBox(height: 4),
+                  Text(fmtDate, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () => Get.dialog(AddEditCourseDialog(course: course)),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Modifier'),
+                style: TextButton.styleFrom(foregroundColor: Colors.grey[700]),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => _showDeleteConfirmation(context, controller, course),
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: const Text('Supprimer'),
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget : Badge de statut pour mobile
+  Widget _buildStatusBadge(bool isPublished) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isPublished ? Colors.green[50] : Colors.orange[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: isPublished ? Colors.green[100]! : Colors.orange[100]!),
+      ),
+      child: Text(
+        isPublished ? 'Publié' : 'Brouillon',
+        style: TextStyle(
+          color: isPublished ? Colors.green[700] : Colors.orange[700],
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  // Widget : Tableau des cours dans un conteneur blanc (Desktop)
+  Widget _buildCoursesTableContainer(BuildContext context, CoursesController controller) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -140,69 +268,51 @@ class CoursesPage extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Obx(() {
-          if (controller.isLoading.value && controller.courses.isEmpty) {
-            return const Padding(
-              padding: EdgeInsets.all(40.0),
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          if (controller.filteredCourses.isEmpty) {
-            return const Padding(
-              padding: EdgeInsets.all(40.0),
-              child: Center(child: Text('Aucun cours trouvé.')),
-            );
-          }
-
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
-              dataRowHeight: 64,
-              horizontalMargin: 24,
-              columnSpacing: 24,
-              columns: const [
-                DataColumn(label: Text('Titre', style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('Niveau', style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('Prix', style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('Créé le', style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
-              ],
-              rows: controller.filteredCourses.map((course) {
-                return DataRow(cells: [
-                  DataCell(Text(course.title, style: const TextStyle(fontWeight: FontWeight.w500))),
-                  DataCell(Text(course.levelLabel, style: TextStyle(color: Colors.grey[700]))),
-                  DataCell(Text('${course.price.toInt()} TND', style: const TextStyle(fontWeight: FontWeight.w500))),
-                  DataCell(_buildStatusDot(course.isPublished)),
-                  DataCell(Text(
-                    course.createdAt != null 
-                        ? DateFormat('dd/MM/yyyy').format(course.createdAt!) 
-                        : '-',
-                    style: TextStyle(color: Colors.grey[600]),
-                  )),
-                  DataCell(Row(
-                    children: [
-                      // Modifier
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.grey),
-                        onPressed: () => Get.dialog(
-                          AddEditCourseDialog(course: course),
-                        ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
+            dataRowHeight: 64,
+            horizontalMargin: 24,
+            columnSpacing: 24,
+            columns: const [
+              DataColumn(label: Text('Titre', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Niveau', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Prix', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Créé le', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+            ],
+            rows: controller.filteredCourses.map((course) {
+              return DataRow(cells: [
+                DataCell(Text(course.title, style: const TextStyle(fontWeight: FontWeight.w500))),
+                DataCell(Text(course.levelLabel, style: TextStyle(color: Colors.grey[700]))),
+                DataCell(Text('${course.price.toInt()} TND', style: const TextStyle(fontWeight: FontWeight.w500))),
+                DataCell(_buildStatusDot(course.isPublished)),
+                DataCell(Text(
+                  course.createdAt != null 
+                      ? DateFormat('dd/MM/yyyy').format(course.createdAt!) 
+                      : '-',
+                  style: TextStyle(color: Colors.grey[600]),
+                )),
+                DataCell(Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.grey),
+                      onPressed: () => Get.dialog(
+                        AddEditCourseDialog(course: course),
                       ),
-                      // Supprimer
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                        onPressed: () => _showDeleteConfirmation(context, controller, course),
-                      ),
-                    ],
-                  )),
-                ]);
-              }).toList(),
-            ),
-          );
-        }),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                      onPressed: () => _showDeleteConfirmation(context, controller, course),
+                    ),
+                  ],
+                )),
+              ]);
+            }).toList(),
+          ),
+        ),
       ),
     );
   }

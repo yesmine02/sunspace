@@ -10,8 +10,9 @@ import 'floor_plan_painter.dart';
 /// Le Widget principal qui affiche le plan d'étage et gère les interactions utilisateur.
 class FloorPlanWidget extends StatefulWidget {
   final Function(String slug) onAreaSelected; // Callback déclenché quand un espace est sélectionné.
+  final String? selectedSlug; // NOUVEAU: slug sélectionné depuis le parent
 
-  const FloorPlanWidget({super.key, required this.onAreaSelected});
+  const FloorPlanWidget({super.key, required this.onAreaSelected, this.selectedSlug});
 
   @override
   State<FloorPlanWidget> createState() => _FloorPlanWidgetState();
@@ -19,7 +20,6 @@ class FloorPlanWidget extends StatefulWidget {
 
 class _FloorPlanWidgetState extends State<FloorPlanWidget> {
   String? hoveredSlug;  // Stocke l'ID de l'espace survolé par la souris (Desktop).
-  String? selectedSlug; // Stocke l'ID de l'espace sélectionné par clic.
 
   // Dimensions d'origine du plan (coordonnées de base pour le dessin).
   static const double kOrigW = 2780;
@@ -90,8 +90,6 @@ class _FloorPlanWidgetState extends State<FloorPlanWidget> {
       }
     }
     
-    // Met à jour l'UI (le Painter colorera la zone sélectionnée).
-    setState(() => selectedSlug = foundSlug);
     // Informe le composant parent de la sélection.
     widget.onAreaSelected(foundSlug ?? "");
   }
@@ -154,7 +152,7 @@ class _FloorPlanWidgetState extends State<FloorPlanWidget> {
                 painter: FloorPlanPainter(
                   areas: areas,
                   hoveredSlug: hoveredSlug,
-                  selectedSlug: selectedSlug,
+                  selectedSlug: widget.selectedSlug,
                 ),
               ),
             ),

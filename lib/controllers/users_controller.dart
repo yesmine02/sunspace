@@ -11,6 +11,7 @@ import 'auth_controller.dart';
 class UsersController extends GetxController {
   final RxList<User> users = <User>[].obs;
   final RxString searchQuery = ''.obs;
+  final RxBool isLoading = false.obs;
   
   final String apiUrl = 'http://193.111.250.244:3046/api/users?populate=*';
   static const String _storageKey = 'saved_users';
@@ -23,48 +24,53 @@ class UsersController extends GetxController {
 
   /// 🔹 CHARGER depuis le serveur (Rétablissement de la connexion pour Users)
   Future<void> loadUsers() async {
+    isLoading.value = true;
     try {
-      final auth = Get.find<AuthController>();
-      String? token = auth.token ?? await SecureStorage.getToken();
+      try {
+        final auth = Get.find<AuthController>();
+        String? token = auth.token ?? await SecureStorage.getToken();
 
-      if (token != null) {
-        final response = await http.get(
-          Uri.parse(apiUrl),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-        );
+        if (token != null) {
+          final response = await http.get(
+            Uri.parse(apiUrl),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+          );
 
-        if (response.statusCode == 200) {
-          try {
-            File('c:\\Dev_mobile\\sunspace\\users.json').writeAsStringSync(response.body);
-          } catch(e) {}
-          final List<dynamic> list = jsonDecode(response.body);
-          
-          try {
-            final f = await SharedPreferences.getInstance();
-            await f.setString('debug_users_dump', response.body);
-          } catch(e){}
+          if (response.statusCode == 200) {
+            try {
+              File('c:\\Dev_mobile\\sunspace\\users.json').writeAsStringSync(response.body);
+            } catch(e) {}
+            final List<dynamic> list = jsonDecode(response.body);
+            
+            try {
+              final f = await SharedPreferences.getInstance();
+              await f.setString('debug_users_dump', response.body);
+            } catch(e){}
 
-          users.assignAll(list.map((item) => User.fromJson(item)).toList());
-          
-          // Sauvegarde en cache local
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_storageKey, response.body);
-          return;
+            users.assignAll(list.map((item) => User.fromJson(item)).toList());
+            
+            // Sauvegarde en cache local
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(_storageKey, response.body);
+            return;
+          }
         }
+      } catch (e) {
+        print('Erreur réseau utilisateurs: $e');
       }
-    } catch (e) {
-      print('Erreur réseau utilisateurs: $e');
-    }
-    
-    // Fallback cache local si le serveur ne répond pas
-    final prefs = await SharedPreferences.getInstance();
-    final String? cached = prefs.getString(_storageKey);
-    if (cached != null) {
-      final List<dynamic> decoded = jsonDecode(cached);
-      users.assignAll(decoded.map((item) => User.fromJson(item)).toList());
+      
+      // Fallback cache local si le serveur ne répond pas
+      final prefs = await SharedPreferences.getInstance();
+      final String? cached = prefs.getString(_storageKey);
+      if (cached != null) {
+        final List<dynamic> decoded = jsonDecode(cached);
+        users.assignAll(decoded.map((item) => User.fromJson(item)).toList());
+      }
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -89,16 +95,23 @@ class UsersController extends GetxController {
 
   void updateSearch(String query) => searchQuery.value = query;
 
-  void addUser(User user) {
-    users.add(user);
-    saveUsers();
-    Get.snackbar(
-      'Succès',
-      'L\'utilisateur "${user.username}" a été créé.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFDCFCE7),
-      colorText: const Color(0xFF166534),
+  Future<void> addUser(User user) async {
+    // Vérifier si l'email existe déjà dans la liste actuelle
+    final bool emailExists = users.any(
+      (u) => u.email?.toLowerCase() == user.email?.toLowerCase()
     );
+
+    if (emailExists) {
+      throw Exception("L'adresse email '${user.email}' est déjà utilisée.");
+    }
+
+    try {
+      users.add(user);
+      await saveUsers();
+    } catch (e) {
+      debugPrint("Error adding user: $e");
+      rethrow;
+    }
   }
 
   Future<void> deleteUser(int id) async {

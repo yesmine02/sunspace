@@ -142,8 +142,18 @@ class SpacesController extends GetxController {
           colorText: Color(0xFF166534),
         );
       } else {
-        print('Erreur création espace: ${response.statusCode} - ${response.body}');
-        _showError('Erreur lors de la création de l\'espace (${response.statusCode})');
+        String errorDetail = 'Erreur ${response.statusCode}';
+        try {
+          final Map<String, dynamic> errorData = jsonDecode(response.body);
+          if (errorData.containsKey('error') && errorData['error']['message'] != null) {
+            errorDetail = errorData['error']['message'];
+          }
+        } catch (e) {
+          errorDetail = response.body; 
+        }
+        
+        print('Erreur création espace détaillée: $errorDetail');
+        _showError('Erreur de création : $errorDetail');
       }
     } catch (e) {
       print('Erreur réseau création espace: $e');
@@ -302,12 +312,8 @@ class SpacesController extends GetxController {
 
   // Mappe les noms de l'interface vers les noms attendus par Strapi
   String _mapUItoStrapiType(String uiType) {
-    switch (uiType) {
-      case 'Bureau': return 'Bureau';
-      case 'Salle de réunion': return 'Salle_reunion';
-      case 'Open Space': return 'Poste_bureatique';
-      default: return uiType;
-    }
+    // Les noms dans l'interface correspondent maintenant exactement aux Enums de Strapi
+    return uiType;
   }
 
   // Statistiques — comptent les espaces par statut

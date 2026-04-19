@@ -22,9 +22,9 @@ class _BookSpacePageState extends State<BookSpacePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Initialisation des contrôleurs GetX
-    final spacesController = Get.put(SpacesController());
-    final bookingController = Get.put(BookingController());
+    // Initialisation des contrôleurs GetX en mode permanent pour éviter qu'ils soient détruits
+    final spacesController = Get.put(SpacesController(), permanent: true);
+    final bookingController = Get.put(BookingController(), permanent: true);
     final bool isMobile = MediaQuery.of(context).size.width < 800;
     
     return Scaffold(
@@ -139,6 +139,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
                   // Le Widget du plan gère le zoom et le dessin proprement dit.
                   Center(
                     child: FloorPlanWidget(
+                      selectedSlug: selectedSpaceForTooltip?.slug,
                       onAreaSelected: (slug) {
                         if (slug.isEmpty) {
                           setState(() => selectedSpaceForTooltip = null);
@@ -499,6 +500,23 @@ class _BookSpacePageState extends State<BookSpacePage> {
                     const SizedBox(height: 20),
                     Text('Visualisation 3D : ${space.name}', style: const TextStyle(color: Colors.white, fontSize: 24)),
                     const Text('(Ici sera intégré le widget ModelViewer ou Unity)', style: TextStyle(color: Colors.white54)),
+                    const SizedBox(height: 30),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Get.back(); // Ferme la vue 3D
+                        // Utilise un petit délai pour permettre à la modale de se fermer proprement
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          // Ouvre la boîte de dialogue de réservation (le bookingController est géré via Get.find)
+                          _showBookingDialog(context, space, Get.find<BookingController>());
+                        });
+                      },
+                      icon: const Icon(Icons.event_available, color: Colors.black),
+                      label: const Text('Réserver cet espace', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                    ),
                   ],
                 ),
               ),

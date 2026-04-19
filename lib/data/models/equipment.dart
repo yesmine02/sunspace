@@ -5,7 +5,7 @@
 // ============================================
 
 // Les statuts possibles d'un équipement
-enum EquipmentStatus { disponible, enMaintenance, horsService, enPanne }
+enum EquipmentStatus { disponible, enMaintenance, enPanne }
 
 class Equipment {
   final String id;              // Identifiant unique (numérique converti en String)
@@ -47,9 +47,6 @@ class Equipment {
       case 'En maintenance':
       case 'En_maintenance':
         return EquipmentStatus.enMaintenance;
-      case 'Hors service':
-      case 'Hors_service':
-        return EquipmentStatus.horsService;
       case 'En panne':
       case 'En_panne':
         return EquipmentStatus.enPanne;
@@ -134,11 +131,9 @@ class Equipment {
       case EquipmentStatus.disponible:
         return 'Disponible';
       case EquipmentStatus.enMaintenance:
-        return 'En maintenance';
-      case EquipmentStatus.horsService:
-        return 'Hors service';
+        return 'En_maintenance';
       case EquipmentStatus.enPanne:
-        return 'En panne';
+        return 'En_panne';
     }
   }
 }

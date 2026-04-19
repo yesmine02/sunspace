@@ -56,12 +56,17 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
-        width: 550,
-        padding: const EdgeInsets.all(28),
+        width: isMobile ? double.infinity : 550,
+        constraints: const BoxConstraints(maxWidth: 550),
+        padding: EdgeInsets.all(isMobile ? 20 : 28),
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           child: Form(
             key: _formKey,
             child: Column(
@@ -71,24 +76,33 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
                 // En-tête avec bouton fermer
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.course == null ? 'Créer un nouveau cours' : 'Modifier le cours',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Remplissez les détails ci-dessous pour ${widget.course == null ? 'créer un nouveau' : 'modifier ce'} cours.',
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.course == null ? 'Créer un nouveau cours' : 'Modifier le cours',
+                            style: TextStyle(
+                              fontSize: isMobile ? 20 : 22, 
+                              fontWeight: FontWeight.bold, 
+                              color: const Color(0xFF1E293B)
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Remplissez les détails ci-dessous pour ${widget.course == null ? 'créer un nouveau' : 'modifier ce'} cours.',
+                            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
                     ),
                     IconButton(
                       onPressed: () => Get.back(),
                       icon: const Icon(Icons.close, color: Colors.grey),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
@@ -104,38 +118,52 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
                 _buildTextField(_descriptionController, 'Une brève description du cours...', maxLines: 3),
                 const SizedBox(height: 20),
 
-                // Niveau et Prix (Côte à côte)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('Niveau'),
-                          _buildDropdown<CourseLevel>(
-                            _selectedLevel,
-                            CourseLevel.values.map((l) {
-                              String label = l == CourseLevel.debutant ? 'Débutant' : (l == CourseLevel.intermediaire ? 'Intermédiaire' : 'Avancé');
-                              return DropdownMenuItem(value: l, child: Text(label));
-                            }).toList(),
-                            (val) => setState(() => _selectedLevel = val!),
-                          ),
-                        ],
+                // Niveau et Prix (Côte à côte sur Desktop, Colonne sur Mobile)
+                if (isMobile) ...[
+                  _buildLabel('Niveau'),
+                  _buildDropdown<CourseLevel>(
+                    _selectedLevel,
+                    CourseLevel.values.map((l) {
+                      String label = l == CourseLevel.debutant ? 'Débutant' : (l == CourseLevel.intermediaire ? 'Intermédiaire' : 'Avancé');
+                      return DropdownMenuItem(value: l, child: Text(label));
+                    }).toList(),
+                    (val) => setState(() => _selectedLevel = val!),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildLabel('Prix (TND)'),
+                  _buildPriceField(),
+                ] else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('Niveau'),
+                            _buildDropdown<CourseLevel>(
+                              _selectedLevel,
+                              CourseLevel.values.map((l) {
+                                String label = l == CourseLevel.debutant ? 'Débutant' : (l == CourseLevel.intermediaire ? 'Intermédiaire' : 'Avancé');
+                                return DropdownMenuItem(value: l, child: Text(label)); // Corrected child
+                              }).toList(),
+                              (val) => setState(() => _selectedLevel = val!),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('Prix (TND)'),
-                          _buildPriceField(),
-                        ],
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('Prix (TND)'),
+                            _buildPriceField(),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 const SizedBox(height: 20),
 
                 // Statut (Brouillon / Publié)
@@ -144,7 +172,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
                   children: [
                     _buildLabel('Statut'),
                     SizedBox(
-                      width: 220, // Largeur fixe comme sur l'image
+                      width: isMobile ? double.infinity : 220,
                       child: _buildDropdown<CourseStatus>(
                         _selectedStatus,
                         [
@@ -158,25 +186,23 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
                 ),
                 const SizedBox(height: 32),
 
-                // Bouton de validation (Bleu)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007AFF), // Bleu vif comme sur l'image
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        widget.course == null ? 'Créer le cours' : 'Enregistrer les modifications',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
+                // Bouton de validation
+                SizedBox(
+                  width: isMobile ? double.infinity : null,
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF007AFF),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 0,
                     ),
-                  ],
+                    child: Text(
+                      widget.course == null ? 'Créer le cours' : 'Enregistrer',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
                 ),
               ],
             ),

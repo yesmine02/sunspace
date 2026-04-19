@@ -15,6 +15,7 @@ class CoursesController extends GetxController {
   final RxList<Course> courses = <Course>[].obs;
   final RxString searchQuery = ''.obs;
   final RxBool isLoading = false.obs;
+  final RxList<int> enrolledCourseIds = <int>[].obs; // IDs des cours déjà inscrits
 
   static const String _baseUrl = 'http://193.111.250.244:3046/api/courses';
   static const String _storageKey = 'saved_courses';
@@ -23,6 +24,7 @@ class CoursesController extends GetxController {
   void onInit() {
     super.onInit();
     loadCourses();
+    fetchEnrollments();
   }
 
   Map<String, String> _headers(String token) => {
@@ -47,7 +49,20 @@ class CoursesController extends GetxController {
         if (response.statusCode == 200) {
           final Map<String, dynamic> responseData = jsonDecode(response.body);
           final List<dynamic> data = responseData['data'] ?? [];
-          courses.value = data.map((item) => Course.fromJson(item)).toList();
+          if (data.isNotEmpty) {
+            print("DEBUG: First Course raw JSON: ${data[0]}");
+          }
+          final List<Course> loaded = [];
+          for (var item in data) {
+            try {
+              loaded.add(Course.fromJson(item));
+            } catch (e, stack) {
+              print("❌ ERROR parsing course: $e");
+              print("ITEM: $item");
+              print(stack);
+            }
+          }
+          courses.value = loaded;
           await _saveToLocal();
         }
       }
@@ -151,6 +166,55 @@ class CoursesController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // 🔹 GET ENROLLMENTS (Dynamique)
+  Future<void> fetchEnrollments() async {
+    try {
+      final auth = Get.find<AuthController>();
+      final userId = auth.currentUser.value?['id'];
+      String? token = auth.token ?? await SecureStorage.getToken();
+
+      if (token != null && userId != null) {
+        final url = 'http://193.111.250.244:3046/api/enrollments?filters[student][id][\$eq]=$userId&populate=course';
+        
+        final response = await http.get(
+          Uri.parse(url),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          final List<dynamic> data = responseData['data'] ?? [];
+          
+          final List<int> ids = [];
+          for (var item in data) {
+            dynamic courseInfo = item['attributes']?['course'];
+            if (courseInfo == null) courseInfo = item['course'];
+
+            if (courseInfo != null) {
+              final courseData = courseInfo['data'];
+              if (courseData != null) {
+                ids.add(int.parse(courseData['id'].toString()));
+              } else if (courseInfo['id'] != null) {
+                ids.add(int.parse(courseInfo['id'].toString()));
+              }
+            }
+          }
+          enrolledCourseIds.value = ids;
+          print("DEBUG: Enrollments fetched dynamyquement: $ids");
+        }
+      }
+    } catch (e) {
+      print('Erreur fetchEnrollments: $e');
+    }
+  }
+
+  bool isEnrolled(int courseId) {
+    return enrolledCourseIds.contains(courseId);
   }
 
   void updateSearch(String query) => searchQuery.value = query;

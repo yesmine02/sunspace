@@ -48,17 +48,22 @@ class Course {
   }
 //✅ Crée une instance de Course à partir d'un JSON.
   factory Course.fromJson(Map<String, dynamic> json) {
+    // Détection auto Strapi v5 (si enveloppé dans 'attributes')
+    final Map<String, dynamic> data = (json['attributes'] != null) ? json['attributes'] : json;
+    
     return Course(
-      id: json['id'].toString(),
-      documentId: json['documentId']?.toString(),
-      title: json['title'] ?? 'Sans titre',
-      level: _parseLevel(json['level']),
-      price: (json['price'] ?? 0).toDouble(),
-      description: json['description'] ?? '',
-      status: _parseStatus(json['mystatus']),
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      publishedAt: json['publishedAt'] != null ? DateTime.parse(json['publishedAt']) : null,
-      instructorName: json['instructor']?['username'] ?? '',
+      id: json['id']?.toString() ?? data['id']?.toString() ?? '',
+      documentId: json['documentId']?.toString() ?? data['documentId']?.toString(),
+      title: data['title'] ?? 'Sans titre',
+      level: _parseLevel(data['level']),
+      price: (data['price'] ?? 0).toDouble(),
+      description: data['description'] ?? '',
+      status: _parseStatus(data['mystatus']),
+      createdAt: data['createdAt'] != null ? DateTime.parse(data['createdAt']) : null,
+      publishedAt: data['publishedAt'] != null ? DateTime.parse(data['publishedAt']) : null,
+      instructorName: (data['instructor'] != null) 
+          ? (data['instructor'] is Map ? (data['instructor']['username'] ?? data['instructor']['data']?['username'] ?? '') : '')
+          : '',
     );
   }
 //✅ Convertit un Course en JSON pour l'API.

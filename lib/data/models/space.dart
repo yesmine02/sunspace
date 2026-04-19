@@ -8,7 +8,23 @@
 enum SpaceStatus { disponible, occupe, enPanne, maintenance }
 
 // Les types possibles d'un espace
-enum SpaceType { bureau, posteBureautique, salleDeReunion, cafe, projecteur, micro, autre }
+// Les types possibles d'un espace (mis à jour selon Strapi)
+enum SpaceType { 
+  espaceDeTravail, 
+  salleDeReunion, 
+  salleDeFormation, 
+  espaceCreatif, 
+  espaceCollaboratif, 
+  bureauPrive, 
+  salleDeConference, 
+  laboratoire, 
+  espaceDetente, 
+  cuisine, 
+  securite, 
+  accueil, 
+  sanitaires,
+  autre 
+}
 
 class Space {
   final String id;             // Identifiant unique (numérique converti en String)
@@ -43,29 +59,27 @@ class Space {
   });
 
   // Convertit le texte du type reçu du serveur Strapi en enum SpaceType
-  // Exemple : "Bureau" → SpaceType.bureau
   static SpaceType _parseType(String? typeStr) {
     if (typeStr == null) return SpaceType.autre;
     switch (typeStr) {
-      case 'Bureau':
-        return SpaceType.bureau;
-      case 'Poste_bureatique':
-        return SpaceType.posteBureautique;
-      case 'Salle_reunion':
-        return SpaceType.salleDeReunion;
-      case 'Cafe':
-        return SpaceType.cafe;
-      case 'Projecteur':
-        return SpaceType.projecteur;
-      case 'Micro':
-        return SpaceType.micro;
-      default:
-        return SpaceType.autre;
+      case 'Espace de Travail': return SpaceType.espaceDeTravail;
+      case 'Salle de Réunion': return SpaceType.salleDeReunion;
+      case 'Salle de Formation': return SpaceType.salleDeFormation;
+      case 'Espace Créatif': return SpaceType.espaceCreatif;
+      case 'Espace Collaboratif': return SpaceType.espaceCollaboratif;
+      case 'Bureau Privé': return SpaceType.bureauPrive;
+      case 'Salle de Conférence': return SpaceType.salleDeConference;
+      case 'Laboratoire': return SpaceType.laboratoire;
+      case 'Espace Détente': return SpaceType.espaceDetente;
+      case 'Cuisine': return SpaceType.cuisine;
+      case 'Sécurité': return SpaceType.securite;
+      case 'Accueil': return SpaceType.accueil;
+      case 'Sanitaires': return SpaceType.sanitaires;
+      default: return SpaceType.autre;
     }
   }
 
   // Convertit le texte du statut reçu du serveur Strapi en enum SpaceStatus
-  // Exemple : "Disponible" → SpaceStatus.disponible
   static SpaceStatus _parseStatus(String? statusStr) {
     if (statusStr == null) return SpaceStatus.disponible;
     switch (statusStr) {
@@ -84,8 +98,6 @@ class Space {
   }
 
   // Crée un objet Space à partir du JSON reçu du serveur
-  // Les noms de champs du serveur (snake_case) sont différents de ceux du modèle (camelCase)
-  // Exemple : "hourly_rate" sur le serveur → "hourlyPrice" dans le modèle
   factory Space.fromJson(Map<String, dynamic> json) {
     try {
       final id = json['id'].toString();
@@ -149,8 +161,6 @@ class Space {
   }
 
   // Convertit l'objet en JSON pour envoyer vers le serveur Strapi (POST ou PUT)
-  // Le serveur attend le format : { "data": { ... } }
-  // On n'envoie PAS id et documentId car le serveur les gère lui-même
   Map<String, dynamic> toStrapiJson() {
     return {
       'data': {
@@ -168,27 +178,27 @@ class Space {
     };
   }
 
-  // Convertit l'enum SpaceType en texte lisible (pour l'affichage et le serveur)
+  // Convertit l'enum SpaceType en texte lisible (exactement comme Strapi l'attend)
   String get typeString {
     switch (type) {
-      case SpaceType.bureau:
-        return 'Bureau';
-      case SpaceType.posteBureautique:
-        return 'Poste_bureatique';
-      case SpaceType.salleDeReunion:
-        return 'Salle_reunion';
-      case SpaceType.cafe:
-        return 'Cafe';
-      case SpaceType.projecteur:
-        return 'Projecteur';
-      case SpaceType.micro:
-        return 'Micro';
-      case SpaceType.autre:
-        return 'Autre';
+      case SpaceType.espaceDeTravail: return 'Espace de Travail';
+      case SpaceType.salleDeReunion: return 'Salle de Réunion';
+      case SpaceType.salleDeFormation: return 'Salle de Formation';
+      case SpaceType.espaceCreatif: return 'Espace Créatif';
+      case SpaceType.espaceCollaboratif: return 'Espace Collaboratif';
+      case SpaceType.bureauPrive: return 'Bureau Privé';
+      case SpaceType.salleDeConference: return 'Salle de Conférence';
+      case SpaceType.laboratoire: return 'Laboratoire';
+      case SpaceType.espaceDetente: return 'Espace Détente';
+      case SpaceType.cuisine: return 'Cuisine';
+      case SpaceType.securite: return 'Sécurité';
+      case SpaceType.accueil: return 'Accueil';
+      case SpaceType.sanitaires: return 'Sanitaires';
+      case SpaceType.autre: return 'Autre';
     }
   }
 
-  // Convertit l'enum SpaceStatus en texte lisible (pour l'affichage et le serveur)
+  // Convertit l'enum SpaceStatus en texte lisible
   String get statusString {
     switch (status) {
       case SpaceStatus.disponible:

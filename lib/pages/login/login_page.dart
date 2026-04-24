@@ -106,9 +106,29 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // 🔹 Champ Mot de passe
-                const Text('Mot de passe',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Mot de passe',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87)),
+                    GestureDetector(
+                      onTap: () {
+                        // TODO: Implémenter la logique de récupération de mot de passe
+                        Get.snackbar('Infos', 'Fonctionnalité bientôt disponible',
+                            snackPosition: SnackPosition.BOTTOM);
+                      },
+                      child: const Text(
+                        'Mot de passe oublié?',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: passwordController,

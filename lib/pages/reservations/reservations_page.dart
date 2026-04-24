@@ -27,23 +27,26 @@ class _ReservationsPageState extends State<ReservationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 1100;
+    final double horizontalPadding = isMobile ? 16.0 : 24.0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: Column(
         children: [
           // ── Bar de recherche supérieure (Global) ───────────────────
-          _buildTopSearchBar(),
+          if (!isMobile) _buildTopSearchBar(),
 
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Titre et Sous-titre ─────────────────────────────
-                  const Text(
+                  Text(
                     'Réservations',
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+                    style: TextStyle(fontSize: isMobile ? 24 : 32, fontWeight: FontWeight.bold, color: const Color(0xFF111827)),
                   ),
                   const SizedBox(height: 4),
                   const Text(
@@ -53,39 +56,49 @@ class _ReservationsPageState extends State<ReservationsPage> {
                   const SizedBox(height: 32),
 
                   // ── Filtres de recherche (Tableau) ───────────────────
-                  _buildTableFilters(),
+                  _buildTableFilters(isMobile),
                   const SizedBox(height: 24),
 
-                  // ── Tableau des données ─────────────────────────────
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: Obx(() {
-                      if (controller.isLoading.value) {
-                        return const Padding(
-                          padding: EdgeInsets.all(50),
-                          child: Center(child: CircularProgressIndicator(color: Color(0xFF007AFF))),
-                        );
-                      }
+                  // ── Liste des données (Tableau ou Cartes) ─────────────────────────────
+                  Obx(() {
+                    if (controller.isLoading.value) {
+                      return const Padding(
+                        padding: EdgeInsets.all(50),
+                        child: Center(child: CircularProgressIndicator(color: Color(0xFF007AFF))),
+                      );
+                    }
 
-                      final items = controller.filteredReservations;
-                      if (items.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.all(50),
-                          child: Center(child: Text('Aucune réservation trouvée.')),
-                        );
-                      }
+                    final items = controller.filteredReservations;
+                    if (items.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(50),
+                        child: Center(child: Text('Aucune réservation trouvée.')),
+                      );
+                    }
 
-                      return _buildDataTable(items);
-                    }),
-                  ),
+                    if (isMobile) {
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) => _buildReservationCard(items[index]),
+                      );
+                    }
+
+                    return Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: _buildDataTable(items),
+                    );
+                  }),
                   const SizedBox(height: 100), // Marge en bas
                 ],
               ),
@@ -141,7 +154,54 @@ class _ReservationsPageState extends State<ReservationsPage> {
     );
   }
 
-  Widget _buildTableFilters() {
+  Widget _buildTableFilters(bool isMobile) {
+    if (isMobile) {
+      return Column(
+        children: [
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: TextField(
+              onChanged: (val) => controller.updateSearchQuery(val),
+              decoration: const InputDecoration(
+                hintText: 'Rechercher...',
+                prefixIcon: Icon(Icons.search, size: 20, color: Color(0xFF9CA3AF)),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: Obx(() => DropdownButton<String>(
+                value: ['En attente', 'Confirmées', 'Toutes'].contains(controller.selectedResFilter.value) 
+                    ? controller.selectedResFilter.value 
+                    : 'Toutes', 
+                isExpanded: true,
+                items: ['En attente', 'Confirmées', 'Toutes'].map((String val) {
+                  return DropdownMenuItem<String>(value: val, child: Text(val));
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) controller.updateResFilter(val);
+                },
+              )),
+            ),
+          ),
+        ],
+      );
+    }
     return Row(
       children: [
         Expanded(
@@ -213,7 +273,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
   }
 
   DataRow _buildDataRow(Reservation res) {
-    final fmtDate = DateFormat('dd févr. yyyy', 'fr_FR').format(res.startDateTime); // Note: ensures french-like format
+    final fmtDate = DateFormat('dd MMM yyyy', 'fr_FR').format(res.startDateTime); // Dynamic localized month format
     final fmtTime = DateFormat('HH:mm').format(res.startDateTime);
 
     return DataRow(
@@ -258,12 +318,22 @@ class _ReservationsPageState extends State<ReservationsPage> {
         DataCell(
           Row(
             children: [
-              // Bouton Valider Rapide (Confirmer)
-              _ActionIcon(
-                icon: Icons.check_circle_outline, 
-                color: const Color(0xFF10B981), 
-                onTap: () => controller.updateReservationStatus(res, 'Confirmee')
-              ),
+              // Bouton Confirmer (visible seulement si EN ATTENTE)
+              if (res.status == ReservationStatus.enAttente)
+                _ActionIcon(
+                  icon: Icons.check_circle_outline,
+                  color: const Color(0xFF10B981),
+                  onTap: () => _showConfirmDialog(res),// Affiche le dialogue de confirmation
+                )
+              else
+                // Badge vert si déjà confirmée
+                Icon(
+                  Icons.check_circle,
+                  color: res.status == ReservationStatus.confirmee
+                      ? const Color(0xFF10B981)
+                      : Colors.grey.shade300,
+                  size: 20,
+                ),
               const SizedBox(width: 8),
               // Bouton Éditer (Changer le statut ou autres)
               _ActionIcon(
@@ -298,6 +368,74 @@ class _ReservationsPageState extends State<ReservationsPage> {
   }
 
   // --- Dialogues d'Actions ---
+
+  /// Dialogue de confirmation professionnelle avant de valider une réservation
+  void _showConfirmDialog(Reservation res) {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(28.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 52),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Confirmer la réservation ?",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "L'espace ${res.spaceName ?? ''} sera marqué comme confirmé.\nL'utilisateur sera notifié.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5),
+              ),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        side: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                      child: const Text("Annuler", style: TextStyle(color: Color(0xFF6B7280))),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.back(); // Ferme le dialogue
+                        controller.updateReservationStatus(res, 'Confirmee');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      child: const Text("Confirmer", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _showStatusDialog(Reservation res) {
     Get.bottomSheet(
@@ -459,6 +597,111 @@ class _ReservationsPageState extends State<ReservationsPage> {
   }
 
   // --- Couleurs de Statut pour l'Admin ---
+
+  Widget _buildReservationCard(Reservation res) {
+    final fmtDate = DateFormat('dd MMM yyyy', 'fr_FR').format(res.startDateTime);
+    final fmtTime = DateFormat('HH:mm').format(res.startDateTime);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  res.spaceName ?? 'N/A',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF111827)),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getStatusBgColor(res.status),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: _getStatusBorderColor(res.status)),
+                ),
+                child: Text(
+                  res.statusString.toUpperCase(),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getStatusTextColor(res.status)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildConditionalUserCell(res),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('DATE & HEURE', style: TextStyle(fontSize: 10, color: Color(0xFF9CA3AF), fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text('$fmtDate  $fmtTime', style: const TextStyle(fontSize: 13, color: Color(0xFF374151))),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text('MONTANT', style: TextStyle(fontSize: 10, color: Color(0xFF9CA3AF), fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text('${res.totalAmount.toInt()} DT', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827))),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(res.paymentMethod.toUpperCase(), style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+              Row(
+                children: [
+                  if (res.status == ReservationStatus.enAttente)
+                    IconButton(
+                      icon: const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 22),
+                      onPressed: () => _showConfirmDialog(res),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, color: Color(0xFF6B7280), size: 22),
+                    onPressed: () => _showStatusDialog(res),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 22),
+                    onPressed: () {
+                      Get.defaultDialog(
+                        title: "Supprimer",
+                        middleText: "Voulez-vous vraiment supprimer cette réservation ?",
+                        textConfirm: "Oui",
+                        textCancel: "Non",
+                        confirmTextColor: Colors.white,
+                        onConfirm: () {
+                          Get.back();
+                          controller.deleteReservation(res);
+                        }
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Color _getStatusBgColor(ReservationStatus status) {
     switch (status) {

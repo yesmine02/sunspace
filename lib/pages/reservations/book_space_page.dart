@@ -629,51 +629,120 @@ class _BookSpacePageState extends State<BookSpacePage> {
     );
   }
 
-  /// Widget de sélection de date/heure avec retour immédiat sur le prix total.
   Widget _buildDateTimePicker(BuildContext context, BookingController controller, double hourlyPrice, double monthlyPrice) {
     return Obx(() {
       final start = controller.startDateTime.value;
       final end = controller.endDateTime.value;
-      final format = DateFormat('dd/MM HH:mm');
+      final isAllDay = controller.isAllDay.value;
+      final dateStr = DateFormat('dd MMMM yyyy', 'fr').format(start);
+      final startTimeStr = DateFormat('HH:mm').format(start);
+      final endTimeStr = DateFormat('HH:mm').format(end);
 
-      return Row(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: InkWell(
-              onTap: () async {
-                DateTime? date = await showDatePicker(context: context, initialDate: start, firstDate: DateTime.now(), lastDate: DateTime(2030));
-                if (date != null) {
-                  TimeOfDay? time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(start));
-                  if (time != null) {
-                    final newStart = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                    final duration = end.difference(start);
-                    controller.updateDates(newStart, newStart.add(duration), hourlyPrice, monthlyPrice);
-                  }
-                }
-              },
-              child: _dateTimeCard("Début", format.format(start)),
+          // Date Picker Field
+          InkWell(
+            onTap: () async {
+              DateTime? date = await showDatePicker(context: context, initialDate: start, firstDate: DateTime.now(), lastDate: DateTime(2030));
+              if (date != null) {
+                final newStart = DateTime(date.year, date.month, date.day, start.hour, start.minute);
+                final duration = end.difference(start);
+                controller.updateDates(newStart, newStart.add(duration), hourlyPrice, monthlyPrice);
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today, size: 18, color: Colors.blue),
+                  const SizedBox(width: 12),
+                  Text("Date : $dateStr", style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                ],
+              ),
             ),
           ),
-          const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Icon(Icons.arrow_forward, size: 16, color: Colors.grey)),
-          Expanded(
-            child: InkWell(
-              onTap: () async {
-                 TimeOfDay? time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(end));
-                 if (time != null) {
-                   final newEnd = DateTime(end.year, end.month, end.day, time.hour, time.minute);
-                   if (newEnd.isAfter(start)) {
+          const SizedBox(height: 20),
+          
+          // Time Pickers Row
+          Row(
+            children: [
+              Expanded(
+                child: _buildTimeDropdown(
+                  "Heure de début",
+                  startTimeStr,
+                  isAllDay,
+                  (String? newValue) {
+                    if (newValue != null) {
+                      final parts = newValue.split(':');
+                      final newStart = DateTime(start.year, start.month, start.day, int.parse(parts[0]), int.parse(parts[1]));
+                      controller.updateDates(newStart, end, hourlyPrice, monthlyPrice);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTimeDropdown(
+                  "Heure de fin",
+                  endTimeStr,
+                  isAllDay,
+                  (String? newValue) {
+                    if (newValue != null) {
+                      final parts = newValue.split(':');
+                      final newEnd = DateTime(end.year, end.month, end.day, int.parse(parts[0]), int.parse(parts[1]));
                       controller.updateDates(start, newEnd, hourlyPrice, monthlyPrice);
-                   } else {
-                     Get.snackbar("Erreur", "La fin doit être après le début");
-                   }
-                 }
-              },
-              child: _dateTimeCard("Fin", format.format(end)),
-            ),
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       );
     });
+  }
+
+  Widget _buildTimeDropdown(String label, String value, bool isDisabled, ValueChanged<String?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        const SizedBox(height: 8),
+        Container(
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isDisabled ? Colors.grey.shade100 : const Color(0xFF10B981), width: 1.5),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: Get.find<BookingController>().timeSlots.contains(value) ? value : null,
+              hint: const Text("Choisir", style: TextStyle(fontSize: 13)),
+              isExpanded: true,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+              onChanged: isDisabled ? null : onChanged,
+              items: Get.find<BookingController>().timeSlots.map((String slot) {
+                return DropdownMenuItem<String>(
+                  value: slot,
+                  child: Text(slot, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _dateTimeCard(String label, String value) {
@@ -736,9 +805,6 @@ class _BookSpacePageState extends State<BookSpacePage> {
   }
 }
 
-// FORMATTERS PERSONNALISÉS pour une saisie fluide et sans erreur.
-
-/// Ajoute un espace tous les 4 chiffres pour le numéro de carte.
 class _CardNumberFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
@@ -752,42 +818,11 @@ class _CardNumberFormatter extends TextInputFormatter {
   }
 }
 
-/// Ajoute un slash '/' et valide la logique du mois (01-12).
 class _ExpiryDateFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    String newText = newValue.text.replaceAll('/', '');
-
-    if (newText.isEmpty) return newValue;
-
-    // Validation du premier chiffre du mois
-    if (newText.length == 1) {
-      int firstDigit = int.parse(newText);
-      if (firstDigit > 1) {
-        // Si l'utilisateur tape 2-9, on transforme en 0x/
-        newText = '0$newText';
-      }
-    } 
-    // Validation des deux chiffres du mois
-    else if (newText.length >= 2) {
-      int month = int.parse(newText.substring(0, 2));
-      if (month > 12) {
-        // Si mois invalide (>12), on garde l'ancien texte ou on suggère 12
-        return oldValue;
-      }
-      if (month == 0) {
-        // Le mois 00 n'existe pas, on bloque
-        return oldValue;
-      }
-    }
-
-    String result = newText.length >= 2 
-      ? "${newText.substring(0, 2)}/${newText.substring(2)}" 
-      : newText;
-
-    return TextEditingValue(
-      text: result, 
-      selection: TextSelection.collapsed(offset: result.length)
-    );
+    String text = newValue.text.replaceAll('/', '');
+    String result = text.length >= 2 ? "${text.substring(0, 2)}/${text.substring(2)}" : text;
+    return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
   }
 }

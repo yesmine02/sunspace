@@ -31,9 +31,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # On retire le formatage et l'analyse pour plus de souplesse
-      # - name: Check formatting
-      #   run: dart format --set-exit-if-changed lib
+      - name: Static Analysis
+        run: flutter analyze # Vérifie les erreurs de code et warnings
+
+      - name: Run Unit Tests
+        run: flutter test # Exécute vos tests unitaires
 
       - name: Build APK (Release)
         run: flutter build apk --release --no-pub

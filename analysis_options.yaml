@@ -1,1 +1,15 @@
+# Ce fichier configure l'analyseur de code Dart (linter)
+# https://dart.dev/guides/language/analysis-options
+
 include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "scratch/**"      # Ignore tous les fichiers dans le dossier scratch
+    - "test_users3.dart" # Ignore ce fichier spécifique qui a des warnings
+    - "**/*.g.dart"      # Ignore les fichiers générés (si vous en avez)
+    - "build/**"
+
+  errors:
+    # On peut aussi décider de transformer certains avertissements en simples infos
+    avoid_print: ignore # Autorise le 'print' pour vos tests personnels

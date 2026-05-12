@@ -30,7 +30,11 @@ jobs:
 
       - name: Static Analysis
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
-        continue-on-error: true # Permet de voir les conseils sans bloquer le build
+        continue-on-error: true
+
+      - name: Run Unit Tests
+        run: flutter test
+        continue-on-error: true # Permet de voir les résultats des tests sans bloquer l'APK
 
       - name: Build APK (Release)
         run: flutter build apk --release --no-pub

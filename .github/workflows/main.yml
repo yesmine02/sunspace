@@ -44,3 +44,10 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload to Firebase App Distribution
+        uses: w9jds/firebase-action@master
+        with:
+          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app ${{ secrets.FIREBASE_APP_ID }} --groups dev-team
+        env:
+          GCP_SA_KEY: ${{ secrets.CREDENTIAL_FILE_CONTENT }}

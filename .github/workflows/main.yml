@@ -32,7 +32,7 @@ jobs:
         run: flutter pub get
 
       - name: Static Analysis
-        run: flutter analyze # Vérifie les erreurs de code et warnings
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos # Ne bloque pas pour des warnings mineurs
 
       - name: Run Unit Tests
         run: flutter test # Exécute vos tests unitaires

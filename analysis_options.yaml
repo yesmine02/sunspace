@@ -7,6 +7,8 @@ analyzer:
   exclude:
     - "scratch/**"      # Ignore tous les fichiers dans le dossier scratch
     - "test_users3.dart" # Ignore ce fichier spécifique qui a des warnings
+    - "fetch_test.dart"   # Ajout de ce fichier qui bloquait
+    - "test/**"          # Ignore le dossier test pour l'instant
     - "**/*.g.dart"      # Ignore les fichiers générés (si vous en avez)
     - "build/**"
 

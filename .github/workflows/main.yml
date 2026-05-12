@@ -28,7 +28,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # On saute l'analyse et les tests pour garantir la génération de l'APK
+      - name: Static Analysis
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+        continue-on-error: true # Permet de voir les conseils sans bloquer le build
+
       - name: Build APK (Release)
         run: flutter build apk --release --no-pub
 

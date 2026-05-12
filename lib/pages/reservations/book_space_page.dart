@@ -7,6 +7,7 @@ import '../../controllers/spaces_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../data/models/space.dart';
 import '../../widgets/shared/floor_plan_widget.dart';
+import '../../widgets/shared/booking_dialog.dart';
 
 /// Page principale de réservation d'espaces pour les professionnels.
 /// Permet de basculer entre une vue Plan interactif et une vue Liste classique.

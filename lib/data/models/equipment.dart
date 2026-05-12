@@ -61,19 +61,22 @@ class Equipment {
   //   - "mystatus" sur le serveur → "status" dans le modèle
   //   - "purchase_price" sur le serveur → "price" dans le modèle
   factory Equipment.fromJson(Map<String, dynamic> json) {
+    // Strapi v4/v5 peut emballer les données dans un objet 'attributes'
+    final Map<String, dynamic> data = json.containsKey('attributes') ? json['attributes'] : json;
+    
     return Equipment(
-      id: json['id'].toString(),                    // Le serveur envoie un int, on le convertit en String
-      documentId: json['documentId']?.toString(),   // Utilisé pour PUT/DELETE sur Strapi
-      name: json['name'] ?? '',
-      type: json['type'] ?? '',
-      serialNumber: (json['serial_number'] ?? json['serialNumber'] ?? '').toString(),  // serial_number = nom Strapi
-      status: _parseStatus(json['mystatus'] ?? json['status']),  // mystatus = nom Strapi
-      spaceName: json['spaceName']?.toString(),
-      description: json['description']?.toString(),
-      purchaseDate: _parseDate(json['purchase_date'] ?? json['purchaseDate']),    // purchase_date = nom Strapi
-      price: (json['purchase_price'] ?? json['price'])?.toDouble(),              // purchase_price = nom Strapi
-      warrantyExpiry: _parseDate(json['warranty_expiry'] ?? json['warrantyExpiry']),  // warranty_expiry = nom Strapi
-      notes: json['notes']?.toString(),
+      id: json['id'].toString(),
+      documentId: json['documentId']?.toString() ?? data['documentId']?.toString(),
+      name: data['name'] ?? '',
+      type: data['type'] ?? '',
+      serialNumber: (data['serial_number'] ?? data['serialNumber'] ?? '').toString(),
+      status: _parseStatus(data['mystatus'] ?? data['status']),
+      spaceName: data['spaceName']?.toString(),
+      description: data['description']?.toString(),
+      purchaseDate: _parseDate(data['purchase_date'] ?? data['purchaseDate']),
+      price: (data['purchase_price'] ?? data['purchasePrice'] ?? data['daily_price'] ?? data['rental_price'])?.toDouble(),
+      warrantyExpiry: _parseDate(data['warranty_expiry'] ?? data['warrantyExpiry']),
+      notes: data['notes']?.toString(),
     );
   }
 

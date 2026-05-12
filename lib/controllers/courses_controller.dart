@@ -10,12 +10,15 @@ import 'package:http/http.dart' as http;
 import '../data/models/course.dart';
 import '../data/local/secure_storage.dart';
 import 'auth_controller.dart';
+import 'notification_controller.dart';
+import 'assignments_controller.dart'; // Ajout de l'import manquant
 
 class CoursesController extends GetxController {
   final RxList<Course> courses = <Course>[].obs;
   final RxString searchQuery = ''.obs;
   final RxBool isLoading = false.obs;
-  final RxList<int> enrolledCourseIds = <int>[].obs; // IDs des cours déjà inscrits
+  final RxList<int> enrolledCourseIds = <int>[].obs;
+  final RxList<String> enrolledCourseDocumentIds = <String>[].obs;
 
   static const String _baseUrl = 'http://193.111.250.244:3046/api/courses';
   static const String _storageKey = 'saved_courses';
@@ -93,7 +96,34 @@ class CoursesController extends GetxController {
         );
 
         if (response.statusCode == 200 || response.statusCode == 201) {
+          // Extraire l'ID du cours créé
+          dynamic newCourseId;
+          try {
+            final respData = jsonDecode(response.body);
+            newCourseId = respData['data']?['id'] ?? respData['data']?['documentId'];
+          } catch (e) {
+            debugPrint('Erreur parsing ID cours: $e');
+          }
+
           await loadCourses();
+          
+          // 📢 Notifier tous les étudiants de la nouvelle formation
+          try {
+            debugPrint('📣 Tentative d\'envoi de notification aux étudiants...');
+            final instructorName = auth.currentUser.value?['username'] ?? 'Un enseignant';
+            final notifCtrl = Get.find<NotificationController>();
+            notifCtrl.notifyMembers(
+              title: 'Nouveau cours disponible !',
+              message: '$instructorName a publié un nouveau cours : "${course.title}"',
+              type: 'Info', // Indispensable pour éviter l'erreur 400
+              relatedType: 'course',
+              relatedId: newCourseId,
+              actionUrl: '/dashboard/student/catalog',
+            );
+          } catch (e) {
+            debugPrint('Erreur notification étudiants: $e');
+          }
+
           Get.back();
           _showSnackbar('Succès', 'Formation créée', Colors.green);
         } else {
@@ -168,53 +198,132 @@ class CoursesController extends GetxController {
     }
   }
 
-  // 🔹 GET ENROLLMENTS (Dynamique)
-  Future<void> fetchEnrollments() async {
+  // 🔹 ENROLL IN COURSE (Inscription)
+  Future<bool> enrollInCourse(Course course) async {
     try {
       final auth = Get.find<AuthController>();
       final userId = auth.currentUser.value?['id'];
       String? token = auth.token ?? await SecureStorage.getToken();
 
-      if (token != null && userId != null) {
-        final url = 'http://193.111.250.244:3046/api/enrollments?filters[student][id][\$eq]=$userId&populate=course';
-        
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-        );
+      if (token == null || userId == null) return false;
 
-        if (response.statusCode == 200) {
-          final Map<String, dynamic> responseData = jsonDecode(response.body);
-          final List<dynamic> data = responseData['data'] ?? [];
-          
-          final List<int> ids = [];
-          for (var item in data) {
-            dynamic courseInfo = item['attributes']?['course'];
-            if (courseInfo == null) courseInfo = item['course'];
-
-            if (courseInfo != null) {
-              final courseData = courseInfo['data'];
-              if (courseData != null) {
-                ids.add(int.parse(courseData['id'].toString()));
-              } else if (courseInfo['id'] != null) {
-                ids.add(int.parse(courseInfo['id'].toString()));
-              }
-            }
-          }
-          enrolledCourseIds.value = ids;
-          print("DEBUG: Enrollments fetched dynamyquement: $ids");
+      final url = 'http://193.111.250.244:3046/api/enrollments';
+      
+      // Strapi v5 Format Robuste
+      final body = jsonEncode({
+        'data': {
+          'student': userId,
+          'course': { 'connect': [int.tryParse(course.id) ?? course.id] },
+          'enrolled_at': DateTime.now().toUtc().toIso8601String(),
+          'publishedAt': DateTime.now().toUtc().toIso8601String(),
+          'mystatus': 'Active', // Correction : 'Active' avec un 'e'
+          'progress_percentage': 0,
+          'certificate_issued': false,
+          'final_grade': 0,
         }
+      });
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _headers(token),
+        body: body,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print("DEBUG: Inscription réussie pour le cours ${course.title}");
+        await fetchEnrollments(); // Recharger les IDs d'inscription
+        await loadCourses();      // Recharger le catalogue pour l'état des boutons
+        
+        // Optionnel : Rafraîchir les devoirs si le contrôleur existe
+        if (Get.isRegistered<AssignmentsController>()) {
+          Get.find<AssignmentsController>().fetchAssignments();
+        }
+
+        // 🔔 Envoyer une notification à l'enseignant du cours
+        if (course.instructorId != null) {
+          try {
+            final studentName = auth.currentUser.value?['username'] ?? 'Un étudiant';
+            final notifCtrl = Get.find<NotificationController>();
+            
+            await notifCtrl.sendNotification(
+              targetUserId: course.instructorId!,
+              title: 'Nouvelle inscription !',
+              message: '$studentName s\'est inscrit à votre cours "${course.title}".',
+              type: 'Info',
+              relatedType: 'course',
+              relatedId: course.id,
+              actionUrl: '/dashboard/instructor/courses',
+            );
+          } catch (e) {
+            print('Erreur lors de l\'envoi de la notification à l\'enseignant: $e');
+          }
+        }
+        
+        return true;
+      } else {
+        print("DEBUG: Erreur inscription: ${response.body}");
+        return false;
       }
     } catch (e) {
-      print('Erreur fetchEnrollments: $e');
+      print('Erreur enrollInCourse: $e');
+      return false;
     }
   }
 
-  bool isEnrolled(int courseId) {
-    return enrolledCourseIds.contains(courseId);
+  // 🔹 GET ENROLLMENTS
+  Future<void> fetchEnrollments() async {
+    try {
+      final auth = Get.find<AuthController>();
+      final userId = auth.currentUser.value?['id'];
+      final token = auth.token ?? await SecureStorage.getToken();
+      if (token == null || userId == null) return;
+
+      // URL simple - confirmée fonctionnelle
+      final url = 'http://193.111.250.244:3046/api/enrollments'
+          '?filters[student][id][\$eq]=$userId'
+          '&populate=course'
+          '&pagination[pageSize]=100';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body)['data'] ?? [];
+        final List<int> ids = [];
+        final List<String> docIds = [];
+
+        for (var item in data) {
+          // Strapi v5 flat: course directement dans item
+          // Strapi v4: dans item['attributes']['course']['data']
+          dynamic courseInfo = item['course'] ?? item['attributes']?['course'];
+          if (courseInfo == null) continue;
+
+          final courseData = courseInfo['data'] ?? courseInfo;
+          final id = int.tryParse((courseData['id'] ?? '').toString());
+          final docId = (courseData['documentId'] ?? courseData['attributes']?['documentId'] ?? '').toString();
+
+          if (id != null) ids.add(id);
+          if (docId.isNotEmpty) docIds.add(docId);
+        }
+
+        enrolledCourseIds.value = ids;
+        enrolledCourseDocumentIds.value = docIds;
+        debugPrint('🎓 Enrollments chargés : IDs=$ids | DocIDs=$docIds');
+      } else {
+        debugPrint('⚠️ fetchEnrollments HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur fetchEnrollments: $e');
+    }
+  }
+
+  bool isEnrolled(Course course) {
+    final numId = int.tryParse(course.id.toString());
+    if (numId != null && enrolledCourseIds.contains(numId)) return true;
+    if (course.documentId != null && enrolledCourseDocumentIds.contains(course.documentId)) return true;
+    return false;
   }
 
   void updateSearch(String query) => searchQuery.value = query;

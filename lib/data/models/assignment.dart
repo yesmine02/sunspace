@@ -13,10 +13,12 @@ class Assignment {
   final String? courseId; // ID du cours
   final String? courseName; // Nom du cours associé
   final DateTime? dueDate; // Date d'échéance
+  final List<dynamic>? submissions; // Soutenir les soumissions extraites
   final double maxPoints; // Points maximum
   final double passingScore; // Note de passage
   final bool allowLateSubmission; // Autoriser les retards
   final String description; // Instructions
+  final String? courseDocumentId; // documentId du cours associé
   final Map<String, dynamic>? attachment; // Pièce jointe
 //✅ Constructeur de la classe Assignment.
   Assignment({
@@ -31,11 +33,67 @@ class Assignment {
     this.description = '',
     this.attachment,
     this.courseId,
+    this.courseDocumentId,
+    this.submissions,
   });
 //✅ Formate la date d'échéance en jj/MM/aaaa.
   String get formattedDueDate {
     if (dueDate == null) return '-';
     return DateFormat('dd/MM/yyyy', 'fr_FR').format(dueDate!);
+  }
+
+  /// ✅ Retourne vrai si la date actuelle dépasse la date d'échéance.
+  bool get isLate {
+    if (dueDate == null) return false;
+    return DateTime.now().isAfter(dueDate!);
+  }
+
+  /// ✅ Retourne vrai si l'étudiant spécifié a déjà soumis ce devoir.
+  bool isSubmittedByUser(String? userId) {
+    if (submissions == null || submissions!.isEmpty || userId == null) return false;
+    return submissions!.any((s) {
+      final subData = s is Map ? (s['attributes'] ?? s) : null;
+      if (subData == null) return false;
+      
+      // Extraction de l'ID de l'étudiant dans la soumission
+      String? subStudentId;
+      final studentLink = subData['student'];
+      if (studentLink != null) {
+        if (studentLink is Map) {
+          subStudentId = (studentLink['id'] ?? studentLink['data']?['id'])?.toString();
+        } else if (studentLink is String || studentLink is int) {
+          subStudentId = studentLink.toString();
+        }
+      }
+      
+      final status = subData['mystatus']?.toString() ?? 'Soumis';
+      return subStudentId == userId && status == 'Soumis';
+    });
+  }
+
+  /// Retourne true si l'utilisateur a soumis ce devoir
+  bool get hasSubmitted => submissions != null && submissions!.isNotEmpty;
+
+  /// ✅ Retourne la date de soumission pour un utilisateur donné
+  String getFormattedSubmissionDateForUser(String? userId) {
+    if (userId == null || submissions == null) return '-';
+    try {
+      final sub = submissions!.firstWhere((s) {
+        final subData = s is Map ? (s['attributes'] ?? s) : null;
+        final studentLink = subData?['student'];
+        String? subStudentId;
+        if (studentLink is Map) {
+          subStudentId = (studentLink['id'] ?? studentLink['data']?['id'])?.toString();
+        }
+        return subStudentId == userId;
+      });
+      final subData = sub is Map ? (sub['attributes'] ?? sub) : null;
+      final dateStr = subData?['submitted_at'] ?? subData?['createdAt'];
+      if (dateStr == null) return '-';
+      return DateFormat('dd/MM/yyyy', 'fr_FR').format(DateTime.parse(dateStr));
+    } catch (e) {
+      return '-';
+    }
   }
 //✅ Méthode utilitaire pour gérer les valeurs nulles ou les listes.
   static String _safeString(dynamic value) {
@@ -67,33 +125,34 @@ class Assignment {
     final dateStr = data['due_date'];
     final idStr = json['id']?.toString() ?? data['id']?.toString() ?? '';
 
-    // Extraction robuste du titre du cours (Strapi v5)
+    // Extraction ultra-robuste du titre du cours et de l'ID (Strapi v4/v5/Flat/Nested)
     String courseTitle = '-';
-    // On cherche d'abord dans 'data' (le niveau actuel), puis dans les relations
-    final coursePayload = data['course'];
-    if (coursePayload != null) {
-      if (coursePayload is Map) {
-         if (coursePayload['title'] != null) {
-           courseTitle = _safeString(coursePayload['title']);
-         } else if (coursePayload['data'] != null && coursePayload['data'] is Map) {
-           // Strapi v5 structure nested data
-           final innerData = coursePayload['data'];
-           if (innerData['attributes'] != null) {
-             courseTitle = _safeString(innerData['attributes']['title']);
-           } else {
-             courseTitle = _safeString(innerData['title']);
-           }
-         }
-      }
-    }
-    
-    // Extraction robuste de l'ID du cours
     String? cId;
-    if (coursePayload != null && coursePayload is Map) {
-      if (coursePayload['id'] != null) {
-        cId = coursePayload['id'].toString();
-      } else if (coursePayload['data'] != null && coursePayload['data'] is Map) {
-        cId = coursePayload['data']['id']?.toString();
+    String? cDocId;
+
+    final dynamic cp = data['course'] ?? json['course'];
+    if (cp != null) {
+      if (cp is Map) {
+        // Extraction ID/DocID
+        cId = (cp['id'] ?? cp['data']?['id'] ?? cp['attributes']?['id'])?.toString();
+        cDocId = (cp['documentId'] ?? cp['data']?['documentId'] ?? cp['attributes']?['documentId'])?.toString();
+        
+        // Recherche du titre dans tous les niveaux possibles (data -> attributes -> title)
+        dynamic findTitle(dynamic obj) {
+          if (obj == null) return null;
+          if (obj is! Map) return null;
+          if (obj['title'] != null) return obj['title'];
+          if (obj['name'] != null) return obj['name'];
+          if (obj['attributes'] != null) return findTitle(obj['attributes']);
+          if (obj['data'] != null) return findTitle(obj['data']);
+          return null;
+        }
+        
+        final resTitle = findTitle(cp);
+        if (resTitle != null) courseTitle = resTitle.toString();
+      } else {
+        // ID direct
+        cId = cp.toString();
       }
     }
 
@@ -107,10 +166,39 @@ class Assignment {
       passingScore: (data['passing_score'] ?? 0).toDouble(),
       allowLateSubmission: data['allow_late_submission'] ?? false,
       description: _safeString(data['description']), 
-      attachment: data['attachment'],
+      attachment: _extractFileData(data['attachment']),
       courseId: cId,
+      courseDocumentId: cDocId,
+      // Strapi v5 peut renvoyer directement la liste ou enveloppée dans 'data'
+      submissions: data['submissions'] is List ? data['submissions'] : (data['submissions']?['data'] ?? []),
     );
   }
+
+  static Map<String, dynamic>? _extractFileData(dynamic fileField) {
+    if (fileField == null) return null;
+    
+    // Si c'est déjà le Map final
+    if (fileField is Map && fileField['url'] != null) {
+      return Map<String, dynamic>.from(fileField);
+    }
+    
+    // Si c'est enveloppé dans data/attributes (Strapi standard)
+    if (fileField is Map && fileField['data'] != null) {
+      final inner = fileField['data'];
+      if (inner is Map) {
+        final Map<String, dynamic> attrs = inner['attributes'] ?? inner;
+        return {
+          'id': inner['id'],
+          'name': attrs['name'],
+          'url': attrs['url'],
+          'ext': attrs['ext'],
+        };
+      }
+    }
+    
+    return null;
+  }
+
 //✅ Convertit un Assignment en JSON pour l'API.
   Map<String, dynamic> toJson() {
     return {
@@ -151,6 +239,15 @@ class Assignment {
 
   // Pour l'envoi API — conforme au schéma Strapi
   Map<String, dynamic> toStrapiJson(dynamic courseId) { //Envoyer un devoir au serveur
+    int? numericCourseId;
+    if (courseId != null) {
+      if (courseId is int) {
+        numericCourseId = courseId;
+      } else if (courseId is String) {
+        numericCourseId = int.tryParse(courseId);
+      }
+    }
+
     return {
       'data': {
         'title': title,
@@ -159,7 +256,8 @@ class Assignment {
         'max_points': maxPoints,
         'passing_score': passingScore,
         'allow_late_submission': allowLateSubmission,
-        if (courseId != null) 'course': courseId.toString(), //associer le devoir au cours
+        if (numericCourseId != null) 'course': {'connect': [numericCourseId]},
+        'publishedAt': DateTime.now().toUtc().toIso8601String(), // Auto-publish for Strapi v4/v5
       }
     };
   }

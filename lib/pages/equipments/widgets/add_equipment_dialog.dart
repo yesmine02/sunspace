@@ -141,7 +141,12 @@ class _AddEquipmentDialogState extends State<AddEquipmentDialog> {
                       'Statut',
                       _selectedStatus,
                       EquipmentStatus.values.map((s) {
-                        String label = s == EquipmentStatus.disponible ? 'Disponible' : (s == EquipmentStatus.enMaintenance ? 'En maintenance' : (s == EquipmentStatus.enPanne ? 'En panne' : 'Hors service'));
+                        String label = '';
+                        switch (s) {
+                          case EquipmentStatus.disponible: label = 'Disponible'; break;
+                          case EquipmentStatus.enMaintenance: label = 'En maintenance'; break;
+                          case EquipmentStatus.enPanne: label = 'En panne'; break;
+                        }
                         return DropdownMenuItem(value: s, child: Text(label));
                       }).toList(),
                       (val) => setState(() => _selectedStatus = val!),
@@ -157,7 +162,7 @@ class _AddEquipmentDialogState extends State<AddEquipmentDialog> {
                     Expanded(flex: isMobile ? 0 : 1, child: _buildDatePickerField('Date d\'achat', _purchaseDate, () => _selectDate(context, true))),
                     if (!isMobile) const SizedBox(width: 16),
                     if (isMobile) const SizedBox(height: 16),
-                    Expanded(flex: isMobile ? 0 : 1, child: _buildTextField('Prix d\'achat', _priceController, '0', isNumeric: true)),
+                    Expanded(flex: isMobile ? 0 : 1, child: _buildTextField('Prix de location / Jour', _priceController, '0', isNumeric: true)),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -265,8 +270,20 @@ class _AddEquipmentDialogState extends State<AddEquipmentDialog> {
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.blue)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          // Validation : certains champs sont obligatoires
-          validator: (val) => (val == null || val.isEmpty) && label != 'Description' && label != 'Notes' ? 'Champ requis' : null,
+          // Validation : certains champs sont obligatoires et ne doivent pas contenir de chiffres pour les noms
+          validator: (val) {
+            if (val == null || val.isEmpty) {
+              if (label != 'Description' && label != 'Notes') return 'Champ requis';
+              return null;
+            }
+            // Validation stricte : pas de chiffres pour le nom et le type
+            if (label == 'Nom' || label == 'Type') {
+              if (RegExp(r'[0-9]').hasMatch(val)) {
+                return 'Le $label ne doit pas contenir de chiffres';
+              }
+            }
+            return null;
+          },
         ),
       ],
     );

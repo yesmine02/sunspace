@@ -102,7 +102,14 @@ class _AddUserDialogState extends State<AddUserDialog> {
                       value: _selectedRole,
                       isExpanded: true,
                       icon: const Icon(Icons.keyboard_arrow_down, size: 20),
-                      items: ['Admin', 'Authenticated'].map((role) {
+                      items: [
+                        'Admin', 
+                        'Authenticated', 
+                        'Etudiant', 
+                        'Enseignant', 
+                        'Gestionnaire d\'espace', 
+                        'Professionnel'
+                      ].map((role) {
                         return DropdownMenuItem(
                           value: role,
                           child: Text(role, style: const TextStyle(fontSize: 14)),
@@ -217,6 +224,10 @@ class _AddUserDialogState extends State<AddUserDialog> {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) return 'Ce champ est obligatoire';
+        // Empêcher les chiffres dans le nom d'utilisateur (si c'est bien ce que l'utilisateur veut pour tous les noms)
+        if (controller == _usernameController && RegExp(r'[0-9]').hasMatch(value)) {
+          return 'Le nom d\'utilisateur ne doit pas contenir de chiffres';
+        }
         return null;
       },
     );
@@ -235,7 +246,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
           createdAt: DateTime.now().toIso8601String(),
         );
 
-        await controller.addUser(newUser);
+        await controller.addUser(newUser, _passwordController.text);
         
         Get.back(); // Close dialog first
 

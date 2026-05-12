@@ -6,8 +6,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../controllers/sessions_controller.dart';
 import '../../controllers/auth_controller.dart';
+import '../../controllers/associations_controller.dart';
 import '../../data/models/training_session.dart';
 
 class TrainingPage extends StatefulWidget {
@@ -25,11 +27,13 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
+    // Initialise le contrôleur d'onglets pour gérer les deux sections (Disponibles / Mes sessions)
     _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
+    // Libère les ressources du contrôleur d'onglets lors de la destruction du widget pour éviter les fuites de mémoire
     _tabController.dispose();
     super.dispose();
   }
@@ -91,6 +95,9 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     );
   }
 
+  /// --- WIDGETS DE CONSTRUCTION ---
+
+  /// Affiche le titre de la page et la description (En-tête)
   Widget _buildHeader(bool isMobile) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,11 +132,16 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     );
   }
 
+  /// Affiche les petits compteurs de statistiques (Mes inscriptions / Disponibles)
   Widget _buildStats(bool isMobile) {
     return Obx(() {
       final userId = _authController.currentUser.value?['id'];
-      final availableCount = _sessionsController.sessions.length;
-      final myInscriptionsCount = _sessionsController.sessions.where((s) => userId != null && s.attendeeIds.contains(userId)).length;
+      
+      // Toutes les sessions disponibles (non encore rejointes par ce pro) et NON CRÉÉES par une association
+      // (Les sessions d'association n'ont jamais de cours associé)
+      final allSessions = _sessionsController.sessions.where((s) => s.courseId != null).toList();
+      final availableCount = allSessions.where((s) => userId != null && !s.attendeeIds.contains(userId)).length;
+      final myInscriptionsCount = allSessions.where((s) => userId != null && s.attendeeIds.contains(userId)).length;
       
       return Row(
         mainAxisAlignment: isMobile ? MainAxisAlignment.start : MainAxisAlignment.end,
@@ -142,6 +154,7 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     });
   }
 
+  /// Construit un petit rectangle de statistique individuel
   Widget _buildStatBox(String value, String label, Color bgColor, Color textColor, bool isMobile, {bool hasBorder = false}) {
     return Container(
       width: isMobile ? 105 : 120,
@@ -161,6 +174,7 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     );
   }
 
+  /// Construit la barre de recherche avec son icône loupe
   Widget _buildSearchBar(bool isMobile) {
     return Container(
       decoration: BoxDecoration(
@@ -188,6 +202,7 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     );
   }
 
+  /// Construit la barre d'onglets (Tabs) pour switcher entre les vues
   Widget _buildTabs(bool isMobile) {
     return Obx(() {
       final userId = _authController.currentUser.value?['id'];
@@ -211,11 +226,12 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     });
   }
 
+  /// Construit un bouton d'onglet individuel (ex: "Sessions disponibles")
   Widget _buildTabItem(int index, String label, bool isMobile) {
     final bool isActive = _tabController.index == index;
     return GestureDetector(
       onTap: () {
-        setState(() => _tabController.index = index);
+        setState(() => _tabController.index = index);//change d'onglet
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -238,14 +254,28 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     );
   }
 
+  /// Affiche la liste des formations filtrées selon l'onglet actif
   Widget _buildSessionsList({required bool isAvailableOnly, required bool isMobile}) {
     return Obx(() {
       final userId = _authController.currentUser.value?['id'];
+      
+      // Toutes les sessions (créées par n'importe quel enseignant, mais pas par une association)
+      // Filtre de recherche textuelle inclus
+      final allSessions = _sessionsController.sessions.where((s) {
+        // Exclure les sessions d'association (qui n'ont pas de cours)
+        if (s.courseId == null) return false;
+        
+        final query = _sessionsController.searchQuery.value.toLowerCase();
+        if (query.isEmpty) return true;
+        return s.title.toLowerCase().contains(query) ||
+               (s.courseName?.toLowerCase().contains(query) ?? false);
+      }).toList();
+
+      // Onglet 0 : sessions disponibles (le pro n'y est pas encore inscrit)
+      // Onglet 1 : mes sessions (le pro y est inscrit)
       final sessions = isAvailableOnly 
-          ? _sessionsController.filteredSessions 
-          : _sessionsController.sessions.where((s) {
-              return userId != null && s.attendeeIds.contains(userId);
-            }).toList();
+          ? allSessions.where((s) => userId != null && !s.attendeeIds.contains(userId)).toList() 
+          : allSessions.where((s) => userId != null && s.attendeeIds.contains(userId)).toList();
 
       if (sessions.isEmpty) {
         return _buildEmptyState(isAvailableOnly, isMobile);
@@ -261,6 +291,7 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     });
   }
 
+  /// Affiche un message et une image quand il n'y a rien à montrer
   Widget _buildEmptyState(bool isAvailableOnly, bool isMobile) {
     return Center(
       child: Column(
@@ -292,6 +323,7 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     );
   }
 
+  /// Construit la carte blanche détaillée pour une formation spécifique
   Widget _buildSessionCard(TrainingSession session, {required bool showUnenroll, required bool isMobile}) {
     final bool isOnline = session.type == SessionType.enLigne || session.type == SessionType.hybride;
     
@@ -363,6 +395,7 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
           const SizedBox(height: 32),
           
           // Row with stats
+          // les infos de la session(dates,heures,participants)
           Wrap(
             spacing: 40,
             runSpacing: 16,
@@ -370,25 +403,39 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
               _buildInfoItem(Icons.calendar_today_rounded, DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(session.startDate ?? DateTime.now())),
               _buildInfoItem(Icons.access_time_rounded, "${DateFormat('HH:mm').format(session.startDate ?? DateTime.now())} - ${DateFormat('HH:mm').format(session.endDate ?? DateTime.now())}"),
               _buildInfoItem(Icons.people_outline_rounded, "${session.currentParticipants} / ${session.maxParticipants} participants"),
+              if (session.instructorName != null)
+                _buildInfoItem(Icons.person_rounded, session.instructorName!),
             ],
           ),
           
           if (showUnenroll && isOnline && session.meetingLink != null) ...[
             const SizedBox(height: 24),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined, size: 20, color: Color(0xFF007AFF)),
-                const SizedBox(width: 8),
-                const Text(
-                  "Lien de la réunion",
-                  style: TextStyle(
-                    color: Color(0xFF007AFF),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    decoration: TextDecoration.underline,
+            InkWell(
+              onTap: session.isExpired ? null : () async {
+                if (session.meetingLink != null) {
+                  final Uri url = Uri.parse(session.meetingLink!);
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  } else {
+                    Get.snackbar("Erreur", "Impossible d'ouvrir le lien : ${session.meetingLink}");
+                  }
+                }
+              },
+              child: Row(
+                children: [
+                  Icon(Icons.location_on_outlined, size: 20, color: session.isExpired ? Colors.grey : const Color(0xFF007AFF)),
+                  const SizedBox(width: 8),
+                  Text(
+                    session.isExpired ? "Session terminée (Lien désactivé)" : "Lien de la réunion",
+                    style: TextStyle(
+                      color: session.isExpired ? Colors.grey : const Color(0xFF007AFF),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      decoration: session.isExpired ? TextDecoration.none : TextDecoration.underline,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
           
@@ -396,15 +443,28 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
           
           Align(
             alignment: Alignment.centerRight,
-            child: showUnenroll 
-                ? _buildUnenrollButton(session)
-                : _buildEnrollButton(session),
+            child: session.isExpired 
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      "SESSION TERMINÉE",
+                      style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  )
+                : (showUnenroll 
+                    ? _buildUnenrollButton(session)
+                    : _buildEnrollButton(session)),
           ),
         ],
       ),
     );
   }
 
+  /// Affiche une icône et un petit texte d'information (ex: Date, Heure)
   Widget _buildInfoItem(IconData icon, String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -423,24 +483,33 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
     );
   }
 
+  /// Bouton bleu pour s'inscrire à une formation
   Widget _buildEnrollButton(TrainingSession session) {
+    final bool isFull = session.currentParticipants >= session.maxParticipants;
+
     return ElevatedButton(
-      onPressed: () => _showEnrollmentDialog(session),
+      onPressed: isFull ? null : () => _showEnrollmentDialog(session),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF007AFF),
+        backgroundColor: isFull ? Colors.grey.shade300 : const Color(0xFF007AFF),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 0,
         minimumSize: const Size(120, 48),
+        disabledBackgroundColor: Colors.grey.shade200,
       ),
-      child: const Text(
-        "S'inscrire",
-        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+      child: Text(
+        isFull ? "Complet" : "S'inscrire",
+        style: TextStyle(
+          fontWeight: FontWeight.w900, 
+          fontSize: 15,
+          color: isFull ? Colors.grey : Colors.white,
+        ),
       ),
     );
   }
 
+  /// Bouton rouge pour annuler une inscription
   Widget _buildUnenrollButton(TrainingSession session) {
     return ElevatedButton(
       onPressed: () => _showUnenrollmentDialog(session),

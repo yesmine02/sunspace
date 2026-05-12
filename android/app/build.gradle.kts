@@ -1,39 +1,35 @@
+//android/app/build.gradle.kts
+//(app)👉 configure l'app
 plugins {
     id("com.android.application")
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id("dev.flutter.flutter-gradle-plugin")
+    id("kotlin-android") 
+    id("dev.flutter.flutter-gradle-plugin") //Connecte Flutter avec Android
 }
 
 android {
-    namespace = "com.example.sunspace"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    namespace = "com.example.sunspace" 
+    compileSdk = flutter.compileSdkVersion // version du SDK Android
+    ndkVersion = flutter.ndkVersion // version du NDK
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17 //Version Android optimisée
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString() //Version Kotlin optimisée
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.sunspace"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        minSdk = flutter.minSdkVersion //Version Android minimale
+        targetSdk = flutter.targetSdkVersion //Version Android maximale
+        versionCode = flutter.versionCode //version Code
+        versionName = flutter.versionName //version Name
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

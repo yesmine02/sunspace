@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
+import '../controllers/notification_controller.dart'; // 🔔 Refresh notifs au démarrage
 import '../data/local/secure_storage.dart';
 import '../data/providers/auth_provider.dart';
 import '../data/repositories/auth_repository.dart';
@@ -33,6 +34,18 @@ class SessionService extends GetxService {
         // # role  :On déclenche le rafraîchissement du rôle en tâche de fond 
         // pour être toujours à jour avec les permissions serveur
         auth.refreshRole();
+
+        // 🔔 Charger les notifications dès que la session est restaurée
+        // (l'utilisateur verra le badge correct dès l'ouverture de l'app)
+        Future.microtask(() async {
+          try {
+            if (Get.isRegistered<NotificationController>()) {
+              await Get.find<NotificationController>().fetchNotifications();
+            }
+          } catch (e) {
+            // Erreur silencieuse - pas critique
+          }
+        });
 
         return true;                           // Session valide
       } else {

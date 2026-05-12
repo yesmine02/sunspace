@@ -159,7 +159,12 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
                       'Statut',
                       _selectedStatus,
                       EquipmentStatus.values.map((s) {
-                        String label = s == EquipmentStatus.disponible ? 'Disponible' : (s == EquipmentStatus.enMaintenance ? 'En maintenance' : (s == EquipmentStatus.enPanne ? 'En panne' : 'Hors service'));
+                        String label = '';
+                        switch (s) {
+                          case EquipmentStatus.disponible: label = 'Disponible'; break;
+                          case EquipmentStatus.enMaintenance: label = 'En maintenance'; break;
+                          case EquipmentStatus.enPanne: label = 'En panne'; break;
+                        }
                         return DropdownMenuItem(value: s, child: Text(label));
                       }).toList(),
                       (val) => setState(() => _selectedStatus = val!),
@@ -175,7 +180,7 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
                     Expanded(flex: isMobile ? 0 : 1, child: _buildDatePickerField('Date d\'achat', _purchaseDate, () => _selectDate(context, true))),
                     if (!isMobile) const SizedBox(width: 16),
                     if (isMobile) const SizedBox(height: 16),
-                    Expanded(flex: isMobile ? 0 : 1, child: _buildTextField('Prix d\'achat', _priceController, '0', isNumeric: true)),
+                    Expanded(flex: isMobile ? 0 : 1, child: _buildTextField('Prix de location / Jour', _priceController, '0', isNumeric: true)),
                   ],
                 ),
                 const SizedBox(height: 16),

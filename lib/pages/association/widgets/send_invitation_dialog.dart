@@ -16,7 +16,15 @@ class SendInvitationDialog extends StatefulWidget {
 class _SendInvitationDialogState extends State<SendInvitationDialog> {
   final controller = Get.find<UsersController>();
   final assocController = Get.find<AssociationsController>();
-  User? selectedUser;
+  final TextEditingController emailController = TextEditingController();
+  User? foundUser;
+  bool isSearching = false;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,42 +86,40 @@ class _SendInvitationDialogState extends State<SendInvitationDialog> {
             const SizedBox(height: 12),
 
             // Dropdown
-            Obx(() => Container(
+            // Email TextField
+            Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<User>(
-                  isExpanded: true,
-                  hint: const Text('Sélectionner un utilisateur', style: TextStyle(color: Color(0xFF94A3B8))),
-                  value: selectedUser,
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8)),
-                  items: controller.users.map((user) {
-                    return DropdownMenuItem<User>(
-                      value: user,
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
-                            child: Text(
-                              (user.username ?? '?')[0].toUpperCase(),
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(user.email ?? '-', style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B))),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (val) => setState(() => selectedUser = val),
+              child: TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  hintText: 'Entrez l\'email de l\'utilisateur...',
+                  hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                  border: InputBorder.none,
+                  icon: Icon(Icons.email_outlined, color: Color(0xFF94A3B8), size: 20),
                 ),
+                onChanged: (val) {
+                  // Optionnel : trouver l'utilisateur en temps réel pour validation visuelle
+                  setState(() {
+                    foundUser = controller.users.firstWhereOrNull(
+                      (u) => u.email?.toLowerCase() == val.trim().toLowerCase()
+                    );
+                  });
+                },
               ),
-            )),
+            ),
+            if (emailController.text.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, left: 4.0),
+                child: foundUser != null
+                  ? Text('✓ Utilisateur trouvé : ${foundUser?.username}', style: const TextStyle(color: Colors.green, fontSize: 12))
+                  : const Text('✗ Aucun utilisateur trouvé avec cet email', style: TextStyle(color: Colors.red, fontSize: 12)),
+              ),
             const SizedBox(height: 48),
 
             // Buttons
@@ -134,8 +140,8 @@ class _SendInvitationDialogState extends State<SendInvitationDialog> {
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton.icon(
-                  onPressed: selectedUser == null ? null : () async {
-                    if (selectedUser?.id == null) return;
+                  onPressed: foundUser == null ? null : () async {
+                    if (foundUser?.id == null) return;
 
                     // 1. On trouve l'association active de l'utilisateur connecté
                     final myId = Get.find<AuthController>().currentUser.value?['id'];
@@ -156,14 +162,16 @@ class _SendInvitationDialogState extends State<SendInvitationDialog> {
                     // 2. On appelle le serveur pour ajouter le membre
                     final success = await assocController.addMemberToAssociation(
                       activeAssoc.documentId!, 
-                      selectedUser!.id!
+                      foundUser!.id!,
+                      newMemberUsername: foundUser!.username,
+                      associationName: activeAssoc.name,
                     );
 
                     if (success) {
                       Get.back();
                       Get.snackbar(
                         'Succès',
-                        'L\'utilisateur ${selectedUser!.username} a été ajouté à l\'association.',
+                        'L\'utilisateur ${foundUser!.username} a été ajouté à l\'association.',
                         backgroundColor: const Color(0xFFDCFCE7),
                         colorText: const Color(0xFF166534),
                       );

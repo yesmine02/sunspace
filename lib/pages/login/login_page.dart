@@ -151,7 +151,7 @@ class LoginPage extends StatelessWidget {
 
                 // 🔹 Bouton de connexion
                 ElevatedButton(
-                  onPressed: () async {
+                  onPressed: () async { // BOUTON : Se connecter
                     final email = emailController.text.trim();
                     final password = passwordController.text.trim();
 
@@ -211,7 +211,7 @@ class LoginPage extends StatelessWidget {
                   children: [
                     const Text('Pas encore de compte? ', style: TextStyle(color: Colors.grey)),
                     GestureDetector(
-                      onTap: () => Get.toNamed(AppRoutes.REGISTER),
+                      onTap: () => Get.toNamed(AppRoutes.REGISTER), // BOUTON : S'inscrire (Redirection)
                       child: const Text(
                         "S'inscrire",
                         style: TextStyle(

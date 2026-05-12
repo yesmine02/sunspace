@@ -190,9 +190,6 @@ class _CreateSpacePageState extends State<CreateSpacePage> {
                             case SpaceStatus.maintenance:
                               label = 'En maintenance';
                               break;
-                            case SpaceStatus.enPanne:
-                              label = 'En panne';
-                              break;
                           }
                           return DropdownMenuItem(
                             value: status,

@@ -26,7 +26,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
   
   late CourseLevel _selectedLevel;
   late CourseStatus _selectedStatus;
-
+//initialisation des variables
   @override
   void initState() {
     super.initState();
@@ -36,7 +36,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
     _selectedLevel = widget.course?.level ?? CourseLevel.debutant;
     _selectedStatus = widget.course?.status ?? CourseStatus.brouillon;
   }
-
+//fonction pour modifier le prix
   void _changePrice(int delta) {
     int current = int.tryParse(_priceController.text) ?? 0;
     int newValue = current + delta;
@@ -46,6 +46,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
     });
   }
 
+//fonction pour libérer les variables
   @override
   void dispose() {
     _titleController.dispose();
@@ -57,7 +58,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
-
+//fenetre de dialogue pour ajouter ou modifier un cours
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -110,7 +111,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
 
                 // Titre du cours
                 _buildLabel('Titre du cours'),
-                _buildTextField(_titleController, 'Introduction au...', maxLines: 1),
+                _buildTextField(_titleController, 'Introduction au...', maxLines: 1, isTitle: true),
                 const SizedBox(height: 20),
 
                 // Description
@@ -219,7 +220,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController controller, String hint, {int maxLines = 1, bool isTitle = false}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
@@ -232,10 +233,16 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
-      validator: (val) => val == null || val.isEmpty ? 'Ce champ est requis' : null,
+      validator: (val) {
+        if (val == null || val.isEmpty) return 'Ce champ est requis';
+        if (isTitle && RegExp(r'[0-9]').hasMatch(val)) {
+          return 'Le titre ne doit pas contenir de chiffres';
+        }
+        return null;
+      },
     );
   }
-
+//champ pour saisir le prix
   Widget _buildPriceField() {
     return TextFormField(
       controller: _priceController,

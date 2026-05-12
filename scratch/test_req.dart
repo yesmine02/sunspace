@@ -1,0 +1,1 @@
+import 'dart:convert'; import 'package:http/http.dart' as http; void main() async { var res = await http.get(Uri.parse('http://193.111.250.244:3046/api/reservations?populate=user&sort=createdAt:desc')); var data = jsonDecode(res.body)['data']; for (var r in data) { if (r['organizer_name'] == 'enseignant') { print('Found reservation: \, User: \, Space: \'); } } }

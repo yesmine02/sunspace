@@ -10,6 +10,7 @@ import '../../controllers/auth_controller.dart';
 import '../../controllers/assignments_controller.dart';
 import '../../pages/assignments/widgets/submit_work_dialog.dart';
 import '../../controllers/courses_controller.dart';
+import '../../widgets/notification_bell.dart';
 
 class CourseDetailsPage extends StatefulWidget {
   const CourseDetailsPage({super.key});
@@ -29,7 +30,7 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
     super.initState();
     // Permet d'ouvrir directement un onglet spécifique (ex: Devoirs)
     final int initialIndex = Get.arguments is Map ? (Get.arguments['initialTab'] ?? 0) : 0;
-    _tabController = TabController(length: 2, vsync: this, initialIndex: initialIndex);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: initialIndex); // Passé à 3 onglets
   }
 
   @override
@@ -96,13 +97,14 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
                   flex: 3,
                   child: Column(
                     children: [
-                      _buildTabBar(),
+                      _buildTabBar(isMobile, course),
                       Expanded(
                         child: TabBarView(
                           controller: _tabController,
                           children: [
                             _buildLessonsTab(isMobile),
                             _buildAssignmentsTab(isMobile),
+                            _buildProgressionTab(), // Nouvel onglet pour mobile
                           ],
                         ),
                       ),
@@ -111,41 +113,121 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
                 ),
                 
                 // RIGHT SIDE: PROGRESSION SIDEBAR
-                if (!isMobile)
-                  Container(
-                    width: 320,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      border: Border(left: BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 8, 
-                              height: 8, 
-                              decoration: const BoxDecoration(color: Color(0xFF007AFF), shape: BoxShape.circle)
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              "PROGRESSION",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w900, 
-                                fontSize: 13, 
-                                letterSpacing: 1.2, 
-                                color: Color(0xFF0F172A)
+                if (!isMobile) _buildProgressionSidebar(course),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressionTab() {
+    return SingleChildScrollView(
+      child: _buildProgressionSidebar(null, isTab: true),
+    );
+  }
+
+  Widget _buildProgressionSidebar(Course? course, {bool isTab = false}) {
+    // Mock data pour la progression (à remplacer plus tard par des données réelles)
+    final List<Map<String, dynamic>> progressionItems = [
+      {'title': 'Introduction au cours', 'completed': true, 'active': false},
+      {'title': 'Concepts fondamentaux', 'completed': true, 'active': false},
+      {'title': 'Pratique guidée', 'completed': false, 'active': true},
+      {'title': 'Exercice d\'application', 'completed': false, 'active': false},
+      {'title': 'Évaluation finale', 'completed': false, 'active': false},
+    ];
+
+    return Container(
+      width: isTab ? double.infinity : 320,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: isTab ? null : const Border(left: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: isTab ? 24 : 32, vertical: 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 8, 
+                height: 8, 
+                decoration: const BoxDecoration(color: Color(0xFF007AFF), shape: BoxShape.circle)
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                "PROGRESSION",
+                style: TextStyle(
+                  fontWeight: FontWeight.w900, 
+                  fontSize: 13, 
+                  letterSpacing: 1.2, 
+                  color: Color(0xFF0F172A)
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          const Divider(color: Color(0xFFE2E8F0)),
+          const SizedBox(height: 32),
+          
+          Expanded(
+            child: ListView.builder(
+              itemCount: progressionItems.length,
+              itemBuilder: (context, index) {
+                final item = progressionItems[index];
+                final bool isLast = index == progressionItems.length - 1;
+                
+                return IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      Column(
+                        children: [
+                          Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: item['completed'] ? const Color(0xFF007AFF) : Colors.white,
+                              border: Border.all(
+                                color: item['completed'] || item['active'] ? const Color(0xFF007AFF) : const Color(0xFFCBD5E1),
+                                width: 2,
                               ),
                             ),
+                            child: item['completed'] 
+                              ? const Icon(Icons.check, size: 8, color: Colors.white) 
+                              : null,
+                          ),
+                          if (!isLast)
+                            Expanded(
+                              child: Container(
+                                width: 2,
+                                color: const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['title'],
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: item['active'] ? FontWeight.w800 : FontWeight.w600,
+                                color: item['active'] ? const Color(0xFF007AFF) : (item['completed'] ? const Color(0xFF0F172A) : const Color(0xFF64748B)),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
                           ],
                         ),
-                        // Espace pour le contenu futur de la progression
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-              ],
+                );
+              },
             ),
           ),
         ],
@@ -184,27 +266,7 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
             ),
           const Spacer(),
           // Notifications
-          Stack(
-            children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF1E293B), size: 26),
-              ),
-              Positioned(
-                right: 12,
-                top: 12,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF007AFF),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          const NotificationBell(),
           const SizedBox(width: 16),
           // User Profile
           Obx(() {
@@ -269,7 +331,7 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
                       style: TextStyle(
                         fontSize: 11, 
                         fontWeight: FontWeight.w800, 
-                        color: Color(0xFF64748B), 
+                        color: Color(0xFF10B981), // Changé en vert pour correspondre au point
                         letterSpacing: 0.5
                       ),
                     ),
@@ -288,7 +350,7 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5)
                 ),
                 Text(
-                  course?.instructorName ?? "louay", 
+                  course?.instructorName ?? "admin", 
                   style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF0F172A), fontSize: 14)
                 ),
               ],
@@ -298,14 +360,14 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
           // Level Badge
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFFEFF6FF), // Fond bleu très clair
                 border: Border.all(color: const Color(0xFFDBEAFE)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                course?.levelLabel ?? "Intermédiaire",
+                course?.levelLabel ?? "Débutant",
                 style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w800, fontSize: 13),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -316,7 +378,7 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(bool isMobile, Course? course) {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -324,77 +386,35 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
       ),
       child: TabBar(
         controller: _tabController,
-        labelColor: const Color(0xFF0F172A),
+        labelColor: const Color(0xFF007AFF),
         unselectedLabelColor: const Color(0xFF64748B),
         indicatorColor: const Color(0xFF007AFF),
         indicatorWeight: 3,
         indicatorPadding: const EdgeInsets.symmetric(horizontal: 16),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
         tabs: [
           const Tab(
-            height: 65,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.menu_book_rounded, size: 20),
-                const SizedBox(width: 12),
-                const Text("Leçons"),
-              ],
-            ),
+            height: 60,
+            child: Text("Leçons"),
           ),
           Tab(
-            height: 65,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.assignment_outlined, size: 20),
-                const SizedBox(width: 12),
-                const Text("Devoirs"),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Obx(() {
-                    final dynamic args = Get.arguments;
-                    Course? course;
-                    if (args is Course) {
-                      course = args;
-                    } else if (args is Map) {
-                      final dynamic c = args['course'];
-                      if (c is Course) course = c;
-                      else if (c is Assignment) {
-                        final String? cid = c.courseId;
-                        if (cid != null) {
-                          course = _coursesController.courses.firstWhereOrNull((course) => course.id.toString() == cid);
-                        }
-                        // Fallback temporaire si non trouvé dans la liste
-                        course ??= Course(id: cid ?? '', title: c.courseName ?? '', level: CourseLevel.debutant, price: 0);
-                      }
-                    }
-
-                    final count = _assignmentsController.assignments.where((a) {
-                      final String cid = a.courseId ?? '';
-                      final String currentCid = course?.id.toString() ?? '';
-                      final String aTitle = a.courseName?.trim().toLowerCase() ?? '';
-                      final String cTitle = course?.title?.trim().toLowerCase() ?? '';
-                      return (cid != '' && cid == currentCid) || (aTitle != '' && aTitle == cTitle);
-                    }).length;
-                    
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDBEAFE),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        count.toString(), 
-                        style: const TextStyle(color: Color(0xFF2563EB), fontSize: 12, fontWeight: FontWeight.w900)
-                      ),
-                    );
-                  }),
-                ),
-              ],
-            ),
+            height: 60,
+            child: Obx(() {
+              final count = _assignmentsController.assignments.where((a) {
+                final String aTitle = (a.courseName ?? '').trim().toLowerCase();
+                final String cTitle = (course?.title ?? '').trim().toLowerCase();
+                if (cTitle.isNotEmpty && aTitle == cTitle) return true;
+                final String cid = a.courseId ?? '';
+                final String currentCid = course?.id.toString() ?? '';
+                if (currentCid.isNotEmpty && cid == currentCid) return true;
+                return false;
+              }).length;
+              return Text("Devoirs${count > 0 ? ' ($count)' : ''}");
+            }),
+          ),
+          const Tab(
+            height: 60,
+            child: Text("Progression"),
           ),
         ],
       ),
@@ -486,14 +506,18 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
         }
 
         final filtered = _assignmentsController.assignments.where((a) {
+          final String aTitle = (a.courseName ?? '').trim().toLowerCase();
+          final String cTitle = (course?.title ?? '').trim().toLowerCase();
+
+          // Priorité au nom du cours (correspond à ce que voit l'utilisateur)
+          if (cTitle.isNotEmpty && aTitle == cTitle) return true;
+
+          // Fallback sur l'ID
           final String cid = a.courseId ?? '';
           final String currentCid = course?.id.toString() ?? '';
-          
-          final String aTitle = a.courseName?.trim().toLowerCase() ?? '';
-          final String cTitle = course?.title?.trim().toLowerCase() ?? '';
+          if (currentCid.isNotEmpty && cid == currentCid) return true;
 
-          final bool match = (cid != '' && cid == currentCid) || (aTitle != '' && aTitle == cTitle);
-          return match;
+          return false;
         }).toList();
 
         if (filtered.isEmpty) {
@@ -591,10 +615,75 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
     }
 
     Widget buildButton() {
+      final String? userId = _authController.currentUser.value?['id']?.toString();
+      final bool isSubmitted = assignment.isSubmittedByUser(userId);
+
+      if (isSubmitted) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFDCFCE7)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(color: Color(0xFFDCFCE7), shape: BoxShape.circle),
+                child: const Icon(Icons.check_rounded, color: Color(0xFF16A34A), size: 28),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Devoir Soumis",
+                style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w900, fontSize: 18),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                assignment.getFormattedSubmissionDateForUser(userId),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF9C3),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  "En révision",
+                  style: TextStyle(color: Color(0xFF854D0E), fontWeight: FontWeight.w800, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: ElevatedButton(
-          onPressed: () => Get.dialog(SubmitWorkDialog(assignment: assignment)),
+          onPressed: () {
+            // 🕑 Vérification de la date d'échéance avant d'ouvrir le dialogue
+            final dueDate = assignment.dueDate as DateTime?;
+            final bool allowLate = assignment.allowLateSubmission as bool? ?? false;
+            
+            if (dueDate != null && DateTime.now().isAfter(dueDate) && !allowLate) {
+              Get.snackbar(
+                'Soumission impossible',
+                'La date d\'\u00e9chéance est dépassée. Cet enseignant n\'autorise pas les soumissions en retard.',
+                backgroundColor: const Color(0xFFDC2626),
+                colorText: Colors.white,
+                snackPosition: SnackPosition.TOP,
+                icon: const Icon(Icons.lock_clock, color: Colors.white),
+                duration: const Duration(seconds: 4),
+              );
+              return;
+            }
+            
+            Get.dialog(SubmitWorkDialog(assignment: assignment));
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF007AFF),
             foregroundColor: Colors.white,

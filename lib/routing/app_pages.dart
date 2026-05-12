@@ -7,13 +7,13 @@ import '../pages/settings/settings_page.dart';
 import '../pages/spaces/spaces_page.dart';
 import '../pages/equipments/equipments_page.dart';
 import '../pages/users/users_page.dart';
-import '../pages/users/students_page.dart';
+import '../pages/instructor/students_page.dart';
 import '../pages/reservations/reservations_page.dart';
-import '../pages/courses/courses_page.dart';
-import '../pages/sessions/sessions_page.dart';
+import '../pages/instructor/courses_page.dart';
+import '../pages/instructor/sessions_page.dart';
+import '../controllers/auth_controller.dart';
 
 import '../pages/assignments/assignments_page.dart';
-import '../pages/communication/communication_page.dart';
 import '../pages/analytics/analytics_page.dart';
 import '../pages/spaces/create_space_page.dart';
 import '../pages/spaces/view_space_page.dart';
@@ -22,8 +22,10 @@ import '../pages/professional/book_space_page.dart';
 import '../pages/professional/my_reservations_page.dart';
 import '../pages/professional/subscription_payment_page.dart';
 import '../pages/professional/profile_page.dart';
-import '../pages/professional/training_page.dart';
+import '../pages/professional/training_page.dart' as pro;
+import '../pages/student/training_page.dart' as student;
 import '../pages/student/my_courses_page.dart';
+import '../pages/student/course_catalog_page.dart';
 import '../pages/student/course_details_page.dart';
 import '../pages/student/study_spaces_page.dart';
 import '../pages/student/checkout_page.dart';
@@ -31,6 +33,7 @@ import '../pages/association/assoc_trainings_page.dart';
 import '../pages/association/assoc_members_page.dart';
 import '../pages/association/assoc_budget_page.dart';
 import '../pages/association/assoc_list_page.dart';
+import '../pages/notifications/notifications_page.dart';
 import '../middleware/auth_middleware.dart';
 import '../dashboard_layout.dart';
 import 'app_routes.dart';
@@ -103,11 +106,6 @@ class AppPages {
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.COMMUNICATION,
-      page: () => DashboardLayout(child: const CommunicationPage()),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
       name: AppRoutes.ANALYTICS,
       page: () => DashboardLayout(child: const AnalyticsPage()),
       middlewares: [AuthMiddleware()],
@@ -128,6 +126,11 @@ class AppPages {
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
+      name: AppRoutes.NOTIFICATIONS,
+      page: () => DashboardLayout(child: const NotificationsPage()),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
       name: AppRoutes.BOOK_SPACE,
       page: () => DashboardLayout(child: const BookSpacePage()),
       middlewares: [AuthMiddleware()],
@@ -142,9 +145,21 @@ class AppPages {
       page: () => DashboardLayout(child: const SubscriptionPaymentPage()),
       middlewares: [AuthMiddleware()],
     ),
+    // Route dédiée UNIQUEMENT pour l'étudiant : sessions des cours inscrits
+    GetPage(
+      name: AppRoutes.STUDENT_SESSIONS,
+      page: () => DashboardLayout(child: student.StudentTrainingPage()),
+      middlewares: [AuthMiddleware()],
+    ),
+    // Route dédiée UNIQUEMENT pour le professionnel : toutes les formations enseignants
     GetPage(
       name: AppRoutes.TRAINING,
-      page: () => DashboardLayout(child: const TrainingPage()),
+      page: () => DashboardLayout(child: pro.TrainingPage()),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.COURSE_CATALOG,
+      page: () => DashboardLayout(child: const CourseCatalogPage()),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(

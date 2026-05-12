@@ -319,7 +319,6 @@ class SpacesController extends GetxController {
   // Statistiques — comptent les espaces par statut
   int get totalSpaces => spaces.length;
   int get availableSpaces => spaces.where((s) => s.status == SpaceStatus.disponible).length;
-  int get brokenSpaces => spaces.where((s) => s.status == SpaceStatus.enPanne).length;
   int get maintenanceSpaces => spaces.where((s) => s.status == SpaceStatus.maintenance).length;
 
   // Met à jour le texte de recherche

@@ -69,44 +69,169 @@ class UsersPage extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Users Table
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minWidth: MediaQuery.of(context).size.width - (horizontalPadding * 2),
+            // Users List (Table on Desktop, Cards on Mobile)
+            Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(child: Padding(padding: EdgeInsets.all(50), child: CircularProgressIndicator()));
+              }
+
+              if (controller.filteredUsers.isEmpty) {
+                return const Center(child: Padding(padding: EdgeInsets.all(50), child: Text('Aucun utilisateur trouvé')));
+              }
+
+              if (isMobile) {
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: controller.filteredUsers.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) => _buildUserCard(context, controller.filteredUsers[index], controller),
+                );
+              }
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: MediaQuery.of(context).size.width - (horizontalPadding * 2),
+                      ),
+                      child: DataTable(
+                        headingRowHeight: 56,
+                        dataRowHeight: 80,
+                        horizontalMargin: 24,
+                        columnSpacing: 24,
+                        headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
+                        dividerThickness: 1,
+                        columns: const [
+                          DataColumn(label: Text('Utilisateur', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
+                          DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
+                          DataColumn(label: Text('Rôle', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
+                          DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
+                          DataColumn(label: Text('Inscrit le', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
+                          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
+                        ],
+                        rows: controller.filteredUsers.map((user) => _buildUserRow(context, user, controller)).toList(),
+                      ),
                     ),
-                    child: Obx(() => DataTable(
-                      headingRowHeight: 56,
-                      dataRowHeight: 80,
-                      horizontalMargin: 24,
-                      columnSpacing: 24,
-                      headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
-                      dividerThickness: 1,
-                      columns: const [
-                        DataColumn(label: Text('Utilisateur', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                        DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                        DataColumn(label: Text('Rôle', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                        DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                        DataColumn(label: Text('Inscrit le', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                        DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                      ],
-                      rows: controller.filteredUsers.map((user) => _buildUserRow(context, user, controller)).toList(),
-                    )),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserCard(BuildContext context, User user, UsersController controller) {
+    final String dateStr = user.createdAt != null 
+        ? DateFormat('dd MMM yyyy').format(DateTime.parse(user.createdAt!))
+        : '-';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.username ?? '-',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    Text(
+                      user.email ?? '-',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (user.confirmed ?? false) ? const Color(0xFFDCFCE7) : Colors.orange[50],
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  (user.confirmed ?? false) ? 'Confirmé' : 'Attente',
+                  style: TextStyle(
+                    color: (user.confirmed ?? false) ? const Color(0xFF166534) : Colors.orange[900],
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('RÔLE', style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.shield_outlined, size: 14, color: Colors.blue[300]),
+                      const SizedBox(width: 4),
+                      Text(user.roleName.isNotEmpty ? user.roleName : 'Authenticated', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('INSCRIT LE', style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  const SizedBox(height: 4),
+                  Text(dateStr, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () => Get.dialog(EditUserDialog(user: user)),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Modifier'),
+                style: TextButton.styleFrom(foregroundColor: Colors.grey[700]),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => _showDeleteConfirmation(user, controller),
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: const Text('Supprimer'),
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

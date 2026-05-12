@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../routing/app_routes.dart';
+import '../../widgets/notification_bell.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -125,7 +126,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(width: 20),
-          _buildTopIcon(Icons.notifications_none_rounded),
+          const NotificationBell(size: 18, iconColor: Color(0xFF64748B)),
           const SizedBox(width: 12),
           _buildTopIcon(Icons.help_outline_rounded),
         ],

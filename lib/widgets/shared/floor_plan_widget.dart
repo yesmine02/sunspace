@@ -5,7 +5,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:get/get.dart';
 import 'floor_plan_painter.dart';
+import '../../controllers/spaces_controller.dart';
+import '../../data/models/space.dart';
 
 /// Le Widget principal qui affiche le plan d'étage et gère les interactions utilisateur.
 class FloorPlanWidget extends StatefulWidget {
@@ -19,7 +22,8 @@ class FloorPlanWidget extends StatefulWidget {
 }
 
 class _FloorPlanWidgetState extends State<FloorPlanWidget> {
-  String? hoveredSlug;  // Stocke l'ID de l'espace survolé par la souris (Desktop).
+  String? hoveredSlug;
+  final SpacesController spacesController = Get.find<SpacesController>();
 
   // Dimensions d'origine du plan (coordonnées de base pour le dessin).
   static const double kOrigW = 2780;
@@ -146,19 +150,33 @@ class _FloorPlanWidgetState extends State<FloorPlanWidget> {
             onExit: (_) => setState(() => hoveredSlug = null),
             child: GestureDetector(
               onTapDown: (d) => _onTap(d, sx, sy),
-              child: CustomPaint(
+              child: Obx(() => CustomPaint(
                 size: Size(drawW, drawH),
                 // Le dessinateur qui utilise les échelles calculées pour dessiner à la bonne taille.
                 painter: FloorPlanPainter(
-                  areas: areas,
+                  areas: _getUpdatedAreas(),
                   hoveredSlug: hoveredSlug,
                   selectedSlug: widget.selectedSlug,
                 ),
-              ),
+              )),
             ),
           ),
         ),
       );
     });
+  }
+
+  /// Mappe les zones avec leurs statuts réels provenant du contrôleur.
+  List<FloorPlanArea> _getUpdatedAreas() {
+    return areas.map((area) {
+      final space = spacesController.spaces.firstWhereOrNull((s) => s.slug == area.slug);
+      return FloorPlanArea(
+        slug: area.slug,
+        points: area.points,
+        isRect: area.isRect,
+        rect: area.rect,
+        status: space?.status ?? SpaceStatus.disponible,
+      );
+    }).toList();
   }
 }

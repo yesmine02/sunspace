@@ -373,6 +373,7 @@ class _AddEditAssignmentDialogState extends State<AddEditAssignmentDialog> {
     );
   }
 
+  /// Crée un menu déroulant (liste de choix) avec un design personnalisé
   Widget _buildDropdown<T>(T value, List<DropdownMenuItem<T>> items, ValueChanged<T?> onChanged, {String? hint}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -417,7 +418,7 @@ class _AddEditAssignmentDialogState extends State<AddEditAssignmentDialog> {
       );
 
       if (widget.assignment == null) {
-        controller.addAssignment(assignment, _selectedCourse?.documentId, file: _pickedFile);
+        controller.addAssignment(assignment, _selectedCourse?.id, file: _pickedFile);
       } else {
         controller.updateAssignment(assignment, _selectedCourse?.documentId);
       }

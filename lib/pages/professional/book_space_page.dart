@@ -346,7 +346,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                    child: Text('${space.hourlyPrice.toInt()} TND / h', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF007AFF))),
+                    child: const Text('Espace disponible', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
                   ),
                 ),
               ],
@@ -380,13 +380,18 @@ class _BookSpacePageState extends State<BookSpacePage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => _showBookingDialog(context, space, bookingController),
+                      onPressed: () => _handleReservationClick(context, space, bookingController),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007AFF),
+                        backgroundColor: space.status == SpaceStatus.disponible 
+                          ? const Color(0xFF007AFF) 
+                          : Colors.grey.shade400,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: const Text('Réserver', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        space.status == SpaceStatus.disponible ? 'Réserver' : 'Indisponible', 
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+                      ),
                     ),
                   ),
                 ],
@@ -444,7 +449,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildSmallInfo(Icons.people_outline, "${space.capacity} pers."),
-                      Text('${space.hourlyPrice.toInt()} TND/hr', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF166534))),
+                      _buildSmallInfo(Icons.info_outline, "Disponible"),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -453,10 +458,18 @@ class _BookSpacePageState extends State<BookSpacePage> {
                     child: ElevatedButton(
                       onPressed: () {
                         setState(() => selectedSpaceForTooltip = null);
-                        _showBookingDialog(context, space, bookingController);
+                        _handleReservationClick(context, space, bookingController);
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF007AFF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      child: const Text('Réserver maintenant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: space.status == SpaceStatus.disponible 
+                          ? const Color(0xFF007AFF) 
+                          : Colors.grey.shade400,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                      ),
+                      child: Text(
+                        space.status == SpaceStatus.disponible ? 'Réserver maintenant' : 'Indisponible', 
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+                      ),
                     ),
                   ),
                 ],
@@ -504,14 +517,18 @@ class _BookSpacePageState extends State<BookSpacePage> {
                     ElevatedButton.icon(
                       onPressed: () {
                         Get.back(); // Ferme la vue 3D
-                        // Utilise un petit délai pour permettre à la modale de se fermer proprement
                         Future.delayed(const Duration(milliseconds: 100), () {
-                          // Ouvre la boîte de dialogue de réservation (le bookingController est géré via Get.find)
-                          _showBookingDialog(context, space, Get.find<BookingController>());
+                          _handleReservationClick(context, space, Get.find<BookingController>());
                         });
                       },
-                      icon: const Icon(Icons.event_available, color: Colors.black),
-                      label: const Text('Réserver cet espace', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                      icon: Icon(
+                        space.status == SpaceStatus.disponible ? Icons.event_available : Icons.info_outline, 
+                        color: Colors.black
+                      ),
+                      label: Text(
+                        space.status == SpaceStatus.disponible ? 'Réserver cet espace' : 'Info Statut', 
+                        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -528,6 +545,52 @@ class _BookSpacePageState extends State<BookSpacePage> {
     );
   }
 
+  /// Gère le clic sur le bouton de réservation en fonction du statut.
+  void _handleReservationClick(BuildContext context, Space space, BookingController controller) {
+    if (space.status == SpaceStatus.disponible) {
+      _showBookingDialog(context, space, controller);
+    } else if (space.status == SpaceStatus.occupe) {
+      _showStatusDialog(
+        context,
+        title: "Espace Occupé",
+        message: "Cet espace est actuellement occupé. Veuillez choisir un autre créneau ou un autre espace.",
+        icon: Icons.person_off_rounded,
+        color: Colors.orange,
+      );
+    } else if (space.status == SpaceStatus.maintenance) {
+      _showStatusDialog(
+        context,
+        title: "En Maintenance",
+        message: "Cet espace est actuellement en maintenance pour améliorer nos services. Merci de votre compréhension.",
+        icon: Icons.construction_rounded,
+        color: Colors.blueGrey,
+      );
+    }
+  }
+
+  /// Affiche une boîte de dialogue d'information sur le statut.
+  void _showStatusDialog(BuildContext context, {required String title, required String message, required IconData icon, required Color color}) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 10),
+            Text(title),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text("D'accord", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Ouvre le dialogue complet pour configurer et payer une réservation.
   void _showBookingDialog(BuildContext context, Space space, BookingController controller) {
     final bool isMobile = MediaQuery.of(context).size.width < 800;
@@ -535,10 +598,8 @@ class _BookSpacePageState extends State<BookSpacePage> {
     // Réinitialisation des données pour une nouvelle session de réservation.
     controller.selectedServices.clear();
     controller.isMonthly.value = false;
-    controller.cardNameController.clear();
-    controller.cardNumberController.clear();
-    controller.cardExpiryController.clear();
-    controller.cardCvcController.clear();
+    // Les contrôleurs de carte ont été supprimés du BookingController.
+
     
     // Détermination des dates par défaut (J+1h à J+3h).
     controller.updateDates(
@@ -547,6 +608,10 @@ class _BookSpacePageState extends State<BookSpacePage> {
       space.hourlyPrice,
       space.monthlyPrice
     );
+
+    // Charger l'emploi du temps initial
+    controller.fetchSpaceReservationsOnDay(space.documentId ?? space.id.toString(), controller.startDateTime.value);
+
 
     Get.dialog(
       Dialog(
@@ -574,41 +639,73 @@ class _BookSpacePageState extends State<BookSpacePage> {
                 // 1. Durée et Heures
                 const Text("Date et Heure", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
-                _buildDateTimePicker(context, controller, space.hourlyPrice, space.monthlyPrice),
+                _buildDateTimePicker(context, controller, space.hourlyPrice, space.monthlyPrice, space.documentId ?? space.id.toString()),
+                const SizedBox(height: 16),
+
+                // Nouvel Emploi du temps (Schedule)
+                _buildScheduleView(controller),
                 const SizedBox(height: 24),
 
-                // 2. Services extra (Café, Projecteur, etc.)
+
                 const Text("Services additionnels", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
-                Obx(() => Column(
+                Obx(() => Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: controller.servicesCatalog.entries.map((entry) {
-                    final isSelected = controller.selectedServices.contains(entry.key);
-                    return CheckboxListTile(
-                      title: Text(entry.key), subtitle: Text('+${entry.value} TND'),
-                      value: isSelected,
-                      onChanged: (val) => controller.toggleService(entry.key, space.hourlyPrice, space.monthlyPrice),
-                      dense: true, activeColor: const Color(0xFF007AFF), contentPadding: EdgeInsets.zero,
+                    final String name = entry.key;
+                    final Map<String, dynamic> info = entry.value;
+                    final bool isAvailable = info['available'] ?? true;
+                    final isSelected = controller.selectedServices.contains(name);
+                    final double price = info['price'] ?? 0.0;
+
+                    return GestureDetector(
+                      onTap: isAvailable 
+                        ? () => controller.toggleService(name, space.hourlyPrice, space.monthlyPrice)
+                        : () => Get.snackbar(
+                            "Indisponible", 
+                            "L'équipement '$name' est actuellement en maintenance.",
+                            backgroundColor: Colors.orange.shade800,
+                            colorText: Colors.white,
+                            snackPosition: SnackPosition.BOTTOM,
+                          ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected 
+                              ? const Color(0xFF007AFF) 
+                              : (isAvailable ? const Color(0xFFDCFCE7) : Colors.grey.shade100),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF007AFF) : (isAvailable ? const Color(0xFFBBF7D0) : Colors.grey.shade300),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "$name (${price.toInt()}TND/j)",
+                              style: TextStyle(
+                                color: isSelected 
+                                    ? Colors.white 
+                                    : (isAvailable ? const Color(0xFF166534) : Colors.grey.shade500),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (isSelected) ...[
+                              const SizedBox(width: 4),
+                              const Icon(Icons.check_circle, size: 14, color: Colors.white),
+                            ],
+                          ],
+                        ),
+                      ),
                     );
                   }).toList(),
                 )),
                 const SizedBox(height: 24),
 
-                // 3. Paiement Sécurisé
-                _buildPaymentFields(controller),
-                const Divider(height: 48),
-
-                // 4. Sommaire du prix total calculé en temps réel
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Total à payer :", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                    Obx(() => Text(
-                      "${controller.totalAmount.value.toStringAsFixed(2)} TND",
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
-                    )),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                const Divider(height: 32),
 
                 // Bouton final de confirmation serveur
                 SizedBox(
@@ -618,7 +715,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF007AFF), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                     child: controller.isLoading.value 
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text("Confirmer et Payer", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      : const Text("Confirmer la réservation", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                   )),
                 ),
               ],
@@ -630,7 +727,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
   }
 
   /// Widget de sélection de date/heure avec retour immédiat sur le prix total.
-  Widget _buildDateTimePicker(BuildContext context, BookingController controller, double hourlyPrice, double monthlyPrice) {
+  Widget _buildDateTimePicker(BuildContext context, BookingController controller, double hourlyPrice, double monthlyPrice, String spaceId) {
     return Obx(() {
       final start = controller.startDateTime.value;
       final end = controller.endDateTime.value;
@@ -650,8 +747,12 @@ class _BookSpacePageState extends State<BookSpacePage> {
                 final newStart = DateTime(date.year, date.month, date.day, start.hour, start.minute);
                 final duration = end.difference(start);
                 controller.updateDates(newStart, newStart.add(duration), hourlyPrice, monthlyPrice);
+                
+                // Rafraîchir l'emploi du temps pour la nouvelle date
+                controller.fetchSpaceReservationsOnDay(spaceId, newStart);
               }
             },
+
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -757,73 +858,58 @@ class _BookSpacePageState extends State<BookSpacePage> {
     );
   }
 
-  /// Champs de texte pour la carte bancaire avec formatage automatique (espaces, slash).
-  Widget _buildPaymentFields(BookingController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(children: [Icon(Icons.payment, size: 20), SizedBox(width: 8), Text("Paiement par carte", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))]),
-        const SizedBox(height: 16),
-        TextField(controller: controller.cardNameController, decoration: _inputDecoration("Nom complet sur la carte", Icons.person_outline)),
-        const SizedBox(height: 12),
-        TextField(
-          controller: controller.cardNumberController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(16), _CardNumberFormatter()],
-          decoration: _inputDecoration("Numéro de carte (16 chiffres)", Icons.credit_card_outlined),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: TextField(
-              controller: controller.cardExpiryController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4), _ExpiryDateFormatter()],
-              decoration: _inputDecoration("MM/AA", Icons.calendar_today_outlined),
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: TextField(
-              controller: controller.cardCvcController,
-              keyboardType: TextInputType.number, obscureText: true,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
-              decoration: _inputDecoration("CVC", Icons.lock_outline),
-            )),
-          ],
-        ),
-      ],
-    );
-  }
+  /// Affiche l'emploi du temps (réservations existantes) pour le jour sélectionné.
+  Widget _buildScheduleView(BookingController controller) {
+    return Obx(() {
+      final reservations = controller.spaceReservationsOnDay;
+      final dateLabel = DateFormat("Aujourd'hui", 'fr').format(controller.startDateTime.value) == DateFormat("Aujourd'hui", 'fr').format(DateTime.now())
+          ? "Aujourd'hui"
+          : DateFormat('dd/MM', 'fr').format(controller.startDateTime.value);
 
-  InputDecoration _inputDecoration(String hint, IconData icon) {
-    return InputDecoration(
-      hintText: hint, prefixIcon: Icon(icon, size: 20, color: Colors.grey),
-      filled: true, fillColor: Colors.grey.shade50,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF007AFF), width: 1.5)),
-    );
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Emploi du temps du $dateLabel", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade100),
+            ),
+            child: reservations.isEmpty
+                ? const Center(
+                    child: Text(
+                      "Aucune réservation pour cette date",
+                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                    ),
+                  )
+                : Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: reservations.map((res) {
+                      final start = DateFormat('HH:mm').format(res.startDateTime);
+                      final end = DateFormat('HH:mm').format(res.endDateTime);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDBEAFE),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF93C5FD)),
+                        ),
+                        child: Text(
+                          "$start - $end",
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+          ),
+        ],
+      );
+    });
   }
 }
 
-class _CardNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    String text = newValue.text.replaceAll(' ', '');
-    String result = "";
-    for (int i = 0; i < text.length; i++) {
-       result += text[i];
-       if ((i + 1) % 4 == 0 && (i + 1) != 16) result += " ";
-    }
-    return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
-  }
-}
-
-class _ExpiryDateFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    String text = newValue.text.replaceAll('/', '');
-    String result = text.length >= 2 ? "${text.substring(0, 2)}/${text.substring(2)}" : text;
-    return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
-  }
-}

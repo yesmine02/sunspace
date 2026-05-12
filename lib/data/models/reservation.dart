@@ -3,6 +3,7 @@
 // ============================================
 //représenter une réservation (ses infos comme date, espace, statut, paiement…)
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 
 import 'user.dart';
 
@@ -20,6 +21,8 @@ class Reservation {
   final double totalAmount;
   final String? notes;
   final String? spaceName;
+  final int numberOfPeople;
+  final String? organizerName;
   final User? user; // Objet User complet si peuplé
 
   Reservation({
@@ -34,46 +37,57 @@ class Reservation {
     required this.totalAmount,
     this.notes,
     this.spaceName,
+    this.numberOfPeople = 1,
+    this.organizerName,
     this.user,
   });
 //convertit le JSON de Strapi en objet Reservation
   factory Reservation.fromJson(Map<String, dynamic> json) {
-    // Dans Strapi v5 avec populate, l'objet est souvent à la racine du JSON data ou dans attributes
-    final attrs = json; 
-    
-    // Parse Space
-    String? sName;
-    if (attrs['space'] != null) { //si l’espace existe
-      if (attrs['space'] is Map) { //Si space est un objet complet
-        sName = attrs['space']['name']; //prend le nom de l’espace
-      } else {
-        sName = "Espace #${attrs['space']}"; //sinon affiche juste Espace + ID
+    try {
+      // Dans Strapi v5 avec populate, l'objet est souvent à la racine du JSON data ou dans attributes
+      final attrs = json; 
+      
+      // Parse Space
+      String? sName;
+      if (attrs['space'] != null) { //si l’espace existe
+        if (attrs['space'] is Map) { //Si space est un objet complet
+          sName = attrs['space']['name']; //prend le nom de l’espace
+        } else {
+          sName = "Espace #${attrs['space']}"; //sinon affiche juste Espace + ID
+        }
       }
-    }
 
-    // Parse User
-    User? uObj; //Variable pour stocker l’utilisateur
-    if (attrs['user'] != null && attrs['user'] is Map) { //si l'utilisateur existe et est un objet 
-      uObj = User.fromJson(attrs['user']);//convertit le JSON en objet User
+      // Parse User
+      User? uObj; //Variable pour stocker l’utilisateur
+      if (attrs['user'] != null && attrs['user'] is Map) { //si l'utilisateur existe et est un objet 
+        uObj = User.fromJson(attrs['user']);//convertit le JSON en objet User
+      }
+
+      return Reservation(
+        id: json['id'].toString(),
+        documentId: json['documentId']?.toString(),
+        startDateTime: DateTime.parse(attrs['start_datetime']).toLocal(),
+        endDateTime: DateTime.parse(attrs['end_datetime']).toLocal(),
+        status: _parseStatus(attrs['mystatus']),
+        purpose: attrs['purpose'],
+        paymentStatus: attrs['payment_status'] ?? 'En_attente',
+        paymentMethod: attrs['payment_method'] ?? 'Carte_en_ligne',
+        totalAmount: (attrs['total_amount'] ?? 0).toDouble(),
+        notes: attrs['notes'],
+        spaceName: sName,
+        organizerName: attrs['organizer_name'],
+        numberOfPeople: int.tryParse(attrs['attendees']?.toString() ?? '1') ?? 1,
+        user: uObj,
+      );
+    } catch (e) {
+      debugPrint('❌ Reservation.fromJson error: $e | JSON: $json');
+      rethrow;
     }
-//crée l’objet Reservation final
-    return Reservation(
-      id: json['id'].toString(),
-      documentId: json['documentId']?.toString(),
-      startDateTime: DateTime.parse(attrs['start_datetime']).toLocal(),
-      endDateTime: DateTime.parse(attrs['end_datetime']).toLocal(),
-      status: _parseStatus(attrs['mystatus']),
-      purpose: attrs['purpose'],
-      paymentStatus: attrs['payment_status'] ?? 'En_attente',
-      paymentMethod: attrs['payment_method'] ?? 'Carte_en_ligne',
-      totalAmount: (attrs['total_amount'] ?? 0).toDouble(),
-      notes: attrs['notes'],
-      spaceName: sName,
-      user: uObj,
-    );
   }
 //convertit le statut texte du JSON en statut que l’application comprend.
-  static ReservationStatus _parseStatus(String? status) {
+  static ReservationStatus _parseStatus(String? status) => parseStatusFromString(status);
+
+  static ReservationStatus parseStatusFromString(String? status) {
     switch (status) {
       case 'Confirmee':
       case 'Confirmée':
@@ -101,4 +115,6 @@ class Reservation {
 
   String get formattedDate => DateFormat('dd/MM/yyyy').format(startDateTime);
   String get formattedTime => "${DateFormat('HH:mm').format(startDateTime)} - ${DateFormat('HH:mm').format(endDateTime)}";
+
+  bool get isSessionReservation => purpose?.startsWith('Session de cours') ?? false;
 }

@@ -121,7 +121,14 @@ class _EditUserDialogState extends State<EditUserDialog> {
                       value: _selectedRole,
                       isExpanded: true,
                       icon: const Icon(Icons.keyboard_arrow_down, size: 20),
-                      items: ['Admin', 'Authenticated'].map((role) {
+                      items: [
+                        'Admin', 
+                        'Authenticated', 
+                        'Etudiant', 
+                        'Enseignant', 
+                        'Gestionnaire d\'espace', 
+                        'Professionnel'
+                      ].map((role) {
                         return DropdownMenuItem(
                           value: role,
                           child: Text(role, style: const TextStyle(fontSize: 14)),
@@ -258,7 +265,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
       );
       
       debugPrint("Form validated. Updating user: ${updatedUser.username}");
-      controller.updateUser(updatedUser);
+      controller.updateUser(updatedUser, password: _passwordController.text.isNotEmpty ? _passwordController.text : null);
       Get.back();
     } else {
       debugPrint("Form validation failed");

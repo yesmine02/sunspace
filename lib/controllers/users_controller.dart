@@ -16,10 +16,30 @@ class UsersController extends GetxController {
   final String apiUrl = 'http://193.111.250.244:3046/api/users?populate=*';
   static const String _storageKey = 'saved_users';
 
+  /// Mapping dynamique des noms de rôles vers leurs IDs
+  final RxMap<String, int> roleMapping = <String, int>{
+    'Admin': 3, // Valeur par défaut probable
+    'Authenticated': 1,
+  }.obs;
+
   @override
   void onInit() {
     super.onInit();
     loadUsers();
+  }
+
+  /// 🔹 Extrait les IDs de rôles depuis les utilisateurs chargés
+  void _updateRoleMapping() {
+    for (var user in users) {
+      if (user.role is Map && user.role['id'] != null) {
+        final name = user.roleName;
+        final id = user.role['id'] as int;
+        if (name.isNotEmpty) {
+          roleMapping[name] = id;
+        }
+      }
+    }
+    debugPrint('🎭 Role Mapping updated: $roleMapping');
   }
 
   /// 🔹 CHARGER depuis le serveur (Rétablissement de la connexion pour Users)
@@ -51,6 +71,7 @@ class UsersController extends GetxController {
             } catch(e){}
 
             users.assignAll(list.map((item) => User.fromJson(item)).toList());
+            _updateRoleMapping();
             
             // Sauvegarde en cache local
             final prefs = await SharedPreferences.getInstance();
@@ -95,22 +116,94 @@ class UsersController extends GetxController {
 
   void updateSearch(String query) => searchQuery.value = query;
 
-  Future<void> addUser(User user) async {
-    // Vérifier si l'email existe déjà dans la liste actuelle
-    final bool emailExists = users.any(
-      (u) => u.email?.toLowerCase() == user.email?.toLowerCase()
-    );
-
-    if (emailExists) {
-      throw Exception("L'adresse email '${user.email}' est déjà utilisée.");
-    }
-
+  Future<void> addUser(User user, String password) async {
+    isLoading.value = true;
     try {
-      users.add(user);
-      await saveUsers();
+      final auth = Get.find<AuthController>();
+      String? token = auth.token ?? await SecureStorage.getToken();
+
+      if (token == null) throw Exception("Non authentifié");
+
+      final response = await http.post(
+        Uri.parse('http://193.111.250.244:3046/api/users'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'username': user.username,
+          'email': user.email,
+          'password': password,
+          'confirmed': user.confirmed,
+          'blocked': user.blocked,
+          'role': roleMapping[user.roleName] ?? (user.role is Map ? user.role['id'] : 1),
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await loadUsers(); // Recharger depuis le serveur
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error']?['message'] ?? "Erreur ${response.statusCode}");
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updateUser(User user, {String? password}) async {
+    isLoading.value = true;
+    try {
+      final auth = Get.find<AuthController>();
+      String? token = auth.token ?? await SecureStorage.getToken();
+
+      if (token == null) return;
+
+      final url = 'http://193.111.250.244:3046/api/users/${user.id}';
+      
+      // Préparation du body
+      final Map<String, dynamic> body = {
+        'username': user.username,
+        'email': user.email,
+        'confirmed': user.confirmed,
+        'blocked': user.blocked,
+      };
+
+      if (password != null && password.isNotEmpty) {
+        body['password'] = password;
+      }
+
+      // Gestion du rôle : On utilise l'ID mappé si disponible, sinon l'ID actuel
+      final int? roleId = roleMapping[user.roleName] ?? (user.role is Map ? user.role['id'] : null);
+      if (roleId != null) {
+        body['role'] = roleId;
+      } else {
+        // Fallback sur le nom si on n'a vraiment pas d'ID (peu probable avec loadUsers)
+        body['role'] = user.roleName;
+      }
+
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        await loadUsers();
+        Get.snackbar('Succès', 'Utilisateur mis à jour sur le serveur');
+      } else {
+        Get.snackbar('Erreur', 'Échec de la mise à jour (Code: ${response.statusCode})');
+      }
     } catch (e) {
-      debugPrint("Error adding user: $e");
-      rethrow;
+      print('Erreur updateUser: $e');
+      Get.snackbar('Erreur', 'Erreur de connexion au serveur');
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -120,8 +213,6 @@ class UsersController extends GetxController {
       String? token = auth.token ?? await SecureStorage.getToken();
 
       if (token != null) {
-        // Dans Strapi, la suppression d'un utilisateur se fait généralement sur /api/users/:id
-        // L'URL de base est http://193.111.250.244:3046/api/users
         final url = 'http://193.111.250.244:3046/api/users/$id';
         
         final response = await http.delete(
@@ -137,14 +228,14 @@ class UsersController extends GetxController {
           saveUsers();
           Get.snackbar(
             'Succès',
-            'Le membre a été retiré avec succès.',
+            'L\'utilisateur a été supprimé avec succès.',
             backgroundColor: Color(0xFFDCFCE7),
             colorText: Color(0xFF166534),
           );
         } else {
           Get.snackbar(
             'Erreur',
-            'Impossible de retirer le membre du serveur (Code: ${response.statusCode})',
+            'Impossible de supprimer l\'utilisateur (Code: ${response.statusCode})',
             backgroundColor: Color(0xFFFEE2E2),
             colorText: Color(0xFF991B1B),
           );
@@ -152,20 +243,6 @@ class UsersController extends GetxController {
       }
     } catch (e) {
       print('Erreur lors de la suppression: $e');
-      Get.snackbar(
-        'Erreur',
-        'Une erreur est survenue lors de la connexion au serveur.',
-        backgroundColor: Color(0xFFFEE2E2),
-        colorText: Color(0xFF991B1B),
-      );
-    }
-  }
-
-  void updateUser(User user) {
-    int index = users.indexWhere((u) => u.id == user.id);
-    if (index != -1) {
-      users[index] = user;
-      saveUsers();
     }
   }
 }

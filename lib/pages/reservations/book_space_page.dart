@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/booking_controller.dart';
 import '../../controllers/spaces_controller.dart';
+import '../../controllers/auth_controller.dart';
 import '../../data/models/space.dart';
 import '../../widgets/shared/floor_plan_widget.dart';
 
@@ -539,6 +540,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
     controller.cardNumberController.clear();
     controller.cardExpiryController.clear();
     controller.cardCvcController.clear();
+    controller.numberOfPeople.value = 1; // Reset à 1
     
     // Détermination des dates par défaut (J+1h à J+3h).
     controller.updateDates(
@@ -548,281 +550,15 @@ class _BookSpacePageState extends State<BookSpacePage> {
       space.monthlyPrice
     );
 
+    final AuthController authController = Get.find<AuthController>();
+    final bool isStudent = authController.isStudent;
+
     Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: 24),
-        child: Container(
-          width: isMobile ? MediaQuery.of(context).size.width * 0.95 : 500,
-          padding: EdgeInsets.all(isMobile ? 16 : 24),
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(child: Text("Réserver : ${space.name}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
-                    IconButton(onPressed: () => Get.back(), icon: const Icon(Icons.close)),
-                  ],
-                ),
-                const Divider(),
-                const SizedBox(height: 16),
-
-                // 1. Durée et Heures
-                const Text("Date et Heure", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 8),
-                _buildDateTimePicker(context, controller, space.hourlyPrice, space.monthlyPrice),
-                const SizedBox(height: 24),
-
-                // 2. Services extra (Café, Projecteur, etc.)
-                const Text("Services additionnels", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 8),
-                Obx(() => Column(
-                  children: controller.servicesCatalog.entries.map((entry) {
-                    final isSelected = controller.selectedServices.contains(entry.key);
-                    return CheckboxListTile(
-                      title: Text(entry.key), subtitle: Text('+${entry.value} TND'),
-                      value: isSelected,
-                      onChanged: (val) => controller.toggleService(entry.key, space.hourlyPrice, space.monthlyPrice),
-                      dense: true, activeColor: const Color(0xFF007AFF), contentPadding: EdgeInsets.zero,
-                    );
-                  }).toList(),
-                )),
-                const SizedBox(height: 24),
-
-                // 3. Paiement Sécurisé
-                _buildPaymentFields(controller),
-                const Divider(height: 48),
-
-                // 4. Sommaire du prix total calculé en temps réel
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Total à payer :", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                    Obx(() => Text(
-                      "${controller.totalAmount.value.toStringAsFixed(2)} TND",
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
-                    )),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Bouton final de confirmation serveur
-                SizedBox(
-                  width: double.infinity,
-                  child: Obx(() => ElevatedButton(
-                    onPressed: controller.isLoading.value ? null : () => controller.createReservation(space),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF007AFF), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                    child: controller.isLoading.value 
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text("Confirmer et Payer", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  )),
-                ),
-              ],
-            ),
-          ),
-        ),
+      BookingDialog(
+        space: space, 
+        isMobile: isMobile
       ),
     );
   }
 
-  Widget _buildDateTimePicker(BuildContext context, BookingController controller, double hourlyPrice, double monthlyPrice) {
-    return Obx(() {
-      final start = controller.startDateTime.value;
-      final end = controller.endDateTime.value;
-      final isAllDay = controller.isAllDay.value;
-      final dateStr = DateFormat('dd MMMM yyyy', 'fr').format(start);
-      final startTimeStr = DateFormat('HH:mm').format(start);
-      final endTimeStr = DateFormat('HH:mm').format(end);
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Date Picker Field
-          InkWell(
-            onTap: () async {
-              DateTime? date = await showDatePicker(context: context, initialDate: start, firstDate: DateTime.now(), lastDate: DateTime(2030));
-              if (date != null) {
-                final newStart = DateTime(date.year, date.month, date.day, start.hour, start.minute);
-                final duration = end.difference(start);
-                controller.updateDates(newStart, newStart.add(duration), hourlyPrice, monthlyPrice);
-              }
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade200),
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.white,
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 18, color: Colors.blue),
-                  const SizedBox(width: 12),
-                  Text("Date : $dateStr", style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          
-          // Time Pickers Row
-          Row(
-            children: [
-              Expanded(
-                child: _buildTimeDropdown(
-                  "Heure de début",
-                  startTimeStr,
-                  isAllDay,
-                  (String? newValue) {
-                    if (newValue != null) {
-                      final parts = newValue.split(':');
-                      final newStart = DateTime(start.year, start.month, start.day, int.parse(parts[0]), int.parse(parts[1]));
-                      controller.updateDates(newStart, end, hourlyPrice, monthlyPrice);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildTimeDropdown(
-                  "Heure de fin",
-                  endTimeStr,
-                  isAllDay,
-                  (String? newValue) {
-                    if (newValue != null) {
-                      final parts = newValue.split(':');
-                      final newEnd = DateTime(end.year, end.month, end.day, int.parse(parts[0]), int.parse(parts[1]));
-                      controller.updateDates(start, newEnd, hourlyPrice, monthlyPrice);
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    });
-  }
-
-  Widget _buildTimeDropdown(String label, String value, bool isDisabled, ValueChanged<String?> onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-        const SizedBox(height: 8),
-        Container(
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isDisabled ? Colors.grey.shade100 : const Color(0xFF10B981), width: 1.5),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: Get.find<BookingController>().timeSlots.contains(value) ? value : null,
-              hint: const Text("Choisir", style: TextStyle(fontSize: 13)),
-              isExpanded: true,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-              onChanged: isDisabled ? null : onChanged,
-              items: Get.find<BookingController>().timeSlots.map((String slot) {
-                return DropdownMenuItem<String>(
-                  value: slot,
-                  child: Text(slot, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _dateTimeCard(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-      ]),
-    );
-  }
-
-  /// Champs de texte pour la carte bancaire avec formatage automatique (espaces, slash).
-  Widget _buildPaymentFields(BookingController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(children: [Icon(Icons.payment, size: 20), SizedBox(width: 8), Text("Paiement par carte", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))]),
-        const SizedBox(height: 16),
-        TextField(controller: controller.cardNameController, decoration: _inputDecoration("Nom complet sur la carte", Icons.person_outline)),
-        const SizedBox(height: 12),
-        TextField(
-          controller: controller.cardNumberController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(16), _CardNumberFormatter()],
-          decoration: _inputDecoration("Numéro de carte (16 chiffres)", Icons.credit_card_outlined),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: TextField(
-              controller: controller.cardExpiryController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4), _ExpiryDateFormatter()],
-              decoration: _inputDecoration("MM/AA", Icons.calendar_today_outlined),
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: TextField(
-              controller: controller.cardCvcController,
-              keyboardType: TextInputType.number, obscureText: true,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
-              decoration: _inputDecoration("CVC", Icons.lock_outline),
-            )),
-          ],
-        ),
-      ],
-    );
-  }
-
-  InputDecoration _inputDecoration(String hint, IconData icon) {
-    return InputDecoration(
-      hintText: hint, prefixIcon: Icon(icon, size: 20, color: Colors.grey),
-      filled: true, fillColor: Colors.grey.shade50,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF007AFF), width: 1.5)),
-    );
-  }
-}
-
-class _CardNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    String text = newValue.text.replaceAll(' ', '');
-    String result = "";
-    for (int i = 0; i < text.length; i++) {
-       result += text[i];
-       if ((i + 1) % 4 == 0 && (i + 1) != 16) result += " ";
-    }
-    return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
-  }
-}
-
-class _ExpiryDateFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    String text = newValue.text.replaceAll('/', '');
-    String result = text.length >= 2 ? "${text.substring(0, 2)}/${text.substring(2)}" : text;
-    return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
-  }
 }

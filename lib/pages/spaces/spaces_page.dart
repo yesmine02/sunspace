@@ -1,6 +1,7 @@
 // ===============================================
 // Page de Liste des Espaces (SpacesPage)
-// Affiche tous les espaces sous forme de tableau.
+// Affiche tous les espaces sous forme de tableau sur desktop
+// et sous forme de cartes sur mobile.
 // Comprend des filtres de recherche et des statistiques.
 // ===============================================
 
@@ -74,123 +75,250 @@ class SpacesPage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Section Tableau des Espaces
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal, // Permet le défilement horizontal sur mobile
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      dividerColor: Colors.grey[100],
-                    ),
-                    child: Obx(() => DataTable(
-                          headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
-                          dataRowHeight: 64,
-                          horizontalMargin: 16,
-                          columnSpacing: 16,
-                          columns: const [
-                            DataColumn(label: Text('Espace', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Localisation', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Capacité', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Tarif/h', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Réservations', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
-                          ],
-                          rows: controller.filteredSpaces.map((space) {
-                            return DataRow(cells: [
-                              DataCell(Text(space.name, style: const TextStyle(fontWeight: FontWeight.w500))),
-                              DataCell(Text(space.typeString, style: TextStyle(color: Colors.grey[600]))),
-                              DataCell(Row(
-                                children: [
-                                  const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                                  const SizedBox(width: 4),
-                                  Text(space.location, style: TextStyle(color: Colors.grey[600])),
-                                ],
-                              )),
-                              DataCell(Row(
-                                children: [
-                                  const Icon(Icons.people_outline, size: 16, color: Colors.grey),
-                                  const SizedBox(width: 4),
-                                  Text('${space.capacity}', style: TextStyle(color: Colors.grey[600])),
-                                ],
-                              )),
-                              DataCell(Row(
-                                children: [
-                                  const Text('TND ', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                                  Text(space.hourlyPrice > 0 ? '${space.hourlyPrice.toInt()}' : '', style: const TextStyle(fontWeight: FontWeight.w500)),
-                                ],
-                              )),
-                              DataCell(Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[50],
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Text('${space.reservations}', style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold)),
-                              )),
-                              DataCell(_buildStatusBadge(space.status)),
-                              DataCell(Row(
-                                children: [
-                                  // Visualiser
-                                  IconButton(
-                                    icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey),
-                                    onPressed: () => Get.toNamed(AppRoutes.VIEW_SPACE, arguments: space),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // Modifier
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.grey),
-                                    onPressed: () => Get.toNamed(AppRoutes.EDIT_SPACE, arguments: space),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // Supprimer
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
-                                    onPressed: () {
-                                      Get.defaultDialog(
-                                        title: "Supprimer l'espace",
-                                        middleText: "Êtes-vous sûr de vouloir supprimer l'espace '${space.name}' ?",
-                                        textConfirm: "Supprimer",
-                                        textCancel: "Annuler",
-                                        confirmTextColor: Colors.white,
-                                        buttonColor: Colors.red,
-                                        onConfirm: () {
-                                          controller.deleteSpace(space.id);
-                                          Get.back();
-                                        },
-                                      );
-                                    },
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                ],
-                              )),
-                            ]);
-                          }).toList(),
-                        )),
-                      ),
+            // Section Liste des Espaces (DataTable sur Desktop, Cards sur Mobile)
+            Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(child: Padding(padding: EdgeInsets.all(50), child: CircularProgressIndicator()));
+              }
+
+              if (controller.filteredSpaces.isEmpty) {
+                return const Center(child: Padding(padding: EdgeInsets.all(50), child: Text('Aucun espace trouvé')));
+              }
+
+              if (isMobile) {
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: controller.filteredSpaces.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) => _buildSpaceCard(context, controller.filteredSpaces[index]),
+                );
+              }
+
+              return Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
                 ),
-              ),
-            ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        dividerColor: Colors.grey[100],
+                      ),
+                      child: DataTable(
+                        headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
+                        dataRowHeight: 64,
+                        horizontalMargin: 16,
+                        columnSpacing: 16,
+                        columns: const [
+                          DataColumn(label: Text('Espace', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Localisation', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Capacité', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Tarif/h', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Réservations', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                        ],
+                        rows: controller.filteredSpaces.map((space) {
+                          return DataRow(cells: [
+                            DataCell(Text(space.name, style: const TextStyle(fontWeight: FontWeight.w500))),
+                            DataCell(Text(space.typeString, style: TextStyle(color: Colors.grey[600]))),
+                            DataCell(Row(
+                              children: [
+                                const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Text(space.location, style: TextStyle(color: Colors.grey[600])),
+                              ],
+                            )),
+                            DataCell(Row(
+                              children: [
+                                const Icon(Icons.people_outline, size: 16, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Text('${space.capacity}', style: TextStyle(color: Colors.grey[600])),
+                              ],
+                            )),
+                            DataCell(Row(
+                              children: [
+                                const Text('TND ', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                                Text(space.hourlyPrice > 0 ? '${space.hourlyPrice.toInt()}' : '', style: const TextStyle(fontWeight: FontWeight.w500)),
+                              ],
+                            )),
+                            DataCell(Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text('${space.reservations}', style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold)),
+                            )),
+                            DataCell(_buildStatusBadge(space.status)),
+                            DataCell(Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey),
+                                  onPressed: () => Get.toNamed(AppRoutes.VIEW_SPACE, arguments: space),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.grey),
+                                  onPressed: () => Get.toNamed(AppRoutes.EDIT_SPACE, arguments: space),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
+                                  onPressed: () {
+                                    Get.defaultDialog(
+                                      title: "Supprimer l'espace",
+                                      middleText: "Êtes-vous sûr de vouloir supprimer l'espace '${space.name}' ?",
+                                      textConfirm: "Supprimer",
+                                      textCancel: "Annuler",
+                                      confirmTextColor: Colors.white,
+                                      buttonColor: Colors.red,
+                                      onConfirm: () {
+                                        controller.deleteSpace(space.id);
+                                        Get.back();
+                                      },
+                                    );
+                                  },
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                              ],
+                            )),
+                          ]);
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
             const SizedBox(height: 32),
 
             // Section Cartes de Statistiques
             _buildResponsiveStatistics(context, controller),
           ],
         ),
+      ),
+    );
+  }
+
+  // Widget : Carte d'espace pour mobile
+  Widget _buildSpaceCard(BuildContext context, Space space) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      space.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    Text(
+                      space.typeString,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              _buildStatusBadge(space.status),
+            ],
+          ),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(space.location, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.people_outline, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text('${space.capacity}', style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Text('TND ', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text('${space.hourlyPrice.toInt()}/h', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                ],
+              ),
+              Row(
+                children: [
+                  const Text('Réservations: ', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('${space.reservations}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.visibility_outlined, size: 20, color: Colors.grey),
+                onPressed: () => Get.toNamed(AppRoutes.VIEW_SPACE, arguments: space),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20, color: Colors.grey),
+                onPressed: () => Get.toNamed(AppRoutes.EDIT_SPACE, arguments: space),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                onPressed: () {
+                  Get.defaultDialog(
+                    title: "Supprimer",
+                    middleText: "Supprimer l'espace '${space.name}' ?",
+                    textConfirm: "Oui",
+                    textCancel: "Non",
+                    confirmTextColor: Colors.white,
+                    buttonColor: Colors.red,
+                    onConfirm: () {
+                      Get.find<SpacesController>().deleteSpace(space.id);
+                      Get.back();
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -206,7 +334,7 @@ class SpacesPage extends StatelessWidget {
             const SizedBox(width: 12),
             Text(
               'Gestion des espaces',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
@@ -216,7 +344,7 @@ class SpacesPage extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           'Gérez vos espaces de coworking',
-          style: TextStyle(color: Colors.grey[600], fontSize: 16),
+          style: TextStyle(color: Colors.grey[600], fontSize: 14),
         ),
       ],
     );
@@ -268,10 +396,10 @@ class SpacesPage extends StatelessWidget {
         child: DropdownButton<String>(
           value: controller.selectedStatus.value,
           isExpanded: true,
-          items: ['Tous les statuts', 'Disponible', 'Occupé', 'En_maintenance', 'En_panne']
+          items: ['Tous les statuts', 'Disponible', 'Occupé', 'En_maintenance']
               .map((status) => DropdownMenuItem(
                     value: status,
-                    child: Text(status),
+                    child: Text(status.replaceAll('_', ' ')),
                   ))
               .toList(),
           onChanged: controller.updateStatus,
@@ -287,7 +415,6 @@ class SpacesPage extends StatelessWidget {
     return Obx(() {
       final total = controller.spaces.length;
       final available = controller.availableSpaces;
-      final broken = controller.brokenSpaces;
       final maintenance = controller.maintenanceSpaces;
 
       return Wrap(
@@ -296,7 +423,6 @@ class SpacesPage extends StatelessWidget {
         children: [
           _buildStatCard('Total', '$total', Colors.black, isMobile),
           _buildStatCard('Disponible', '$available', const Color(0xFF166534), isMobile),
-          _buildStatCard('En panne', '$broken', const Color(0xFF991B1B), isMobile),
           _buildStatCard('En maintenance', '$maintenance', const Color(0xFF854D0E), isMobile),
         ],
       );
@@ -361,12 +487,7 @@ class SpacesPage extends StatelessWidget {
       case SpaceStatus.maintenance:
         bgColor = const Color(0xFFFEF9C3);
         textColor = const Color(0xFF854D0E);
-        label = 'En_maintenance';
-        break;
-      case SpaceStatus.enPanne:
-        bgColor = const Color(0xFFFEE2E2);
-        textColor = const Color(0xFF991B1B);
-        label = 'En_panne';
+        label = 'En maintenance';
         break;
     }
 

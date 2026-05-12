@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import '../../widgets/notification_bell.dart';
 
 class SubscriptionPaymentPage extends StatefulWidget {
   const SubscriptionPaymentPage({super.key});
@@ -253,7 +254,7 @@ class _SubscriptionPaymentPageState extends State<SubscriptionPaymentPage> {
             ),
           ),
           const SizedBox(width: 20),
-          const Icon(Icons.notifications_none_outlined, color: Color(0xFF1E293B)),
+          const NotificationBell(iconColor: Color(0xFF1E293B)),
           const SizedBox(width: 20),
           const CircleAvatar(
             radius: 18,

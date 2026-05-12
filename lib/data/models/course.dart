@@ -19,6 +19,7 @@ class Course {
   final DateTime? createdAt;
   final DateTime? publishedAt;
   final String? instructorName;
+  final int? instructorId;
 
   Course({
     required this.id,
@@ -31,6 +32,7 @@ class Course {
     this.createdAt,
     this.publishedAt,
     this.instructorName,
+    this.instructorId,
   });
 //✅ Vérifie si le cours est publié.
   bool get isPublished => status == CourseStatus.publie;
@@ -64,6 +66,9 @@ class Course {
       instructorName: (data['instructor'] != null) 
           ? (data['instructor'] is Map ? (data['instructor']['username'] ?? data['instructor']['data']?['username'] ?? '') : '')
           : '',
+      instructorId: (data['instructor'] != null)
+          ? (data['instructor'] is Map ? int.tryParse((data['instructor']['id'] ?? data['instructor']['data']?['id'] ?? '').toString()) : null)
+          : null,
     );
   }
 //✅ Convertit un Course en JSON pour l'API.

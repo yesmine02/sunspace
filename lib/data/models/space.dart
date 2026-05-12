@@ -5,7 +5,7 @@
 // ============================================
 
 // Les statuts possibles d'un espace
-enum SpaceStatus { disponible, occupe, enPanne, maintenance }
+enum SpaceStatus { disponible, occupe, maintenance }
 
 // Les types possibles d'un espace
 // Les types possibles d'un espace (mis à jour selon Strapi)
@@ -90,8 +90,6 @@ class Space {
         return SpaceStatus.occupe;
       case 'En_maintenance':
         return SpaceStatus.maintenance;
-      case 'En_panne':
-        return SpaceStatus.enPanne;
       default:
         return SpaceStatus.disponible;
     }
@@ -207,8 +205,6 @@ class Space {
         return 'Occupé';
       case SpaceStatus.maintenance:
         return 'En_maintenance';
-      case SpaceStatus.enPanne:
-        return 'En_panne';
     }
   }
 }

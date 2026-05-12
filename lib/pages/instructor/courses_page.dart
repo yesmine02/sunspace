@@ -8,8 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/courses_controller.dart';
+import '../../controllers/auth_controller.dart';
 import '../../data/models/course.dart';
-import './widgets/add_edit_course_dialog.dart';
+import 'package:sunspace/pages/instructor/widgets/add_edit_course_dialog.dart';
 
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
@@ -47,7 +48,24 @@ class CoursesPage extends StatelessWidget {
                 );
               }
 
-              if (controller.filteredCourses.isEmpty) {
+              // Filtrage intelligent selon le rôle
+              final auth = Get.find<AuthController>();
+              final currentUserId = int.tryParse(auth.currentUser.value?['id']?.toString() ?? '');
+              
+              final List<Course> displayableCourses;
+              if (auth.isAdmin) {
+                // Le SUPER ADMIN voit TOUT
+                displayableCourses = controller.courses;
+              } else {
+                // Les autres (Enseignants) ne voient que les leurs
+                displayableCourses = controller.courses.where((c) => c.instructorId == currentUserId).toList();
+              }
+              
+              // Appliquer la recherche locale
+              final query = controller.searchQuery.value.toLowerCase();
+              final filtered = displayableCourses.where((c) => c.title.toLowerCase().contains(query)).toList();
+
+              if (filtered.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(40.0),
                   child: Center(child: Text('Aucun cours trouvé.')),
@@ -58,13 +76,13 @@ class CoursesPage extends StatelessWidget {
                 return ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: controller.filteredCourses.length,
+                  itemCount: filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) => _buildCourseCard(context, controller, controller.filteredCourses[index]),
+                  itemBuilder: (context, index) => _buildCourseCard(context, controller, filtered[index]),
                 );
               }
 
-              return _buildCoursesTableContainer(context, controller);
+              return _buildCoursesTableContainer(context, controller, filtered);
             }),
           ],
         ),
@@ -101,7 +119,7 @@ class CoursesPage extends StatelessWidget {
             const Icon(Icons.menu_book_rounded, color: Colors.blue, size: 32),
             const SizedBox(width: 12),
             const Text(
-              'Mes Formations',
+              'Mes Cours',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
             ),
           ],
@@ -118,7 +136,7 @@ class CoursesPage extends StatelessWidget {
   Widget _buildAddButton() {
     return ElevatedButton.icon(
       onPressed: () => Get.dialog(
-        const AddEditCourseDialog(),
+        const AddEditCourseDialog(), // BOUTON : Créer une nouvelle formation
         barrierDismissible: true,
       ),
       icon: const Icon(Icons.add, size: 20),
@@ -191,6 +209,19 @@ class CoursesPage extends StatelessWidget {
             course.levelLabel,
             style: TextStyle(color: Colors.blue[600], fontWeight: FontWeight.w500, fontSize: 14),
           ),
+          if (course.instructorName != null && course.instructorName!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.person_outline, size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  "Par : ${course.instructorName}",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13, fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
+          ],
           const Divider(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -218,14 +249,14 @@ class CoursesPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton.icon(
-                onPressed: () => Get.dialog(AddEditCourseDialog(course: course)),
+                onPressed: () => Get.dialog(AddEditCourseDialog(course: course)), // BOUTON : Modifier ce cours
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Modifier'),
                 style: TextButton.styleFrom(foregroundColor: Colors.grey[700]),
               ),
               const SizedBox(width: 8),
               TextButton.icon(
-                onPressed: () => _showDeleteConfirmation(context, controller, course),
+                onPressed: () => _showDeleteConfirmation(context, controller, course), // BOUTON : Supprimer définitivement ce cours
                 icon: const Icon(Icons.delete_outline, size: 18),
                 label: const Text('Supprimer'),
                 style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
@@ -258,7 +289,7 @@ class CoursesPage extends StatelessWidget {
   }
 
   // Widget : Tableau des cours dans un conteneur blanc (Desktop)
-  Widget _buildCoursesTableContainer(BuildContext context, CoursesController controller) {
+  Widget _buildCoursesTableContainer(BuildContext context, CoursesController controller, List<Course> displayCourses) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -277,15 +308,17 @@ class CoursesPage extends StatelessWidget {
             columnSpacing: 24,
             columns: const [
               DataColumn(label: Text('Titre', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Enseignant', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Niveau', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Prix', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Créé le', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
             ],
-            rows: controller.filteredCourses.map((course) {
+            rows: displayCourses.map((course) {
               return DataRow(cells: [
                 DataCell(Text(course.title, style: const TextStyle(fontWeight: FontWeight.w500))),
+                DataCell(Text(course.instructorName ?? '-', style: TextStyle(color: Colors.grey[700], fontSize: 13))),
                 DataCell(Text(course.levelLabel, style: TextStyle(color: Colors.grey[700]))),
                 DataCell(Text('${course.price.toInt()} TND', style: const TextStyle(fontWeight: FontWeight.w500))),
                 DataCell(_buildStatusDot(course.isPublished)),

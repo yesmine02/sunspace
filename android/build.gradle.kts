@@ -1,3 +1,8 @@
+//android/build.gradle.kts
+//(global)👉 configure tout le projet
+plugins {
+}
+
 allprojects {
     repositories {
         google()

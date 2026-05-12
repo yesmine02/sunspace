@@ -11,6 +11,7 @@
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../data/models/space.dart';
 
 // ── Data model ──────────────────────────────────────
 class FloorPlanArea {
@@ -18,12 +19,14 @@ class FloorPlanArea {
   final List<Offset> points;
   final bool isRect;
   final Rect? rect;
-//Cette classe représente une zone cliquable du plan
+  final SpaceStatus status; // NOUVEAU: Statut en temps réel
+
   FloorPlanArea({
     required this.slug,
     this.points = const [],
     this.isRect = false,
     this.rect,
+    this.status = SpaceStatus.disponible, // Défaut : libre
   });
 //dessiner la forme de la zone: soit un rectangle/soit un polygone
   Path getPath(double scaleX, double scaleY) {
@@ -64,9 +67,15 @@ class FloorPlanPainter extends CustomPainter {
 
   // ── Colour palette (matching web CSS) ──────────────
   static const Color kCorridorBg   = Color(0xFFCDCDCD); // grey corridors
-  static const Color kRoomBg       = Color(0xFFD9D9D9); // lighter room fill
-  static const Color kRoomBorder   = Color(0xFF7ED9A0); // green border
-  static const Color kFurniture    = Color(0xFFEAEAEA); // table / chair
+  static const Color kRoomBg       = Color(0xFFF1F5F9); // gris très clair neutre
+  static const Color kRoomBorder   = Color(0xFFCBD5E1); // bordure par défaut
+  
+  // Nouveaux codes couleurs dynamiques
+  static const Color kStatusFree        = Color(0xFF10B981); // Vert (Disponible)
+  static const Color kStatusOccupied    = Color(0xFFF59E0B); // Orange (Occupé)
+  static const Color kStatusMaintenance = Color(0xFF64748B); // Gris/Bleu (Maintenance)
+  
+  static const Color kFurniture    = Color(0xFFEAEAEA);
   static const Color kFurnBorder   = Color(0xFFBDBDBD);
   static const Color kPlantFill    = Color(0xFF7ED9A0); // green plant
   static const Color kPlantDark    = Color(0xFF4CB87A);
@@ -106,60 +115,62 @@ class FloorPlanPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
 
-    void room(Rect r) {//dessine une salle rectangulaire
-      canvas.drawRect(_s(r, sx, sy), roomPaint);
-      canvas.drawRect(_s(r, sx, sy), borderPaint);
+    void room(Rect r, SpaceStatus status) {
+      final color = _getStatusColor(status);
+      canvas.drawRect(_s(r, sx, sy), Paint()..color = color.withOpacity(0.08));
+      canvas.drawRect(_s(r, sx, sy), Paint()..color = color..style = PaintingStyle.stroke..strokeWidth = 2.5);
     }
 
-    void roomPoly(List<Offset> pts) {//dessine une salle polygonale
+    void roomPoly(List<Offset> pts, SpaceStatus status) {
       final p = _poly(pts, sx, sy);
-      canvas.drawPath(p, roomPaint);
-      canvas.drawPath(p, borderPaint);
+      final color = _getStatusColor(status);
+      canvas.drawPath(p, Paint()..color = color.withOpacity(0.08));
+      canvas.drawPath(p, Paint()..color = color..style = PaintingStyle.stroke..strokeWidth = 2.5);
     }
 
     // ── Top row (Espace 1 — wide open space) ──────────
     roomPoly([ //Chaque Offset représente un coin 
       const Offset(571, 22), const Offset(1598, 20), const Offset(1598, 246),//coordonnées des points de la salle
       const Offset(1507, 248), const Offset(1509, 444), const Offset(573, 442),
-    ]);
+    ], _getAreaStatus('espace1'));
 
     // ── Right column rooms ─────────────────────────────
-    room(const Rect.fromLTRB(2263, 22,   2754, 452));   // Espace 2
-    room(const Rect.fromLTRB(2261, 469,  2752, 840));   // Espace 3
-    room(const Rect.fromLTRB(2261, 857,  2747, 1220));  // Espace 4
-    room(const Rect.fromLTRB(2263, 1237, 2747, 1630));  // Espace 5
+    room(const Rect.fromLTRB(2263, 22,   2754, 452),  _getAreaStatus('espace2'));
+    room(const Rect.fromLTRB(2261, 469,  2752, 840),  _getAreaStatus('espace3'));
+    room(const Rect.fromLTRB(2261, 857,  2747, 1220), _getAreaStatus('espace4'));
+    room(const Rect.fromLTRB(2263, 1237, 2747, 1630), _getAreaStatus('espace5'));
 
     // ── Center-right cluster ───────────────────────────
     roomPoly([
       const Offset(1563, 1520), const Offset(1828, 1520), const Offset(1828, 1446),
       const Offset(2030, 1444), const Offset(2027, 1932), const Offset(1558, 1930),
       const Offset(1561, 1721),
-    ]);  // Espace 6
+    ], _getAreaStatus('espace6'));
 
     roomPoly([
       const Offset(1428, 1120), 
       const Offset(1680, 1120), 
       const Offset(1680, 1450), 
       const Offset(1428, 1450),
-    ]);  // Espace 7
+    ], _getAreaStatus('espace7'));
 
     // ── Centre ────────────────────────────────────────
-    room(const Rect.fromLTRB(829,  1122, 1205, 1512));  // Espace 8
-    room(const Rect.fromLTRB(470,  869,  814,  1579));  // Espace 9
-    room(const Rect.fromLTRB(14,   602,  453,  1458));  // Espace 10
-    room(const Rect.fromLTRB(473,  469,  770,  857));   // Espace 11
+    room(const Rect.fromLTRB(829,  1122, 1205, 1512), _getAreaStatus('espace8'));
+    room(const Rect.fromLTRB(470,  869,  814,  1579), _getAreaStatus('espace9'));
+    room(const Rect.fromLTRB(14,   602,  453,  1458), _getAreaStatus('espace10'));
+    room(const Rect.fromLTRB(473,  469,  770,  857),  _getAreaStatus('espace11'));
 
     roomPoly([
       const Offset(1065, 466), const Offset(1507, 464), const Offset(1509, 508),
       const Offset(1492, 511), const Offset(1492, 837), const Offset(1413, 840),
       const Offset(1411, 940), const Offset(1065, 943),
-    ]);  // Espace 12
+    ], _getAreaStatus('espace12'));
 
     roomPoly([
       const Offset(1499, 516), const Offset(1946, 518), const Offset(1944, 850),
       const Offset(1558, 854), const Offset(1558, 945), const Offset(1428, 943),
       const Offset(1426, 845), const Offset(1497, 845),
-    ]);  // Espace 13
+    ], _getAreaStatus('espace13'));
 
     // ── Stairs / elevator / WC areas ──────────────────
     // Stairs top-left
@@ -331,6 +342,23 @@ class FloorPlanPainter extends CustomPainter {
   }
 
   // ── Helpers ───────────────────────────────────────────
+  
+  SpaceStatus _getAreaStatus(String slug) {
+    try {
+      return areas.firstWhere((a) => a.slug == slug).status;
+    } catch (_) {
+      return SpaceStatus.disponible;
+    }
+  }
+
+  Color _getStatusColor(SpaceStatus status) {
+    switch (status) {
+      case SpaceStatus.disponible: return kStatusFree;
+      case SpaceStatus.occupe:     return kStatusOccupied;
+      case SpaceStatus.maintenance: return kStatusMaintenance;
+      default: return kRoomBorder;
+    }
+  }
 
   /// Scale a rect
   Rect _s(Rect r, double sx, double sy) =>

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/booking_controller.dart';
 import '../../data/models/reservation.dart';
+import '../../widgets/notification_bell.dart';
 
 class ReservationsPage extends StatefulWidget {
   const ReservationsPage({super.key});
@@ -140,7 +141,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
             ),
           ),
           const Spacer(),
-          const Icon(Icons.notifications_outlined, color: Color(0xFF6B7280)),
+          const NotificationBell(iconColor: Color(0xFF6B7280)),
           const SizedBox(width: 16),
           CircleAvatar(
             radius: 16,
@@ -436,7 +437,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
       ),
     );
   }
-
+// dialogue de modification de la status( en attente, confirmée, terminée, annulée)
   void _showStatusDialog(Reservation res) {
     Get.bottomSheet(
       Container(
@@ -513,15 +514,23 @@ class _ReservationsPageState extends State<ReservationsPage> {
       );
     }
 
-    // Cas par défaut (Ancien style)
+    // Cas par défaut : utiliser les données réelles de la réservation
+    final String displayName = (res.organizerName ?? res.user?.username ?? '—').trim();
+    
+    final String initial = displayName.isNotEmpty && displayName != '—' ? displayName[0].toUpperCase() : '?';
+    final bool isSession = res.isSessionReservation;
+
     return Row(
       children: [
         CircleAvatar(
           radius: 14,
-          backgroundColor: res.user != null ? Colors.blue.shade100 : Colors.orange.shade100,
+          backgroundColor: isSession ? const Color(0xFFEDE9FE) : Colors.blue.shade100,
           child: Text(
-            res.user != null ? (res.user?.username?[0].toUpperCase() ?? 'I') : 'I', 
-            style: TextStyle(fontSize: 10, color: res.user != null ? const Color(0xFF007AFF) : const Color(0xFFF97316)),
+            initial,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSession ? const Color(0xFF7C3AED) : const Color(0xFF007AFF),
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -531,17 +540,54 @@ class _ReservationsPageState extends State<ReservationsPage> {
           children: [
             Row(
               children: [
-                Text(res.user?.username ?? 'intern', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 150),
+                  child: Text(
+                    displayName,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 const SizedBox(width: 4),
+                // Badge : Formation (violet) ou Client (bleu)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(4)),
-                  child: const Text('Client', style: TextStyle(fontSize: 10, color: Color(0xFF3B82F6))),
+                  decoration: BoxDecoration(
+                    color: isSession ? const Color(0xFFEDE9FE) : const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isSession ? Icons.school_outlined : Icons.person_outline,
+                        size: 9,
+                        color: isSession ? const Color(0xFF7C3AED) : const Color(0xFF3B82F6),
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        isSession ? 'Formation' : 'Client',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isSession ? const Color(0xFF7C3AED) : const Color(0xFF3B82F6),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            Text(res.user?.email ?? 'intern@sunevit.tn', style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-            const Text('Non spécifié', style: TextStyle(fontSize: 10, color: Color(0xFF9CA3AF))),
+            if (res.user?.email != null)
+              Text(res.user!.email!, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+            if (isSession && res.purpose != null)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 200),
+                child: Text(
+                  res.purpose!.replaceFirst('Session de cours : ', ''),
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF9CA3AF), fontStyle: FontStyle.italic),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
           ],
         ),
       ],
@@ -672,15 +718,15 @@ class _ReservationsPageState extends State<ReservationsPage> {
                   if (res.status == ReservationStatus.enAttente)
                     IconButton(
                       icon: const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 22),
-                      onPressed: () => _showConfirmDialog(res),
+                      onPressed: () => _showConfirmDialog(res), // BOUTON : Valider/Accepter la réservation
                     ),
                   IconButton(
                     icon: const Icon(Icons.edit_outlined, color: Color(0xFF6B7280), size: 22),
-                    onPressed: () => _showStatusDialog(res),
+                    onPressed: () => _showStatusDialog(res), // BOUTON : Modifier le statut (Refuser, Annuler, etc.)
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 22),
-                    onPressed: () {
+                    onPressed: () { // BOUTON : Supprimer définitivement la réservation
                       Get.defaultDialog(
                         title: "Supprimer",
                         middleText: "Voulez-vous vraiment supprimer cette réservation ?",

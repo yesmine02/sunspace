@@ -121,55 +121,67 @@ class EquipmentsPage extends StatelessWidget {
                           DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
                           DataColumn(label: Text('Numéro de série', style: TextStyle(fontWeight: FontWeight.bold))),
                           DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Espaces', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(label: Text('Prix/Jour', style: TextStyle(fontWeight: FontWeight.bold))),
                           DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
                         ],
                         rows: controller.filteredEquipments.map((equipment) {
-                          return DataRow(cells: [
-                            DataCell(Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(equipment.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                                if (equipment.description != null && equipment.description!.isNotEmpty)
-                                  Text(equipment.description!, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                              ],
-                            )),
-                            DataCell(Text(equipment.type, style: TextStyle(color: Colors.grey[700]))),
-                            DataCell(Text(equipment.serialNumber, style: TextStyle(color: Colors.grey[700]))),
-                            DataCell(_buildStatusBadge(equipment.status)),
-                            DataCell(Text(equipment.spaceName ?? '-', style: TextStyle(color: Colors.grey[700]))),
-                            DataCell(Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.grey),
-                                  onPressed: () => Get.dialog(EditEquipmentDialog(equipment: equipment)),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
-                                  onPressed: () {
-                                    Get.defaultDialog(
-                                      title: "Supprimer l'équipement",
-                                      middleText: "Êtes-vous sûr de vouloir supprimer l'équipement '${equipment.name}' ?",
-                                      textConfirm: "Supprimer",
-                                      textCancel: "Annuler",
-                                      confirmTextColor: Colors.white,
-                                      buttonColor: Colors.red,
-                                      onConfirm: () {
-                                        controller.deleteEquipment(equipment.id);
-                                        Get.back();
-                                      },
-                                    );
-                                  },
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                ),
-                              ],
-                            )),
-                          ]);
+                          final bool isBroken = equipment.status == EquipmentStatus.enPanne || 
+                                              equipment.status == EquipmentStatus.enMaintenance;
+                          
+                          return DataRow(
+                            color: isBroken ? MaterialStateProperty.all(Colors.grey.shade50.withOpacity(0.5)) : null,
+                            cells: [
+                              DataCell(Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    equipment.name, 
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: isBroken ? Colors.grey : Colors.black87,
+                                    )
+                                  ),
+                                  if (equipment.description != null && equipment.description!.isNotEmpty)
+                                    Text(equipment.description!, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                                ],
+                              )),
+                              DataCell(Text(equipment.type, style: TextStyle(color: isBroken ? Colors.grey : Colors.grey[700]))),
+                              DataCell(Text(equipment.serialNumber, style: TextStyle(color: isBroken ? Colors.grey : Colors.grey[700]))),
+                              DataCell(_buildStatusBadge(equipment.status)),
+                              DataCell(Text(equipment.price != null ? '${equipment.price!.toInt()} TND' : '-', style: TextStyle(color: isBroken ? Colors.grey : Colors.grey[700]))),
+                              DataCell(Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.grey),
+                                    onPressed: () => Get.dialog(EditEquipmentDialog(equipment: equipment)),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
+                                    onPressed: () {
+                                      Get.defaultDialog(
+                                        title: "Supprimer l'équipement",
+                                        middleText: "Êtes-vous sûr de vouloir supprimer l'équipement '${equipment.name}' ?",
+                                        textConfirm: "Supprimer",
+                                        textCancel: "Annuler",
+                                        confirmTextColor: Colors.white,
+                                        buttonColor: Colors.red,
+                                        onConfirm: () {
+                                          controller.deleteEquipment(equipment.id);
+                                          Get.back();
+                                        },
+                                      );
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              )),
+                            ],
+                          );
                         }).toList(),
                       ),
                     ),
@@ -189,104 +201,113 @@ class EquipmentsPage extends StatelessWidget {
 
   // Widget : Carte d'équipement pour mobile
   Widget _buildEquipmentCard(BuildContext context, Equipment equipment, EquipmentsController controller) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
+    final bool isBroken = equipment.status == EquipmentStatus.enPanne || 
+                        equipment.status == EquipmentStatus.enMaintenance;
+
+    return Opacity(
+      opacity: isBroken ? 0.6 : 1.0,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isBroken ? Colors.grey.shade200 : Colors.grey[200]!),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        equipment.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold, 
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        equipment.type,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                _buildStatusBadge(equipment.status),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      equipment.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Text(
-                      equipment.type,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                    ),
+                    Text('S/N', style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    const SizedBox(height: 4),
+                    Text(equipment.serialNumber, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   ],
                 ),
-              ),
-              _buildStatusBadge(equipment.status),
-            ],
-          ),
-          const Divider(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('S/N', style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                  const SizedBox(height: 4),
-                  Text(equipment.serialNumber, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('ESPACE', style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                  const SizedBox(height: 4),
-                  Text(equipment.spaceName ?? '-', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                ],
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('PRIX/JOUR', style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    const SizedBox(height: 4),
+                    Text(equipment.price != null ? '${equipment.price!.toInt()} TND' : '-', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ],
+            ),
+            if (equipment.description != null && equipment.description!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                equipment.description!,
+                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
-          ),
-          if (equipment.description != null && equipment.description!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              equipment.description!,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () => Get.dialog(EditEquipmentDialog(equipment: equipment)),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('Modifier'),
+                  style: TextButton.styleFrom(foregroundColor: Colors.grey[700]),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () {
+                    Get.defaultDialog(
+                      title: "Supprimer",
+                      middleText: "Supprimer l'équipement '${equipment.name}' ?",
+                      textConfirm: "Oui",
+                      textCancel: "Non",
+                      confirmTextColor: Colors.white,
+                      buttonColor: Colors.red,
+                      onConfirm: () {
+                        controller.deleteEquipment(equipment.id);
+                        Get.back();
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: const Text('Supprimer'),
+                  style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                ),
+              ],
             ),
           ],
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: () => Get.dialog(EditEquipmentDialog(equipment: equipment)),
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Modifier'),
-                style: TextButton.styleFrom(foregroundColor: Colors.grey[700]),
-              ),
-              const SizedBox(width: 8),
-              TextButton.icon(
-                onPressed: () {
-                  Get.defaultDialog(
-                    title: "Supprimer",
-                    middleText: "Supprimer l'équipement '${equipment.name}' ?",
-                    textConfirm: "Oui",
-                    textCancel: "Non",
-                    confirmTextColor: Colors.white,
-                    buttonColor: Colors.red,
-                    onConfirm: () {
-                      controller.deleteEquipment(equipment.id);
-                      Get.back();
-                    },
-                  );
-                },
-                icon: const Icon(Icons.delete_outline, size: 18),
-                label: const Text('Supprimer'),
-                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

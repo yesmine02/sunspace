@@ -4,7 +4,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../../controllers/auth_controller.dart';
+import '../../widgets/notification_bell.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -53,6 +56,53 @@ class _ProfilePageState extends State<ProfilePage> {
     };
     
     await authController.updateProfile(data);
+  }
+
+  void _showImageOptions() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Photo de profil',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: Color(0xFF007AFF)),
+              title: const Text('Choisir une photo'),
+              onTap: () {
+                Get.back();
+                _pickNewImage();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+              title: const Text('Supprimer la photo', style: TextStyle(color: Colors.redAccent)),
+              onTap: () async {
+                Get.back();
+                await authController.removeProfilePicture();
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickNewImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (image != null) {
+      await authController.uploadProfilePicture(image);
+    }
   }
 
   @override
@@ -132,18 +182,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           const SizedBox(width: 20),
           // Notifications
-          Stack(
-            children: [
-              const Icon(Icons.notifications_none_outlined, color: Color(0xFF1E293B)),
-              Positioned(
-                right: 0, top: 0,
-                child: Container(
-                  width: 8, height: 8,
-                  decoration: const BoxDecoration(color: Color(0xFF007AFF), shape: BoxShape.circle),
-                ),
-              ),
-            ],
-          ),
+          const NotificationBell(iconColor: Color(0xFF1E293B)),
           const SizedBox(width: 20),
           // User Avatar
           const CircleAvatar(
@@ -275,31 +314,88 @@ class _ProfilePageState extends State<ProfilePage> {
                     left: isMobile ? null : 0,
                     right: isMobile ? 0 : null,
                     child: Center(
-                      child: Container(
-                        width: isMobile ? 100 : 120,
-                        height: isMobile ? 100 : 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5)),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            Center(
-                              child: Icon(Icons.person_outline_rounded, size: isMobile ? 50 : 60, color: const Color(0xFFE2E8F0)),
+                      child: GestureDetector(
+                        onTap: _showImageOptions, // Propose Modifier ou Supprimer la photo
+                        child: Container(
+                          width: isMobile ? 100 : 120,
+                          height: isMobile ? 100 : 120,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5)),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
+                            child: Stack(
+                              children: [
+                                // Affichage de l'image de l'utilisateur ou de l'icône par défaut
+                                Obx(() {
+                                  final user = authController.currentUser.value;
+                                  
+                                  // Le champ correct identifié via les logs est 'avatar'
+                                  final avatar = user?['avatar'];
+                                  String? imageUrl;
+                                  
+                                  if (avatar != null) {
+                                    if (avatar is Map) {
+                                      imageUrl = avatar['url'];
+                                    } else if (avatar is List && avatar.isNotEmpty) {
+                                      imageUrl = avatar[0]['url'];
+                                    }
+                                  } 
+                                  // Fallback secondaire
+                                  else {
+                                    final fallback = user?['image'] ?? user?['photo'] ?? user?['images'];
+                                    if (fallback is Map) imageUrl = fallback['url'];
+                                    else if (fallback is List && fallback.isNotEmpty) imageUrl = fallback[0]['url'];
+                                  }
+
+                                  if (imageUrl != null) {
+                                    // On ajoute un "cache-buster" (?v=...) pour forcer Flutter à retélécharger l'image si elle vient de changer
+                                    final timestamp = DateTime.now().millisecondsSinceEpoch;
+                                    final fullUrl = imageUrl.startsWith('http') 
+                                      ? "$imageUrl?v=$timestamp" 
+                                      : "http://193.111.250.244:3046$imageUrl?v=$timestamp";
+                                    
+                                    return Image.network(
+                                      fullUrl,
+                                      key: ValueKey(timestamp), // Force le widget à se reconstruire
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorBuilder: (context, error, stackTrace) => Center(
+                                          child: Icon(Icons.person, size: isMobile ? 50 : 60, color: const Color(0xFFE2E8F0))),
+                                    );
+                                  }
+
+                                  return Center(
+                                    child: Icon(Icons.person_outline_rounded, size: isMobile ? 50 : 60, color: const Color(0xFFE2E8F0)),
+                                  );
+                                }),
+
+                                // Overlay "Caméra"
+                                Positioned(
+                                  bottom: 8,
+                                  right: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: const BoxDecoration(color: Color(0xFF007AFF), shape: BoxShape.circle),
+                                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                                  ),
+                                ),
+
+                                // Indicateur de chargement si l'upload est en cours
+                                Obx(() => authController.isLoading.value 
+                                  ? Container(
+                                      color: Colors.black26, 
+                                      child: const Center(child: CircularProgressIndicator(color: Colors.white)))
+                                  : const SizedBox.shrink()
+                                ),
+                              ],
                             ),
-                            Positioned(
-                              bottom: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(color: Color(0xFF007AFF), shape: BoxShape.circle),
-                                child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -332,7 +428,15 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 24),
           _buildAboutTile(Icons.business_outlined, "ORGANISATION", user?['organization'] ?? "Indépendant", const Color(0xFFF1F5F9), const Color(0xFF64748B)),
           const SizedBox(height: 24),
-          _buildAboutTile(Icons.calendar_today_outlined, "MEMBRE DEPUIS", "février 2026", const Color(0xFFFEF3C7), const Color(0xFFD97706)),
+          _buildAboutTile(
+            Icons.calendar_today_outlined, 
+            "MEMBRE DEPUIS", 
+            user?['createdAt'] != null 
+                ? DateFormat('MMMM yyyy', 'fr_FR').format(DateTime.parse(user!['createdAt']).toLocal())
+                : "février 2026", 
+            const Color(0xFFFEF3C7), 
+            const Color(0xFFD97706)
+          ),
           const SizedBox(height: 40),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

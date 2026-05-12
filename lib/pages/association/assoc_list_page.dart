@@ -5,6 +5,7 @@ import '../../controllers/users_controller.dart';
 import '../../controllers/associations_controller.dart';
 import '../../data/models/association_model.dart';
 import 'widgets/add_association_dialog.dart';
+import 'widgets/manage_members_dialog.dart';
 
 class AssocListPage extends StatelessWidget {
   const AssocListPage({super.key});
@@ -120,6 +121,7 @@ class AssocListPage extends StatelessWidget {
     );
   }
 
+  /// Crée le tableau pour afficher les associations
   Widget _buildTable(List<Association> associations) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -151,6 +153,7 @@ class AssocListPage extends StatelessWidget {
     );
   }
 
+  /// Crée la liste mobile pour afficher les associations
   Widget _buildMobileList(List<Association> associations) {
     return ListView.builder(
       shrinkWrap: true,
@@ -181,7 +184,18 @@ class AssocListPage extends StatelessWidget {
                     _buildInfoRow('Admin', assoc.admin?.username ?? '-'),
                     _buildInfoRow('Budget', '${assoc.budget.toInt()} TND'),
                     _buildInfoRow('Statut', '', customWidget: _buildStatusBadge(assoc.isVerified)),
-                    _buildInfoRow('Membres', '${assoc.members?.length ?? 0} membres'),
+                    _buildInfoRow('Membres', '', customWidget: TextButton.icon(
+                      onPressed: () => Get.dialog(ManageMembersDialog(association: assoc)),
+                      icon: const Icon(Icons.people_outline, size: 16),
+                      label: Text('${assoc.members?.length ?? 0} membres'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF2563EB),
+                        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        backgroundColor: const Color(0xFFEFF6FF),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    )),
                     const Divider(height: 24),
                     Wrap(
                       spacing: 8,
@@ -196,6 +210,7 @@ class AssocListPage extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                           ),
                         ),
+                        //bouton pour modifier l'association
                         TextButton.icon(
                           onPressed: () => Get.dialog(AddAssociationDialog(association: assoc)),
                           icon: const Icon(Icons.edit_outlined, size: 18),
@@ -224,6 +239,7 @@ class AssocListPage extends StatelessWidget {
     );
   }
 
+  /// Crée une ligne d'information 
   Widget _buildInfoRow(String label, String value, {Widget? customWidget}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -237,6 +253,7 @@ class AssocListPage extends StatelessWidget {
     );
   }
 
+  /// Crée une cellule avec le nom de l'association et l'email
   Widget _buildNameCell(Association assoc) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -247,7 +264,7 @@ class AssocListPage extends StatelessWidget {
       ],
     );
   }
-
+  /// Affiche les informations de l'administrateur (Nom et Email)
   Widget _buildAdminCell(Association assoc) {
     if (assoc.admin == null) {
       return const Text(
@@ -265,6 +282,7 @@ class AssocListPage extends StatelessWidget {
     );
   }
 
+  /// Affiche un badge de statut (Vérifiée en vert / Non vérifiée en gris)
   Widget _buildStatusBadge(bool verified) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -295,16 +313,23 @@ class AssocListPage extends StatelessWidget {
     );
   }
 
+  /// Affiche le nombre de membres — cliquable pour gérer
   Widget _buildMembersCell(Association assoc) {
-    return Row(
-      children: [
-        const Icon(Icons.people_outline, size: 18, color: Color(0xFF64748B)),
-        const SizedBox(width: 6),
-        Text('${assoc.members?.length ?? 0} membres', style: const TextStyle(color: Color(0xFF475569))),
-      ],
+    return TextButton.icon(
+      onPressed: () => Get.dialog(ManageMembersDialog(association: assoc)),
+      icon: const Icon(Icons.people_outline, size: 16),
+      label: Text('${assoc.members?.length ?? 0} membres'),
+      style: TextButton.styleFrom(
+        foregroundColor: const Color(0xFF2563EB),
+        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        backgroundColor: const Color(0xFFEFF6FF),
+      ),
     );
   }
 
+  /// Affiche les icônes d'actions (Ouvrir le lien, Modifier, Supprimer)
   Widget _buildActionButtons(Association assoc) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -333,6 +358,7 @@ class AssocListPage extends StatelessWidget {
     );
   }
 
+  /// Affiche un message quand il n'y a aucune association dans la liste
   Widget _buildEmptyState() {
     return const Center(
       child: Padding(
@@ -342,6 +368,7 @@ class AssocListPage extends StatelessWidget {
     );
   }
 
+  /// Affiche une boîte de dialogue pour confirmer la suppression d'une association
   void _confirmDelete(BuildContext context, Association assoc, AssociationsController controller) {
     if (assoc.documentId == null) return;
 

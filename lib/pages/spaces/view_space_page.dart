@@ -216,11 +216,6 @@ class ViewSpacePage extends StatelessWidget {
         iconColor = const Color(0xFF854D0E);
         label = 'En maintenance';
         break;
-      case SpaceStatus.enPanne:
-        bgColor = const Color(0xFFFEE2E2);
-        iconColor = const Color(0xFF991B1B);
-        label = 'En panne';
-        break;
     }
 
     return Container(

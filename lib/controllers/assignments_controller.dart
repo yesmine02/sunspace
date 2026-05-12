@@ -12,6 +12,7 @@ import 'auth_controller.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'courses_controller.dart';
+import 'notification_controller.dart';
 
 class AssignmentsController extends GetxController {
   final String _baseUrl = 'http://193.111.250.244:3046/api/assignments';
@@ -39,36 +40,21 @@ class AssignmentsController extends GetxController {
       final user = _authController.currentUser.value;
 
       String url;
+      final coursesController = Get.find<CoursesController>();
 
       if (isManagementMode.value && _authController.isAdmin) {
-        // Admin en mode gestion : Voit TOUT
-        url = '$_baseUrl?populate=course&populate=submissions&populate=attachment';
+        url = '$_baseUrl?populate[submissions][populate][student]=true&populate[submissions][populate][file]=true&populate[attachment]=true&populate[course]=true&sort[0]=createdAt:desc';
       } else if (_authController.isInstructor && user != null) {
-        // Enseignant : récupère ses devoirs
-        url = '$_baseUrl?populate=course&populate=submissions&populate=attachment&filters[course][instructor][id][\$eq]=${user['id']}';
+        url = '$_baseUrl?populate[course][populate][instructor]=true&populate[submissions][populate][student]=true&populate[submissions][populate][file]=true&populate[attachment]=true&filters[course][instructor][id][\$eq]=${user['id']}&sort[0]=createdAt:desc';
       } else if ((_authController.isStudent || _authController.isAdmin) && user != null) {
-        // Étudiant ou Admin en vue "Mes Devoirs" : filtrer par inscriptions
-        final coursesController = Get.find<CoursesController>();
-        if (coursesController.enrolledCourseIds.isEmpty) {
-          await coursesController.fetchEnrollments();
-        }
-        final ids = coursesController.enrolledCourseIds;
-        if (ids.isEmpty) {
-          assignments.value = [];
-          originalAssignments = [];
-          isLoading(false);
-          return;
-        }
-        final idFilters = ids.asMap().entries.map((e) =>
-          'filters[course][id][\$in][${e.key}]=${e.value}'
-        ).join('&');
-        url = '$_baseUrl?populate=course&populate=attachment&$idFilters';
+        isManagementMode.value = false;
+        // TOUJOURS recharger les inscriptions fraîches avant de filtrer
+        await coursesController.fetchEnrollments();
+        // Spécifier les relations profondes pour que isSubmittedByUser puisse lire 'student' dans 'submissions'
+        url = '$_baseUrl?populate[course]=true&populate[attachment]=true&populate[submissions][populate][student]=true&populate[submissions][populate][file]=true&pagination[pageSize]=100&sort[0]=createdAt:desc';
       } else {
-        // Autres cas
-        url = '$_baseUrl?populate=course&populate=submissions&populate=attachment';
+        url = '$_baseUrl?populate=course&populate=submissions&populate=attachment&sort[0]=createdAt:desc';
       }
-
-      print("Fetching assignments from: $url");
 
       final response = await http.get(
         Uri.parse(url),
@@ -78,53 +64,46 @@ class AssignmentsController extends GetxController {
         },
       );
 
-      print("Response status: ${response.statusCode}");
-      // print("Response body: ${response.body}"); // Uncomment for deep debug
-
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
-        
-        if (data['data'] is List) { //On vérifie que :👉 le serveur a envoyé une liste.
-          final List<dynamic> jsonList = data['data']; //On met la liste JSON dans une variable
-          print("Found ${jsonList.length} assignments.");
-
-          final List<Assignment> loadedAssignments = [];
-          if (jsonList.isNotEmpty) {
-            print("DEBUG: First item raw JSON: ${jsonList[0]}");
-          }
+        if (data['data'] is List) {
+          final List<dynamic> jsonList = data['data'];
+          List<Assignment> loadedAssignments = [];
           for (var item in jsonList) {
             try {
-              final assignment = Assignment.fromJson(item);
-              loadedAssignments.add(assignment);
-            } catch (e, stack) {
-              print("❌ ERROR parsing assignment: $e");
-              print("ITEM: $item");
-              print(stack);
+              loadedAssignments.add(Assignment.fromJson(item));
+            } catch (e) {
+              debugPrint('❌ Erreur parsing devoir: $e');
             }
           }
 
-          assignments.value = loadedAssignments;//On met à jour la liste reactive affichée dans UI.
-          originalAssignments = loadedAssignments;//On garde une copie originale.👉 utile pour :recherche,filtres,reset.
-          
-          if (assignments.isEmpty && jsonList.isNotEmpty) {
-             errorMessage.value = "Erreur de lecture des données (Parsing).";
+          // Filtre par cours inscrits pour étudiants et admins en mode non-gestion
+          if ((_authController.isStudent || _authController.isAdmin) && !isManagementMode.value) {
+            final enrolledIds = coursesController.enrolledCourseIds;
+            final enrolledDocIds = coursesController.enrolledCourseDocumentIds;
+            if (enrolledIds.isNotEmpty || enrolledDocIds.isNotEmpty) {
+              loadedAssignments = loadedAssignments.where((a) {
+                final cId = int.tryParse(a.courseId ?? '');
+                final isById = cId != null && enrolledIds.contains(cId);
+                final isByDocId = a.courseDocumentId != null && enrolledDocIds.contains(a.courseDocumentId);
+                return isById || isByDocId;
+              }).toList();
+            }
           }
-          
-          _filterAssignments();
-          _saveToCache(data); 
-        } else {
-           print("Format inattendu: data['data'] n'est pas une liste.");
-           errorMessage.value = "Format de réponse inattendu (pas une liste).";
-        }
 
+          assignments.value = loadedAssignments;
+          originalAssignments = List<Assignment>.from(loadedAssignments);
+          _filterAssignments();
+          _saveToCache(data);
+        } else {
+          errorMessage.value = 'Format de réponse inattendu.';
+        }
       } else {
-        print("Erreur chargement: ${response.statusCode} - ${response.body}");
-        errorMessage.value = "Erreur serveur: ${response.statusCode}";
+        errorMessage.value = 'Erreur serveur: ${response.statusCode}';
         _loadFromCache();
       }
     } catch (e) {
-      print("Exception chargement devoirs: $e");
-      errorMessage.value = "Erreur de connexion: $e";
+      errorMessage.value = 'Erreur de connexion.';
       _loadFromCache();
     } finally {
       isLoading(false);
@@ -173,16 +152,38 @@ class AssignmentsController extends GetxController {
       print("Response body: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final createdData = json.decode(response.body);
+        print("=== CRÉATION RÉUSSIE ===");
+        print("Data de retour: $createdData");
+
         // Si un fichier est fourni, on l'upload séparément via Strapi Upload API
         if (file != null) {
-          final createdData = json.decode(response.body);
           final createdId = createdData['data']?['id']; //On récupère l’ID du devoir créé.
           if (createdId != null) {
             await _uploadAttachment(createdId, file, token);
           }
         }
-        Get.snackbar('Succès', 'Devoir créé avec succès');
-        fetchAssignments();
+
+        // 📢 Notifier tous les membres (Étudiants et Professionnels)
+        try {
+          final instructorName = _authController.currentUser.value?['username'] ?? 'Un enseignant';
+          final notifCtrl = Get.find<NotificationController>();
+          final createdId = createdData['data']?['id'] ?? createdData['data']?['documentId'];
+          
+          notifCtrl.notifyMembers(
+            title: 'Nouveau devoir publié !',
+            message: '$instructorName a publié un nouveau devoir : "${assignment.title}"',
+            type: 'Info',
+            relatedType: 'assignment',
+            relatedId: createdId,
+            actionUrl: '/dashboard/student/assignments',
+          );
+        } catch (e) {
+          debugPrint('Erreur notification membres (devoir): $e');
+        }
+        
+        Get.snackbar('Succès', 'Devoir créé avec succès', backgroundColor: Colors.green, colorText: Colors.white);
+        await fetchAssignments(); // Recharger la liste
       } else {
         print("Erreur création: ${response.body}");
         Get.snackbar('Erreur', 'Échec de la création (${response.statusCode})');
@@ -302,11 +303,14 @@ class AssignmentsController extends GetxController {
       
       final body = json.encode({
         'data': {
-          'assignment': assignmentId,
-          'student': userId,
+          'assignment': assignmentId, // ID direct au lieu de connect
+          'student': userId,        // ID direct au lieu de connect
           'content': content ?? '',
-          'status': 'En attente',
-          'submitted_at': DateTime.now().toIso8601String(),
+          'mystatus': 'Soumis',
+          'submitted_at': DateTime.now().toUtc().toIso8601String(),
+          'publishedAt': DateTime.now().toUtc().toIso8601String(),
+          'grade': 0,
+          'is_late': false,
         }
       });
 
@@ -324,13 +328,40 @@ class AssignmentsController extends GetxController {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
-        final submissionId = data['data']?['id'];
+        final submissionId = data['data']?['id'] ?? data['data']?['documentId'];
 
         if (file != null && submissionId != null) {
           await _uploadSubmissionFile(submissionId, file, token);
         }
 
-        Get.snackbar('Succès', 'Votre travail a été soumis !', backgroundColor: const Color(0xFF10B981), colorText: Colors.white);
+        await fetchAssignments(); // Rafraîchir la liste après soumission
+
+        // 🔔 Envoyer une notification à l'enseignant du cours
+        try {
+          final assignment = assignments.firstWhereOrNull((a) => a.id.toString() == assignmentId);
+          if (assignment != null && assignment.courseId != null) {
+            final coursesCtrl = Get.find<CoursesController>();
+            final course = coursesCtrl.courses.firstWhereOrNull((c) => c.id.toString() == assignment.courseId);
+            
+            if (course != null && course.instructorId != null) {
+              final studentName = user['username'] ?? 'Un étudiant';
+              final notifCtrl = Get.find<NotificationController>();
+              
+              await notifCtrl.sendNotification(
+                targetUserId: course.instructorId!,
+                title: 'Nouveau devoir soumis !',
+                message: '$studentName a soumis son travail pour le devoir "${assignment.title}".',
+                type: 'Info',
+                relatedType: 'submission',
+                relatedId: submissionId,
+                actionUrl: '/dashboard/instructor/assignments', // Lien vers la gestion des devoirs
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('Erreur lors de l\'envoi de la notification de soumission: $e');
+        }
+
         return true;
       } else {
         Get.snackbar('Erreur', 'Échec de la soumission (${response.statusCode})');
@@ -353,7 +384,7 @@ class AssignmentsController extends GetxController {
 
       request.fields['ref'] = 'api::submission.submission';
       request.fields['refId'] = entryId.toString();
-      request.fields['field'] = 'attachment';
+      request.fields['field'] = 'file'; // Correction : s'appelle 'file' selon votre schéma
 
       if (file.bytes != null) {
         request.files.add(http.MultipartFile.fromBytes('files', file.bytes!, filename: file.name));
@@ -377,10 +408,14 @@ class AssignmentsController extends GetxController {
   Future<void> _loadFromCache() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.containsKey('cached_assignments')) {
-      final data = json.decode(prefs.getString('cached_assignments')!);
-      final List<dynamic> jsonList = data['data'];
-      assignments.value = jsonList.map((item) => Assignment.fromJson(item)).toList();
-      originalAssignments = assignments.toList();
+      final Map<String, dynamic> responseData = jsonDecode(prefs.getString('cached_assignments')!);
+      final List<dynamic> data = responseData['data'] ?? [];
+          
+      List<Assignment> loaded = data.map((item) => Assignment.fromJson(item)).toList();
+
+      // Pas de filtrage local - on affiche tous les devoirs du cache
+      assignments.value = loaded;
+      originalAssignments = List.from(loaded);
     }
   }
 }

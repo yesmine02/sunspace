@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/assignment.dart';
+import '../../../data/models/submission.dart';
+import '../../../controllers/auth_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ViewAssignmentDialog extends StatelessWidget {
   final Assignment assignment;
@@ -16,6 +19,8 @@ class ViewAssignmentDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
     final double dialogWidth = isMobile ? MediaQuery.of(context).size.width * 0.95 : 550;
+    final AuthController authController = Get.find<AuthController>();
+    final bool canSeeSubmissions = authController.isInstructor || authController.isAdmin;
 
     return Dialog(
       insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 40, vertical: 24),
@@ -93,35 +98,12 @@ class ViewAssignmentDialog extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // Pièce jointe
-                    if (assignment.attachment != null) ...[
-                      _buildSectionTitle('Pièce jointe'),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F9FF),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFBAE6FD)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.attach_file, color: Color(0xFF0284C7), size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                assignment.attachment?['name'] ?? 'Fichier joint',
-                                style: const TextStyle(
-                                  color: Color(0xFF0284C7),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    // Section Soumissions (Design Capture)
+                    if (canSeeSubmissions) ...[
+                      const SizedBox(height: 32),
+                      _buildSectionTitle('Soumissions des étudiants'),
+                      const SizedBox(height: 16),
+                      _buildSubmissionsList(isMobile),
                     ],
                   ],
                 ),
@@ -226,6 +208,144 @@ class ViewAssignmentDialog extends StatelessWidget {
   String _formatDueDate() {
     if (assignment.dueDate == null) return '-';
     return DateFormat('dd/MM/yyyy à HH:mm', 'fr_FR').format(assignment.dueDate!);
+  }
+//affiche les soumissions
+  Widget _buildSubmissionsList(bool isMobile) {
+    if (assignment.submissions == null || assignment.submissions!.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: const Center(
+          child: Text("Aucune soumission pour le moment.", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+        ),
+      );
+    }
+
+    return Column(
+      children: assignment.submissions!.map((subData) {
+        final submission = Submission.fromJson(subData);
+        return _buildSubmissionCard(submission, isMobile);
+      }).toList(),
+    );
+  }
+
+  Widget _buildSubmissionCard(Submission sub, bool isMobile) {
+    final DateTime? displayDate = sub.submittedAt ?? sub.createdAt;
+    final String dateStr = displayDate != null 
+        ? DateFormat('dd/MM/yyyy HH:mm:ss').format(displayDate)
+        : '-';
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sub.studentName ?? 'etudiant',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                        color: Color(0xFF1E293B),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Soumis le : $dateStr",
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: sub.attachmentUrl != null ? () => _openFile(sub.attachmentUrl) : null,
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFFE0F2FE),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text(
+                  "Ouvrir",
+                  style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w900, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Text(
+              sub.status,
+              style: const TextStyle(
+                color: Color(0xFF475569),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openFile(String? url) async {
+    if (url == null || url.isEmpty) {
+      Get.snackbar('Erreur', 'Lien invalide ou inexistant');
+      return;
+    }
+    
+    String fullUrl = url;
+    if (!url.startsWith('http')) {
+      // Si ça ne commence pas par http, c'est un lien relatif, on ajoute le serveur
+      // On s'assure qu'il y a bien un seul slash entre le port et le lien
+      String separator = url.startsWith('/') ? '' : '/';
+      fullUrl = 'http://193.111.250.244:3046$separator$url';
+    }
+
+    // Affiche l'URL pour que vous puissiez me la copier si ça échoue encore
+    Get.snackbar(
+      'Ouverture...', 
+      fullUrl,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.black87,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 4),
+    );
+
+    // Encodage de l'URL pour gérer les espaces ou caractères spéciaux
+    final encodedUrl = Uri.encodeFull(fullUrl);
+    final uri = Uri.parse(encodedUrl);
+
+    try {
+      // On tente directement l'ouverture car canLaunchUrl est capricieux sur Android
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      print("❌ Erreur launchUrl: $e");
+      Get.snackbar('Erreur', 'Impossible d\'ouvrir le lien : $e');
+    }
   }
 }
 

@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../controllers/booking_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../data/models/space.dart';
+import '../../widgets/notification_bell.dart';
 
 class CheckoutPage extends StatelessWidget {
   const CheckoutPage({super.key});
@@ -27,7 +28,10 @@ class CheckoutPage extends StatelessWidget {
           hourlyPrice: space.hourlyPrice, 
           monthlyPrice: space.monthlyPrice
         );
+        // Charger l'emploi du temps initial
+        controller.fetchSpaceReservationsOnDay(space.documentId ?? space.id.toString(), controller.startDateTime.value);
       });
+
     }
 
     if (space == null) {
@@ -62,17 +66,26 @@ class CheckoutPage extends StatelessWidget {
                       return isMobile 
                         ? Column(
                             children: [
-                              _buildFormulaCard(context, controller, space),
+                              if (!authController.isStudent) _buildFormulaCard(context, controller, space),
                               const SizedBox(height: 24),
                               _buildSummaryCard(space),
                               const SizedBox(height: 24),
                               _buildInfoCard(),
+                              if (authController.isStudent) ...[
+                                const SizedBox(height: 24),
+                                _buildStudentScheduleSelection(context, controller, space),
+                              ],
                             ],
                           )
                         : Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(flex: 2, child: _buildFormulaCard(context, controller, space)),
+                              Expanded(
+                                flex: 2, 
+                                child: authController.isStudent 
+                                  ? _buildStudentScheduleSelection(context, controller, space)
+                                  : _buildFormulaCard(context, controller, space)
+                              ),
                               const SizedBox(width: 48),
                               Expanded(
                                 flex: 1, 
@@ -81,33 +94,17 @@ class CheckoutPage extends StatelessWidget {
                                     _buildSummaryCard(space),
                                     const SizedBox(height: 24),
                                     _buildInfoCard(),
+                                    if (!authController.isStudent) ...[
+                                      const SizedBox(height: 24),
+                                      _buildBillingDetailsCard(context, controller, space),
+                                    ],
                                   ],
                                 )
                               ),
                             ],
                           );
-                    } else if (controller.checkoutStep.value == 2) {
-                      return isMobile 
-                        ? Column(
-                            children: [
-                              _buildPaymentCard(context, controller, space),
-                              const SizedBox(height: 24),
-                              _buildBillingDetailsCard(context, controller, space),
-                            ],
-                          )
-                        : Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 2, child: _buildPaymentCard(context, controller, space)),
-                              const SizedBox(width: 48),
-                              Expanded(
-                                flex: 1, 
-                                child: _buildBillingDetailsCard(context, controller, space),
-                              ),
-                            ],
-                          );
                     } else {
-                      return const Center(child: Text("Confirmation Page (Step 3)"));
+                      return const Center(child: Text("Réservation en cours..."));
                     }
                   }),
                 ],
@@ -146,7 +143,7 @@ class CheckoutPage extends StatelessWidget {
               ),
             ),
           const Spacer(),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF475569))),
+          const NotificationBell(iconColor: Color(0xFF475569)),
           const SizedBox(width: 16),
           Obx(() {
             final user = authController.currentUser.value;
@@ -211,9 +208,7 @@ class CheckoutPage extends StatelessWidget {
       children: [
         _buildStepCircle(1, controller.checkoutStep.value == 1, controller.checkoutStep.value > 1),
         _buildStepDivider(controller.checkoutStep.value > 1, isMobile),
-        _buildStepCircle(2, controller.checkoutStep.value == 2, controller.checkoutStep.value > 2),
-        _buildStepDivider(controller.checkoutStep.value > 2, isMobile),
-        _buildStepCircle(3, controller.checkoutStep.value == 3, false),
+        _buildStepCircle(2, controller.checkoutStep.value == 2, false),
       ],
     ));
   }
@@ -282,6 +277,9 @@ class CheckoutPage extends StatelessWidget {
             icon: Icons.calendar_today_outlined,
             isSelected: controller.isMonthly.value,
             onTap: () {
+              // Étape 1 : Validation locale des dates
+              if (!controller.validateBookingTimes()) return;
+
               controller.isMonthly.value = true;
               controller.calculateTotal(
                 hourlyPrice: space.hourlyPrice, 
@@ -312,123 +310,149 @@ class CheckoutPage extends StatelessWidget {
           // Date & Time pickers
           Obx(() {
             final start = controller.startDateTime.value;
+            final end = controller.endDateTime.value;
             final dateStr = DateFormat('dd/MM/yyyy').format(start);
-            final timeStr = DateFormat('HH:mm').format(start);
+            final startTimeStr = DateFormat('HH:mm').format(start);
+            final endTimeStr = DateFormat('HH:mm').format(end);
 
-            return Row(
-              children: [
-                Expanded(
-                  child: _buildPickerField(
-                    context,
-                    "DATE DE DÉBUT",
-                    dateStr,
-                    Icons.calendar_today_outlined,
-                    onTap: () async {
-                      DateTime? date = await showDatePicker(
-                        context: context,
-                        initialDate: start,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2030),
-                      );
-                      if (date != null) {
-                        final newStart = DateTime(date.year, date.month, date.day, start.hour, start.minute);
-                        controller.updateDates(newStart, newStart.add(const Duration(hours: 1)), space.hourlyPrice, space.monthlyPrice);
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: _buildPickerField(
-                    context,
-                    "HEURE DE DÉBUT",
-                    timeStr,
-                    Icons.access_time_rounded,
-                    onTap: () async {
-                      TimeOfDay? time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(start),
-                      );
-                      if (time != null) {
-                        final newStart = DateTime(start.year, start.month, start.day, time.hour, time.minute);
-                        controller.updateDates(newStart, newStart.add(const Duration(hours: 2)), space.hourlyPrice, space.monthlyPrice);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            );
-          }),
-          const SizedBox(height: 24),
-
-          // Duration picker for Ponctuelle
-          Obx(() {
-            if (controller.isMonthly.value) return const SizedBox.shrink();
-            
-            final durationHours = controller.endDateTime.value.difference(controller.startDateTime.value).inHours;
-            
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("DURÉE", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1.0)),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<int>(
-                      value: durationHours > 0 ? durationHours : 1,
-                      isExpanded: true,
-                      items: List.generate(12, (index) => index + 1).map((h) => DropdownMenuItem(
-                        value: h,
-                        child: Text("$h heure${h > 1 ? 's' : ''}"),
-                      )).toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          controller.updateDates(
-                            controller.startDateTime.value, 
-                            controller.startDateTime.value.add(Duration(hours: val)), 
-                            space.hourlyPrice, 
-                            space.monthlyPrice
-                          );
-                        }
-                      },
+                // Section Title
+                Row(
+                  children: [
+                    const Icon(Icons.access_time, size: 20, color: Color(0xFF0F172A)),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Sélectionner l'horaire",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
-                  ),
+                  ],
                 ),
+                const SizedBox(height: 16),
+
+                // All Day Checkbox
+                Row(
+                  children: [
+                    SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: Checkbox(
+                        value: controller.isAllDay.value,
+                        onChanged: (val) => controller.toggleAllDay(space.hourlyPrice, space.monthlyPrice),
+                        activeColor: const Color(0xFF10B981),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      "Réserver toute la journée (09:00 - 18:00)",
+                      style: TextStyle(color: Color(0xFF475569), fontSize: 14),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Dropdowns Side by Side
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTimeDropdown(
+                        context,
+                        controller,
+                        "Heure de début",
+                        startTimeStr,
+                        controller.isAllDay.value || controller.isMonthly.value,
+                        (String? newValue) {
+                          if (newValue != null) {
+                            final parts = newValue.split(':');
+                            final newStart = DateTime(start.year, start.month, start.day, int.parse(parts[0]), int.parse(parts[1]));
+                            controller.updateDates(newStart, end, space.hourlyPrice, space.monthlyPrice);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildTimeDropdown(
+                        context,
+                        controller,
+                        "Heure de fin",
+                        endTimeStr,
+                        controller.isAllDay.value || controller.isMonthly.value,
+                        (String? newValue) {
+                          if (newValue != null) {
+                            final parts = newValue.split(':');
+                            final newEnd = DateTime(end.year, end.month, end.day, int.parse(parts[0]), int.parse(parts[1]));
+                            controller.updateDates(start, newEnd, space.hourlyPrice, space.monthlyPrice);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Date Picker
+                _buildPickerField(
+                  context,
+                  "DATE",
+                  dateStr,
+                  Icons.calendar_today_outlined,
+                  onTap: () async {
+                    DateTime? date = await showDatePicker(
+                      context: context,
+                      initialDate: start,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(2030),
+                    );
+                    if (date != null) {
+                      final newStart = DateTime(date.year, date.month, date.day, start.hour, start.minute);
+                      final newEnd = DateTime(date.year, date.month, date.day, end.hour, end.minute);
+                      controller.updateDates(newStart, newEnd, space.hourlyPrice, space.monthlyPrice);
+
+                      // Rafraîchir l'emploi du temps pour la nouvelle date
+                      controller.fetchSpaceReservationsOnDay(space.documentId ?? space.id.toString(), newStart);
+                    }
+                  },
+
+                ),
+                const SizedBox(height: 24),
+                _buildScheduleView(controller),
               ],
             );
           }),
+
           const SizedBox(height: 48),
 
           // Submit Button
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                // Calcule le total avant de passer au paiement
-                controller.calculateTotal(hourlyPrice: space.hourlyPrice, monthlyPrice: space.monthlyPrice);
-                controller.checkoutStep.value = 2;
-              },
+            child: Obx(() => ElevatedButton(
+              onPressed: controller.isLoading.value 
+                ? null 
+                : () {
+                    if (!controller.validateBookingTimes()) return;
+                    controller.calculateTotal(hourlyPrice: space.hourlyPrice, monthlyPrice: space.monthlyPrice);
+                    controller.createReservation(space);
+                  },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF007AFF),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Text("Continuer vers le paiement", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  SizedBox(width: 12),
-                  Icon(Icons.chevron_right),
-                ],
-              ),
-            ),
+              child: controller.isLoading.value 
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Text("Confirmer la réservation", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      SizedBox(width: 12),
+                      Icon(Icons.check_circle_outline),
+                    ],
+                  ),
+            )),
           ),
         ],
       ),
@@ -485,7 +509,41 @@ class CheckoutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPickerField(BuildContext context, String label, String value, IconData icon, {required VoidCallback onTap}) {
+  Widget _buildTimeDropdown(BuildContext context, BookingController controller, String label, String value, bool isDisabled, ValueChanged<String?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        const SizedBox(height: 8),
+        Container(
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isDisabled ? Colors.grey.shade200 : const Color(0xFF10B981), width: 1.5),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: controller.timeSlots.contains(value) ? value : null,
+              hint: const Text("Sélectionnez l'heure", style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+              isExpanded: true,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0F172A)),
+              onChanged: isDisabled ? null : onChanged,
+              items: controller.timeSlots.map((String slot) {
+                return DropdownMenuItem<String>(
+                  value: slot,
+                  child: Text(slot, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPickerField(BuildContext context, String label, String value, IconData icon, {VoidCallback? onTap}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -580,139 +638,12 @@ class CheckoutPage extends StatelessWidget {
 
   // --- STEP 2: PAYMENT ---
 
+/*
   Widget _buildPaymentCard(BuildContext context, BookingController controller, Space space) {
-    final bool isMobile = MediaQuery.of(context).size.width < 1100;
-    return Container(
-      padding: const EdgeInsets.all(0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Securisé
-          Container(
-            padding: EdgeInsets.all(isMobile ? 24 : 40),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("PAIEMENT SÉCURISÉ", style: TextStyle(fontSize: isMobile ? 18 : 24, fontWeight: FontWeight.w900, color: const Color(0xFF0F172A))),
-                      Text("Données cryptées.", style: TextStyle(fontSize: isMobile ? 14 : 16, color: const Color(0xFF64748B))),
-                    ],
-                  ),
-                ),
-                Icon(Icons.shield_outlined, size: isMobile ? 32 : 48, color: const Color(0xFF3B82F6)),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: EdgeInsets.all(isMobile ? 24 : 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTextField("Nom sur la carte", "Ex: Jean Dupont", controller: controller.cardNameController),
-                const SizedBox(height: 24),
-                _buildTextField(
-                  "Numéro de carte", 
-                  "0000 0000 0000 0000", 
-                  icon: Icons.credit_card_outlined,
-                  controller: controller.cardNumberController,
-                  formatters: [CardNumberFormatter()],
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(child: _buildTextField(
-                      "Date d'expiration", 
-                      "MM/AA",
-                      controller: controller.cardExpiryController,
-                      formatters: [CardExpiryFormatter()],
-                      keyboardType: TextInputType.number,
-                    )),
-                    const SizedBox(width: 16),
-                    Expanded(child: _buildTextField(
-                      "CVC", 
-                      "***",
-                      controller: controller.cardCvcController,
-                      keyboardType: TextInputType.number,
-                      limit: 3,
-                    )),
-                  ],
-                ),
-                const SizedBox(height: 32),
-
-                // Logos Paiement
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.credit_card, color: Color(0xFFEF4444)),
-                      const SizedBox(width: 8),
-                      const Text("Visa", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                      if (!isMobile) ...[
-                        const Spacer(),
-                        const Text("PAIEMENT CRYPTÉ SSL 256 BITS", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 48),
-
-                // Buttons
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        controller.checkoutStep.value = 1;
-                      },
-                      child: const Text("Modifier l'offre", style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold)),
-                    ),
-                    const Spacer(),
-                    Obx(() => ElevatedButton(
-                      onPressed: controller.isLoading.value ? null : () => controller.createReservation(space),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3B82F6),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 40, vertical: 20),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: controller.isLoading.value 
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
-                        : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.payment, size: 18),
-                            const SizedBox(width: 8),
-                            Obx(() => Text("Payer ${controller.totalAmount.value.toInt()} DT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 16 : 18))),
-                          ],
-                        ),
-                    )),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    ... (contenu commenté)
   }
+*/
+
 
   Widget _buildBillingDetailsCard(BuildContext context, BookingController controller, Space space) {
     return Container(
@@ -792,53 +723,190 @@ class CheckoutPage extends StatelessWidget {
       ],
     );
   }
-}
 
-// ============================================
-// Formatters pour le Paiement
-// ============================================
+  /// Version simplifiée de la sélection d'horaire pour l'étudiant (sans prix).
+  Widget _buildStudentScheduleSelection(BuildContext context, BookingController controller, Space space) {
+    final bool isMobile = MediaQuery.of(context).size.width < 1100;
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 20 : 40),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Plannifier votre session", style: TextStyle(fontSize: isMobile ? 20 : 24, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
+          const SizedBox(height: 8),
+          const Text("Choisissez la date et l'heure pour votre réservation.", style: TextStyle(color: Color(0xFF64748B))),
+          const SizedBox(height: 32),
+          
+          Obx(() {
+            final start = controller.startDateTime.value;
+            final end = controller.endDateTime.value;
+            final dateStr = DateFormat('dd/MM/yyyy').format(start);
+            final startTimeStr = DateFormat('HH:mm').format(start);
+            final endTimeStr = DateFormat('HH:mm').format(end);
 
-class CardNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    var text = newValue.text.replaceAll(' ', '');
-    if (text.length > 16) text = text.substring(0, 16);
-    
-    var buffer = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-        buffer.write(text[i]);
-        var nonZeroIndex = i + 1;
-        if (nonZeroIndex % 4 == 0 && nonZeroIndex != text.length) {
-            buffer.write(' ');
-        }
-    }
-    
-    var string = buffer.toString();
-    return newValue.copyWith(
-        text: string,
-        selection: TextSelection.collapsed(offset: string.length)
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildPickerField(
+                  context,
+                  "DATE DE RÉSERVATION",
+                  dateStr,
+                  Icons.calendar_today_outlined,
+                  onTap: () async {
+                    DateTime? date = await showDatePicker(
+                      context: context,
+                      initialDate: start,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(2030),
+                    );
+                    if (date != null) {
+                      final newStart = DateTime(date.year, date.month, date.day, start.hour, start.minute);
+                      final newEnd = DateTime(date.year, date.month, date.day, end.hour, end.minute);
+                      controller.updateDates(newStart, newEnd, space.hourlyPrice, space.monthlyPrice);
+                      controller.fetchSpaceReservationsOnDay(space.documentId ?? space.id.toString(), newStart);
+                    }
+                  },
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTimeDropdown(
+                        context,
+                        controller,
+                        "Heure de début",
+                        startTimeStr,
+                        false,
+                        (String? newValue) {
+                          if (newValue != null) {
+                            final parts = newValue.split(':');
+                            final newStart = DateTime(start.year, start.month, start.day, int.parse(parts[0]), int.parse(parts[1]));
+                            controller.updateDates(newStart, end, space.hourlyPrice, space.monthlyPrice);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildTimeDropdown(
+                        context,
+                        controller,
+                        "Heure de fin",
+                        endTimeStr,
+                        false,
+                        (String? newValue) {
+                          if (newValue != null) {
+                            final parts = newValue.split(':');
+                            final newEnd = DateTime(end.year, end.month, end.day, int.parse(parts[0]), int.parse(parts[1]));
+                            controller.updateDates(start, newEnd, space.hourlyPrice, space.monthlyPrice);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildScheduleView(controller),
+              ],
+            );
+          }),
+          
+          const SizedBox(height: 48),
+          SizedBox(
+            width: double.infinity,
+            child: Obx(() => ElevatedButton(
+              onPressed: controller.isLoading.value 
+                ? null 
+                : () {
+                    if (!controller.validateBookingTimes()) return;
+                    controller.createReservation(space);
+                  },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF007AFF),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: controller.isLoading.value 
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Text("Confirmer la réservation", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      SizedBox(width: 12),
+                      Icon(Icons.check_circle_outline),
+                    ],
+                  ),
+            )),
+          ),
+        ],
+      ),
     );
+  }
+
+  /// Affiche l'emploi du temps (réservations existantes) pour le jour sélectionné.
+  Widget _buildScheduleView(BookingController controller) {
+    return Obx(() {
+      final reservations = controller.spaceReservationsOnDay;
+      final dateLabel = DateFormat("Aujourd'hui", 'fr').format(controller.startDateTime.value) == DateFormat("Aujourd'hui", 'fr').format(DateTime.now())
+          ? "Aujourd'hui"
+          : DateFormat('dd/MM', 'fr').format(controller.startDateTime.value);
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Emploi du temps du $dateLabel", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: reservations.isEmpty
+                ? const Center(
+                    child: Text(
+                      "Aucune réservation pour cette date",
+                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                    ),
+                  )
+                : Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: reservations.map((res) {
+                      final start = DateFormat('HH:mm').format(res.startDateTime);
+                      final end = DateFormat('HH:mm').format(res.endDateTime);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDBEAFE),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF93C5FD)),
+                        ),
+                        child: Text(
+                          "$start - $end",
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+          ),
+        ],
+      );
+    });
   }
 }
 
-class CardExpiryFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    var text = newValue.text.replaceAll('/', '').replaceAll(' ', '');
-    if (text.length > 4) text = text.substring(0, 4);
-    
-    var buffer = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-        buffer.write(text[i]);
-        if (i == 1 && text.length > 2) {
-            buffer.write(' / ');
-        }
-    }
-    
-    var string = buffer.toString();
-    return newValue.copyWith(
-        text: string,
-        selection: TextSelection.collapsed(offset: string.length)
-    );
-  }
-}
+// Formatters commentés...
+/*
+class CardNumberFormatter ...
+class CardExpiryFormatter ...
+*/
+

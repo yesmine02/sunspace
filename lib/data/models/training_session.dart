@@ -12,6 +12,7 @@ class TrainingSession {
   final String? documentId;
   final String title;
   final String? courseName; // Nom du cours associé
+  final String? courseId; // ID numérique ou documentId du cours
   final SessionType type;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -21,12 +22,15 @@ class TrainingSession {
   final String? meetingLink;
   final String? notes;
   final List<int> attendeeIds;
+  final int? instructorId;
+  final String? instructorName;
 
   TrainingSession({
     required this.id,
     this.documentId,
     required this.title,
     this.courseName,
+    this.courseId,
     required this.type,
     this.startDate,
     this.endDate,
@@ -36,6 +40,8 @@ class TrainingSession {
     this.meetingLink,
     this.notes,
     this.attendeeIds = const [],
+    this.instructorId,
+    this.instructorName,
   });
 
   // Libellés pour l'UI
@@ -60,30 +66,75 @@ class TrainingSession {
     return status == SessionStatus.publie ? 'Planifiée' : 'Brouillon';
   }
 
+  bool get isExpired {
+    if (endDate == null) return false;
+    return DateTime.now().isAfter(endDate!);
+  }
+
   String get formattedStartDate {
     if (startDate == null) return '-';
     return DateFormat('d MMMM à HH:mm', 'fr_FR').format(startDate!);
   }
 
+  String get formattedEndDate {
+    if (endDate == null) return '-';
+    return DateFormat('d MMMM à HH:mm', 'fr_FR').format(endDate!);
+  }
+
+  String get formattedTimeRange {
+    if (startDate == null || endDate == null) return '-';
+    final date = DateFormat('d MMMM', 'fr_FR').format(startDate!);
+    final start = DateFormat('HH:mm').format(startDate!);
+    final end = DateFormat('HH:mm').format(endDate!);
+    return "$date ($start - $end)";
+  }
+
+  /// Extrait le nom de l'espace depuis les notes (format: "📍 Espace: NOM\n...")
+  String? get spaceName {
+    if (notes == null) return null;
+    if (notes!.startsWith("📍 Espace: ")) {
+      return notes!.split("\n")[0].replaceFirst("📍 Espace: ", "").trim();
+    }
+    return null;
+  }
+
   factory TrainingSession.fromJson(Map<String, dynamic> json) {
+    // Détection auto Strapi v5 (si enveloppé dans 'attributes')
+    final Map<String, dynamic> data = (json['attributes'] != null) ? json['attributes'] : json;
+
     // Le serveur Strapi utilise start_datetime et end_datetime
-    final startStr = json['start_datetime'];
-    final endStr = json['end_datetime'];
+    final startStr = data['start_datetime'];
+    final endStr = data['end_datetime'];
 
     return TrainingSession(
-      id: json['id']?.toString() ?? '',
-      documentId: json['documentId']?.toString(),
-      title: json['title'] ?? 'Sans titre',
-      courseName: json['course']?['title'] ?? json['courseName'] ?? '-',
-      type: _parseType(json['type']),
-      startDate: startStr != null ? DateTime.parse(startStr) : null,
-      endDate: endStr != null ? DateTime.parse(endStr) : null,
-      status: json['mystatus'] == 'Planifiée' ? SessionStatus.publie : SessionStatus.brouillon,
-      maxParticipants: json['max_participants'] ?? 10,
-      currentParticipants: (json['attendees'] as List?)?.length ?? json['currentParticipants'] ?? 0,
-      attendeeIds: (json['attendees'] as List?)?.map((e) => (e['id'] as num).toInt()).toList() ?? [],
-      meetingLink: json['meeting_url'] ?? json['recording_url'] ?? json['meetingLink'],
-      notes: json['notes'],
+      id: json['id']?.toString() ?? data['id']?.toString() ?? '',
+      documentId: json['documentId']?.toString() ?? data['documentId']?.toString(),
+      title: data['title'] ?? 'Sans titre',
+      courseName: data['course'] is Map 
+          ? (data['course']['title'] ?? data['course']['data']?['attributes']?['title'] ?? data['course']['data']?['title'] ?? '-')
+          : (data['courseName'] ?? '-'),
+      courseId: data['course'] != null
+          ? (data['course'] is Map
+              ? (data['course']['id'] ?? data['course']['data']?['id'] ?? data['course']['documentId'] ?? data['course']['data']?['documentId'])?.toString()
+              : data['course'].toString())
+          : null,
+      type: _parseType(data['type']),
+      startDate: startStr != null ? DateTime.parse(startStr).toLocal() : null,
+      endDate: endStr != null ? DateTime.parse(endStr).toLocal() : null,
+      status: data['mystatus'] == 'Planifiée' ? SessionStatus.publie : SessionStatus.brouillon,
+      maxParticipants: data['max_participants'] ?? 10,
+      currentParticipants: (data['attendees'] as List?)?.length ?? data['currentParticipants'] ?? 0,
+      attendeeIds: (data['attendees'] as List?)?.map((e) => (e['id'] as num).toInt()).toList() ?? [],
+      meetingLink: data['meeting_url'] ?? data['recording_url'] ?? data['meetingLink'],
+      notes: data['notes'],
+      instructorId: data['instructor'] != null
+          ? (data['instructor'] is Map
+              ? int.tryParse((data['instructor']['id'] ?? data['instructor']['data']?['id'] ?? '').toString())
+              : int.tryParse(data['instructor'].toString()))
+          : null,
+      instructorName: data['instructor'] != null && data['instructor'] is Map
+          ? (data['instructor']['username'] ?? data['instructor']['data']?['attributes']?['username'] ?? data['instructor']['data']?['username'] ?? 'Instructeur')
+          : null,
     );
   }
 

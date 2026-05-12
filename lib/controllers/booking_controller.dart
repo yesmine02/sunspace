@@ -11,7 +11,10 @@ import 'package:http/http.dart' as http;
 import '../controllers/auth_controller.dart';
 import '../data/models/space.dart';
 import '../data/models/reservation.dart';
+import 'package:intl/intl.dart';
 import 'notification_controller.dart';
+import 'equipments_controller.dart';
+import '../data/models/equipment.dart';
 
 class BookingController extends GetxController {
   // ── Dépendances ──────────────────────────────────────────────
@@ -24,6 +27,7 @@ class BookingController extends GetxController {
   final RxString searchQuery = ''.obs;
   final RxBool isLoading = false.obs;
   final RxBool isCheckingAvailability = false.obs; // État de vérification
+  final RxList<Reservation> spaceReservationsOnDay = <Reservation>[].obs; // Réservations du jour pour l'espace sélectionné
   final RxBool isMonthly = true.obs;
   
   // Plage horaire de travail
@@ -36,32 +40,83 @@ class BookingController extends GetxController {
   final RxBool isAllDay = false.obs; // Réservation toute la journée
   final RxInt checkoutStep = 1.obs; // 1: Date/Heure, 2: Services, 3: Paiement
   final RxList<String> selectedServices = <String>[].obs;// Services additionnels
+  final RxInt numberOfPeople = 1.obs; // Demande actuelle
 
   // ── Champs de réservation ────────────────────────────────────
-  final Rx<DateTime> startDateTime = DateTime.now().add(const Duration(hours: 1)).obs;// Date et heure de début
-  final Rx<DateTime> endDateTime = DateTime.now().add(const Duration(hours: 2)).obs;// Date et heure de fin
-  final RxDouble totalAmount = 0.0.obs;// Montant total
+  final Rx<DateTime> selectedDate = DateTime.now().obs;
+  final Rx<TimeOfDay> startTime = TimeOfDay.fromDateTime(DateTime.now().add(const Duration(hours: 1))).obs;
+  final Rx<TimeOfDay> endTime = TimeOfDay.fromDateTime(DateTime.now().add(const Duration(hours: 2))).obs;
+  
+  final Rx<DateTime> startDateTime = DateTime.now().add(const Duration(hours: 1)).obs;
+  final Rx<DateTime> endDateTime = DateTime.now().add(const Duration(hours: 2)).obs;
+  final RxDouble totalAmount = 0.0.obs;
 
-  // ── Catalogue des services additionnels ──────────────────────
-  final Map<String, double> servicesCatalog = const {
-    'Café illimité': 5.0,
-    'Projecteur': 15.0,
-    'Microphone': 10.0,
-    'Imprimante pro': 8.0,
-  };
+  // Contrôleurs de paiement
+  final TextEditingController cardNameController = TextEditingController();
+  final TextEditingController cardNumberController = TextEditingController();
+  final TextEditingController cardExpiryController = TextEditingController();
+  final TextEditingController cardCvcController = TextEditingController();
+
+  // ── Catalogue des services additionnels (Dynamique) ─────────
+  // Fusionne les services fixes et les équipements physiques
+  Map<String, Map<String, dynamic>> get servicesCatalog {
+    // 1. Initialisation du catalogue vide
+    final Map<String, Map<String, dynamic>> catalog = {};
+
+    // 2. Intégration des équipements physiques depuis EquipmentsController
+    try {
+      final EquipmentsController eqController = Get.find<EquipmentsController>();
+      
+      for (var eq in eqController.equipments) {
+        final String name = eq.name;
+        // On récupère le prix de l'équipement (strictement depuis le serveur)
+        final double rentalPrice = eq.price ?? 0.0; 
+        
+        final bool isEqAvailable = eq.status == EquipmentStatus.disponible;
+
+        if (catalog.containsKey(name)) {
+          // Si on a déjà cet équipement, il est disponible si au moins un exemplaire l'est
+          catalog[name]!['available'] = catalog[name]!['available'] || isEqAvailable;
+          // On garde le prix de l'équipement (le dernier trouvé avec ce nom)
+          catalog[name]!['price'] = rentalPrice;
+        } else {
+          catalog[name] = {
+            'price': rentalPrice,
+            'available': isEqAvailable,
+            'type': eq.type,
+          };
+        }
+      }
+    } catch (e) {
+      print("Erreur lors de la construction du catalogue dynamique: $e");
+    }
+
+    return catalog;
+  }
 
   // ── Contrôleurs de formulaire ────────────────────────────────
-  final cardNameController = TextEditingController();// Nom sur la carte
-  final cardNumberController = TextEditingController();
-  final cardExpiryController = TextEditingController();
-  final cardCvcController = TextEditingController();
+  // Les contrôleurs de carte ont été supprimés car le paiement n'est plus requis.
+
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Recalculer le total dès que la liste des équipements change (prix mis à jour, etc.)
+    try {
+      final EquipmentsController eqController = Get.find<EquipmentsController>();
+      ever(eqController.equipments, (_) {
+        // On récupère le prix de l'espace actuel pour recalculer
+        // Note: On pourrait avoir besoin de passer les prix réels ici
+        // Pour l'instant on se contente de rafraîchir si on a un espace sélectionné
+        print("Equipements mis à jour, rafraîchissement du catalogue...");
+      });
+    } catch (e) {
+      print("EquipmentsController non trouvé pour le listener: $e");
+    }
+  }
 
   @override
   void onClose() {
-    cardNameController.dispose();
-    cardNumberController.dispose();
-    cardExpiryController.dispose();
-    cardCvcController.dispose();
     super.onClose();
   }
 
@@ -117,9 +172,23 @@ class BookingController extends GetxController {
 
   
   
-  void toggleService(String name, double hourlyPrice, double monthlyPrice) {// Active ou désactive un service additionnel
-    selectedServices.contains(name) ? selectedServices.remove(name) : selectedServices.add(name);// Ajoute ou retire le service de la liste
-    _calculateTotal(hourlyPrice: hourlyPrice, monthlyPrice: monthlyPrice);// Met à jour le total
+  void toggleService(String name, double hourlyPrice, double monthlyPrice) {
+    // Vérifier la disponibilité avant de basculer
+    final service = servicesCatalog[name];
+    if (service != null && service['available'] == false) {
+      Get.snackbar(
+        "Indisponible", 
+        "L'équipement '$name' est actuellement en maintenance.",
+        backgroundColor: Colors.orange.shade800,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
+      );
+      return;
+    }
+    
+    selectedServices.contains(name) ? selectedServices.remove(name) : selectedServices.add(name);
+    _calculateTotal(hourlyPrice: hourlyPrice, monthlyPrice: monthlyPrice);
   }
 
   void updateDates(DateTime start, DateTime end, double hourlyPrice, double monthlyPrice) {
@@ -141,7 +210,7 @@ class BookingController extends GetxController {
           }();
 
     final servicesCost = selectedServices.fold<double>(
-      0.0, (sum, s) => sum + (servicesCatalog[s] ?? 0.0)
+      0.0, (sum, s) => sum + ((servicesCatalog[s]?['price'] as double?) ?? 0.0)
     );
 
     totalAmount.value = base + servicesCost;
@@ -189,114 +258,110 @@ class BookingController extends GetxController {
     return true;
   }
 
-  // ── Validation du formulaire de paiement ──────────────────────
-// Valide le formulaire de paiement
-  bool _validatePaymentForm() {
-    if (cardNameController.text.trim().isEmpty ||// Vérifie si le nom sur la carte est vide
-        cardNumberController.text.trim().isEmpty ||// Vérifie si le numéro de carte est vide
-        cardExpiryController.text.trim().isEmpty ||// Vérifie si la date d'expiration est vide
-        cardCvcController.text.trim().isEmpty) {// Vérifie si le code CVC est vide
-      _showError('Champs incomplets', 'Veuillez remplir tous les champs de paiement.');
-      return false;
-    }
-    if (cardNumberController.text.replaceAll(' ', '').length != 16) {// Vérifie si le numéro de carte contient 16 chiffres
-      _showError('Carte invalide', 'Le numéro de carte doit contenir 16 chiffres.');
-      return false;
-    }
+  // ── Validation du formulaire de paiement (Supprimée car paiement désactivé) ──
 
-    // Validation logique de la date d'expiration (MM/YY)
-    final expiryStr = cardExpiryController.text;
-    if (!expiryStr.contains('/') || expiryStr.length != 5) {
-      _showError('Date invalide', 'Le format doit être MM/YY.');
-      return false;
-    }
-
-    final parts = expiryStr.split('/');
-    final month = int.tryParse(parts[0]) ?? 0;
-    final year = int.tryParse(parts[1]) ?? 0;
-
-    if (month < 1 || month > 12) {
-      _showError('Mois invalide', 'Le mois doit être entre 01 et 12.');
-      return false;
-    }
-
-    // Vérifier si la carte est expirée (On rajoute 2000 pour l'année YY -> YYYY)
-    final now = DateTime.now();
-    final currentYear = now.year % 100;
-    final currentMonth = now.month;
-
-    if (year < currentYear || (year == currentYear && month < currentMonth)) {
-      _showError('Carte expirée', "La date d'expiration est dépassée.");
-      return false;
-    }
-
-    return true;
-  }
 
   // ── Vérification dynamique de disponibilité ───────────────────
 
-  /// Contacte le serveur Strapi et retourne `true` si le créneau est libre.
-  /// Lance une exception si le serveur est injoignable.
+  /// Contacte le serveur Strapi et valide la capacité de l'espace.
+  /// Algorithme : Places disponibles = (Capacité Max) - (Somme des places déjà Confirmées)
   Future<bool> _isSlotAvailable({
-    required String spaceId,// ID de l'espace
-    required String? token,// Token de l'utilisateur
+    required Space space,
+    required String? token,
   }) async {
-    isCheckingAvailability.value = true;// Met à jour le statut de vérification
-    // Vérifie si le créneau est disponible
+    isCheckingAvailability.value = true;
+    final String spaceId = space.documentId ?? space.id;
+    final int capacityMax = space.capacity;
+    final int requested = numberOfPeople.value;
+
     try {
       final url = Uri.parse(
-        '$_baseUrl?filters[space][documentId][\$eq]=$spaceId&filters[mystatus][\$ne]=Annulee&populate=false'
-      );// URL de l'API Strapi
-// Envoie la requête à l'API Strapi
+        '$_baseUrl?filters[space][documentId][\$eq]=$spaceId&filters[mystatus][\$eq]=Confirmée&populate=false'
+      );
+      
       final response = await http.get(url, headers: {
         'Authorization': 'Bearer $token',
         'Accept': 'application/json',
-      }).timeout(const Duration(seconds: 10));// Timeout de 10 secondes
+      }).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode != 200) {
-        debugPrint('[BookingController] Dispo check error: ${response.statusCode}');
-        return true; // On laisse passer si le serveur n'arrive pas à répondre
-      }
-// Décode la réponse JSON
-//on la convertit en liste d'objets lisibles par Dart. existing
-//existing = toutes les réservations déjà enregistrées pour cet espace.
+      if (response.statusCode != 200) return true;
+
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final List<dynamic> existing = data['data'] ?? [];// Liste des réservations existantes
-//Ce sont les horaires que l'utilisateur actuel veut réserver.
-      final newStart = startDateTime.value;// date de début de la réservation
-      final newEnd = endDateTime.value;// date de fin de la réservation
-// Parcourt toutes les réservations existantes
-      for (final res in existing) {
-// Si une réservation n'est pas confirmée, elle ne bloque pas le créneau
-// L'utilisateur a demandé que seules les réservations confirmées bloquent le créneau
-        final status = (res['mystatus'] ?? '').toString().toLowerCase();// Statut de la réservation
-        if (!status.contains('confirm')) continue;// Si la réservation n'est pas confirmée, on laisse le créneau libre
-//on lit les heures de la réservation 
-//déjà en place dans la base de données et on les convertit en date locale
-        final existStart = DateTime.parse(res['start_datetime']).toLocal();// Date de début de la réservation existante
-        final existEnd = DateTime.parse(res['end_datetime']).toLocal();// Date de fin de la réservation existante
+      final List<dynamic> existing = data['data'] ?? [];
+      
+      final newStart = startDateTime.value;
+      final newEnd = endDateTime.value;
 
-        // Algorithme de chevauchement standard :
-        // Deux intervalles se chevauchent si : début_A < fin_B ET fin_A > début_B
+      int occupiedSeats = 0;
+
+      for (final res in existing) {
+        // On ne compte que les réservations confirmées sur le même créneau
+        final existStart = DateTime.parse(res['start_datetime']).toLocal();
+        final existEnd = DateTime.parse(res['end_datetime']).toLocal();
+
         if (newStart.isBefore(existEnd) && newEnd.isAfter(existStart)) {
-          return false; // ❌ Créneau occupé
+          // Chevauchement détecté, on cumule les personnes
+          final int people = int.tryParse(res['attendees']?.toString() ?? '1') ?? 1;
+          occupiedSeats += people;
         }
       }
-      return true; // ✅ Créneau libre
+
+      final int availableSeats = capacityMax - occupiedSeats;
+
+      if (requested > availableSeats) {
+        // BLOCAGE IMMÉDIAT
+        _showCapacityError(availableSeats, requested);
+        return false;
+      }
+
+      return true; // ✅ Capacité suffisante
 
     } finally {
       isCheckingAvailability.value = false;// Met fin à la vérification de disponibilité
     }
   }
 
+  /// Récupère toutes les réservations d'un espace pour un jour spécifique
+  Future<void> fetchSpaceReservationsOnDay(String spaceId, DateTime day) async {
+    isLoading.value = true;
+    try {
+      final token = await _auth.getToken();
+      if (token == null) return;
+
+      // On filtre par espace, par statut (Uniquement confirmé pour l'affichage) et par date
+      final dateStr = DateFormat('yyyy-MM-dd').format(day);
+      final url = Uri.parse(
+        '$_baseUrl?filters[space][documentId][\$eq]=$spaceId'
+        '&filters[mystatus][\$eq]=Confirmée'
+        '&filters[start_datetime][\$contains]=$dateStr'
+        '&populate=user'
+      );
+
+      debugPrint('[BookingController] Fetch day schedule URL: $url');
+
+      final response = await http.get(url, headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final List<dynamic> list = data['data'] ?? [];
+        spaceReservationsOnDay.assignAll(list.map((item) => Reservation.fromJson(item)).toList());
+        debugPrint('[BookingController] Day schedule: ${spaceReservationsOnDay.length} items found');
+      }
+    } catch (e) {
+      debugPrint('[BookingController] Error fetching day schedule: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // ── CRÉATION DE LA RÉSERVATION (workflow complet) ─────────────
 
-  Future<void> createReservation(Space space) async {
+  Future<bool> createReservation(Space space) async {
     // Étape 0 : Valider l'horaire (Business hours & Past hours)
-    if (!validateBookingTimes()) return;
-
-    // Étape 1 : Valider le formulaire côté client
-    if (!_validatePaymentForm()) return;
+    if (!validateBookingTimes()) return false;
 
     isLoading.value = true;
 
@@ -306,16 +371,14 @@ class BookingController extends GetxController {
 
       if (token == null || user == null) {// Si le token ou l'utilisateur est null
         _showError('Session expirée', 'Veuillez vous reconnecter et réessayer.');
-        return;
+        return false;
       }
 
-      // Étape 2 : Vérifier dynamiquement la disponibilité sur le serveur
-      final spaceId = space.documentId ?? space.id;// Récupère l'ID de l'espace
-      final slotFree = await _isSlotAvailable(spaceId: spaceId, token: token);// Vérifie si le créneau est disponible
+      // Étape 2 : Vérification Intelligente de la Capacité
+      final slotAllowed = await _isSlotAvailable(space: space, token: token);
 
-      if (!slotFree) {// Si le créneau n'est pas disponible
-        _showUnavailableDialog();// Affiche un message d'erreur
-        return;
+      if (!slotAllowed) {
+        return false; // L'erreur de capacité est déjà gérée par _showCapacityError
       }
 
       // Étape 3 : Envoyer la réservation au serveur
@@ -323,18 +386,20 @@ class BookingController extends GetxController {
         "data": {
           "start_datetime": startDateTime.value.toUtc().toIso8601String(),
           "end_datetime": endDateTime.value.toUtc().toIso8601String(),
+          "is_all_day": isAllDay.value,
           "mystatus": "En_attente",
+          "attendees": numberOfPeople.value,
           "purpose": "Réservation via App",
           "payment_status": "En_attente",
           "payment_method": "Carte_en_ligne",
           "total_amount": totalAmount.value,
+          "turnstile_verified": true,
           "notes": selectedServices.isEmpty
               ? "Aucun service additionnel"
               : "Services : ${selectedServices.join(', ')}",
           "organizer_name": user['username'] ?? "Utilisateur",
-          "organizer_phone": user['phone'] ?? "Non spécifié",
-          "user": user['documentId'] ?? user['id'],
-          "space": spaceId,
+          "organizer_phone": user['phone'] ?? "00000000",
+          "space": space.documentId ?? space.id,
         }
       };
 
@@ -357,9 +422,20 @@ class BookingController extends GetxController {
         // 📢 Notifier l'administrateur
         try {
           final notifCtrl = Get.find<NotificationController>();
+          final username = user['username'] ?? 'Un utilisateur';
+          final spaceName = space.name ?? 'Espace inconnu';
+          final dateFormat = DateFormat('dd/MM/yyyy');
+          final timeFormat = DateFormat('HH:mm');
+          final start = startDateTime.value;
+          final end = endDateTime.value;
+          
+          final dateStr = dateFormat.format(start);
+          final startTimeStr = timeFormat.format(start);
+          final endTimeStr = timeFormat.format(end);
+
           notifCtrl.notifyAdmins(
-            title: 'Nouvelle réservation',
-            message: 'Un utilisateur a réservé l\'espace ${space.name}. Veuillez valider ou refuser cette demande.',
+            title: 'Nouvelle réservation — $spaceName',
+            message: '$username a réservé "$spaceName" le $dateStr $startTimeStr -> $endTimeStr',
           );
         } catch (e) {
           debugPrint('Erreur envoi notification admin: $e');
@@ -368,14 +444,17 @@ class BookingController extends GetxController {
         Get.back(); // Ferme le formulaire
         _showSuccessDialog(); // Affiche le succès
         fetchMyReservations(); // Rafraîchit la liste
+        return true;
       } else {
         final errBody = jsonDecode(response.body);// Récupère le corps de la réponse
         final msg = errBody['error']?['message'] ?? 'Erreur ${response.statusCode}';// Récupère le message d'erreur
         _showError('Réservation refusée', msg);// Affiche un message d'erreur
+        return false;
       }
 
     } on Exception catch (e) {
       _showError('Problème réseau', 'Impossible de joindre le serveur. Vérifiez votre connexion.\n($e)');
+      return false;
     } finally {
       isLoading.value = false;
     }
@@ -441,21 +520,38 @@ class BookingController extends GetxController {
     try {
       final token = await _auth.getToken();
       final user = _auth.currentUser.value;
-      if (token == null || user == null) return;
+      if (token == null || user == null) {
+        debugPrint('[BookingController] fetchMine: Token or User is null');
+        return;
+      }
 
-      final userId = user['id'];
+      final username = Uri.encodeComponent(user['username'] ?? '');
+      final url = '$_baseUrl?filters[organizer_name][\$eq]=$username&populate=space&sort=createdAt:desc&pagination[pageSize]=100';
+      debugPrint('[BookingController] fetchMine URL: $url');
+      
       final response = await http.get(
-        Uri.parse('$_baseUrl?filters[user][id][\$eq]=$userId&populate=space'),
+        Uri.parse(url),
         headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
       ).timeout(const Duration(seconds: 15));
+
+      debugPrint('[BookingController] fetchMine Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         if (data.containsKey('data')) {
-          reservations.assignAll(
-            (data['data'] as List).map((item) => Reservation.fromJson(item)).toList()
-          );
+          final List rawList = data['data'];
+          debugPrint('[BookingController] fetchMine: Found ${rawList.length} items');
+          
+          try {
+            final parsedList = rawList.map((item) => Reservation.fromJson(item)).toList();
+            reservations.assignAll(parsedList);
+            debugPrint('[BookingController] fetchMine: Successfully parsed all reservations');
+          } catch (e) {
+            debugPrint('[BookingController] fetchMine Parsing Error: $e');
+          }
         }
+      } else {
+        debugPrint('[BookingController] fetchMine Error Body: ${response.body}');
       }
     } on Exception catch (e) {
       debugPrint('[BookingController] fetchMine exception: $e');
@@ -488,20 +584,16 @@ class BookingController extends GetxController {
         ).timeout(const Duration(seconds: 10));
       }
 
-      // 1. Première tentative avec la valeur passée (ex: "Confirmee")
-      var response = await sendUpdate(status);
+      // ─── Normalisation du statut pour Strapi v5 (qui demande des accents) ───
+      String statusToSend = status;
+      if (status == 'Confirmee') statusToSend = 'Confirmée';
+      if (status == 'Annulee') statusToSend = 'Annulée';
+      if (status == 'Terminee') statusToSend = 'Terminée';
 
-      // 2. Si 400 et que c'est "Confirmee", tenter "Confirmée" (avec accent)
-      if (response.statusCode == 400 && status == 'Confirmee') {
-        debugPrint('[updateStatus] 400 détecté avec "Confirmee", tentative avec "Confirmée"...');
-        response = await sendUpdate('Confirmée');
-      }
+      var response = await sendUpdate(statusToSend);
 
       // 3. Gestion globale de la réponse
       if (response.statusCode == 200) {
-        // Détection de la valeur finale acceptée
-        final finalStatusStr = response.statusCode == 200 ? (status == 'Confirmee' ? (response.request?.toString().contains('Confirmée') ?? false ? 'Confirmée' : 'Confirmee') : status) : status;
-        
         // Mise à jour LOCALE de l'item spécifique pour éviter de faire sauter toute la liste
         final idx = reservations.indexWhere((r) => r.id == res.id || (r.documentId != null && r.documentId == res.documentId));
         if (idx != -1) {
@@ -511,16 +603,59 @@ class BookingController extends GetxController {
             documentId: old.documentId,
             startDateTime: old.startDateTime,
             endDateTime: old.endDateTime,
-            status: Reservation.parseStatusFromString(status == 'Confirmee' ? 'Confirmée' : status), // On force l'enum interne
+            status: Reservation.parseStatusFromString(statusToSend),
             purpose: old.purpose,
             paymentStatus: old.paymentStatus,
             paymentMethod: old.paymentMethod,
             totalAmount: old.totalAmount,
             notes: old.notes,
             spaceName: old.spaceName,
+            organizerName: old.organizerName, // FIX: On garde le nom !
+            numberOfPeople: old.numberOfPeople, // FIX: On garde le nombre de personnes !
             user: old.user,
           );
           reservations.refresh();
+        }
+
+        // 📢 GESTION DES NOTIFICATIONS
+        try {
+          final notifCtrl = Get.find<NotificationController>();
+          final spaceName = res.spaceName ?? 'Espace';
+          final isAdminUser = _auth.isAdmin;
+          final currentUser = _auth.currentUser.value;
+
+          // 1. Notifier l'admin si un UTILISATEUR annule sa propre réservation
+          if (statusToSend == 'Annulée' && !isAdminUser) {
+            final username = currentUser?['username'] ?? 'Un utilisateur';
+            final date = res.formattedDate;
+            final time = res.formattedTime;
+            
+            notifCtrl.notifyAdmins(
+              title: 'Réservation Annulée — $spaceName',
+              message: '$username a annulé sa réservation pour "$spaceName" prévue le $date ($time).',
+            );
+          }
+
+          // 2. Notifier l'utilisateur (seulement si l'ADMIN fait le changement)
+          if (res.user?.id != null && isAdminUser) {
+            final isConfirmed = statusToSend == 'Confirmée';
+            final isRefused = statusToSend == 'Annulée';
+            
+            if (isConfirmed || isRefused) {
+              final statusText = isConfirmed ? 'validée' : 'refusée';
+              final titleText = isConfirmed ? 'Réservation confirmée !' : 'Réservation refusée !';
+              final notifType = isConfirmed ? 'Confirmation_réservation' : 'Alerte';
+              
+              notifCtrl.sendNotification(
+                targetUserId: res.user!.id!,
+                title: titleText,
+                message: 'Votre réservation pour "$spaceName" a été $statusText par l\'administration.',
+                type: notifType,
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('Erreur envoi notification statut: $e');
         }
 
         Get.snackbar(
@@ -680,6 +815,44 @@ class BookingController extends GetxController {
         ),
       ),
       barrierDismissible: false,
+    );
+  }
+
+  void _showCapacityError(int available, int requested) {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(28.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.block_flipped, color: Colors.red, size: 64),
+              const SizedBox(height: 20),
+              const Text(
+                "Action impossible : Capacité insuffisante",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Il ne reste que $available places pour ce créneau, alors que vous en demandez $requested.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 15, color: Colors.black87),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Get.back(),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade800),
+                  child: const Text("Compris", style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../routing/app_routes.dart';
+import '../controllers/associations_controller.dart';
 
 class Sidebar extends StatelessWidget {
   const Sidebar({super.key});
@@ -101,6 +102,10 @@ class Sidebar extends StatelessWidget {
               final bool isAssoc = authController.isAssociation;
               final bool isSpaceManager = authController.isSpaceManager;
               final bool isAuthenticatedOnly = authController.isAuthenticatedOnly;
+              
+              final assocCtrl = Get.find<AssociationsController>();
+              final bool isAssocAdmin = assocCtrl.isCurrentUserAssocAdmin;
+              final bool isAssocMember = assocCtrl.isCurrentUserAssocMember;
 
               // Badge du rôle courant (affiché dans le menu pour info)
               final String roleName = authController.currentRoleName;
@@ -202,7 +207,7 @@ class Sidebar extends StatelessWidget {
                     const SizedBox(height: 32),
                     _buildSectionHeader('ENSEIGNANT'),
                     _buildMenuItem(
-                      title: 'Mes formations',
+                      title: 'Mes cours',
                       icon: Icons.menu_book_rounded,
                       isActive: currentRoute == AppRoutes.COURSES,
                       onTap: () => Get.offAllNamed(AppRoutes.COURSES),
@@ -224,12 +229,6 @@ class Sidebar extends StatelessWidget {
                       icon: Icons.assignment_outlined,
                       isActive: currentRoute == AppRoutes.TASKS && (Get.arguments is Map ? Get.arguments['isManagement'] == true : false),
                       onTap: () => Get.offAllNamed(AppRoutes.TASKS, arguments: {'isManagement': true}),
-                    ),
-                    _buildMenuItem(
-                      title: 'Communication',
-                      icon: Icons.chat_bubble_outline_rounded,
-                      isActive: currentRoute == AppRoutes.COMMUNICATION,
-                      onTap: () => Get.offAllNamed(AppRoutes.COMMUNICATION),
                     ),
                   ],
 
@@ -264,14 +263,8 @@ class Sidebar extends StatelessWidget {
                     _buildMenuItem(
                       title: 'Sessions',
                       icon: Icons.calendar_today_outlined,
-                      isActive: currentRoute == AppRoutes.TRAINING,
-                      onTap: () => Get.offAllNamed(AppRoutes.TRAINING),
-                    ),
-                    _buildMenuItem(
-                      title: 'Communication',
-                      icon: Icons.people_outline_rounded,
-                      isActive: currentRoute == AppRoutes.COMMUNICATION,
-                      onTap: () => Get.offAllNamed(AppRoutes.COMMUNICATION),
+                      isActive: currentRoute == AppRoutes.STUDENT_SESSIONS,
+                      onTap: () => Get.offAllNamed(AppRoutes.STUDENT_SESSIONS),
                     ),
                   ],
 
@@ -285,42 +278,38 @@ class Sidebar extends StatelessWidget {
                       isActive: currentRoute == AppRoutes.TRAINING,
                       onTap: () => Get.offAllNamed(AppRoutes.TRAINING),
                     ),
-                    _buildMenuItem(
-                      title: 'Abonnements',
-                      icon: Icons.calendar_month_outlined,
-                      isActive: currentRoute == AppRoutes.SUBSCRIPTION_PAYMENT,
-                      onTap: () => Get.offAllNamed(AppRoutes.SUBSCRIPTION_PAYMENT),
-                    ),
-                    _buildMenuItem(
-                      title: 'Mon Profil',
-                      icon: Icons.person_outline_rounded,
-                      isActive: currentRoute == AppRoutes.PROFILE,
-                      onTap: () => Get.offAllNamed(AppRoutes.PROFILE),
-                    ),
                   ],
 
                   // --- SECTION ASSOCIATION ---
-                  if (isAssoc || isAdmin) ...[
+                  // Visible si rôle Association OU Admin global OU si l'utilisateur est admin/membre d'une association réelle
+                  if (isAssoc || isAdmin || isAssocAdmin || isAssocMember) ...[
                     const SizedBox(height: 32),
                     _buildSectionHeader('ASSOCIATION'),
+                    
+                    // 1. Formations
                     _buildMenuItem(
                       title: 'Formations',
                       icon: Icons.menu_book_rounded,
                       isActive: currentRoute == AppRoutes.ASSOC_TRAININGS,
                       onTap: () => Get.offAllNamed(AppRoutes.ASSOC_TRAININGS),
                     ),
+                    
+                    // 2. Membres (Visible pour TOUS les membres de l'association)
                     _buildMenuItem(
                       title: 'Membres',
                       icon: Icons.people_outline,
                       isActive: currentRoute == AppRoutes.ASSOC_MEMBERS,
                       onTap: () => Get.offAllNamed(AppRoutes.ASSOC_MEMBERS),
                     ),
-                    _buildMenuItem(
-                      title: 'Budget & Utilisation',
-                      icon: Icons.bar_chart_rounded,
-                      isActive: currentRoute == AppRoutes.ASSOC_BUDGET,
-                      onTap: () => Get.offAllNamed(AppRoutes.ASSOC_BUDGET),
-                    ),
+                    
+                    // 3. Budget & Utilisation (Visible uniquement pour l'ADMIN de l'association ou Admin global)
+                    if (isAdmin || isAssocAdmin)
+                      _buildMenuItem(
+                        title: 'Budget & Utilisation',
+                        icon: Icons.bar_chart_rounded,
+                        isActive: currentRoute == AppRoutes.ASSOC_BUDGET,
+                        onTap: () => Get.offAllNamed(AppRoutes.ASSOC_BUDGET),
+                      ),
                   ],
                 ],
               );

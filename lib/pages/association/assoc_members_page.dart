@@ -26,6 +26,7 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   String _activeFilter = 'TOUS';
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchText = '';
+  int? _selectedAssocId; // ID de l'association actuellement sélectionnée pour affichage
 
   @override
   void dispose() {
@@ -48,38 +49,40 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
           vertical: isMobile ? 24.0 : 36.0,
         ),
         child: Obx(() {
-          // 🔹 IDENTIFICATION DE L'ASSOCIATION ACTIVE
-          // On cherche quelle association appartient à l'utilisateur actuellement connecté
-          final currentUser = Get.find<AuthController>().currentUser.value;
+          // 🔹 IDENTIFICATION DE L'ASSOCIATION ACTIVE VIA LE CONTROLLER
+          final List<Association> myAssocs = assocCtrl.myAssociations;
           Association? activeAssoc;
-          if (currentUser != null && currentUser['id'] != null) {
-            final myId = currentUser['id'] as int;
-            activeAssoc = assocCtrl.associations.firstWhereOrNull((a) {
-              // On vérifie si l'utilisateur est soit l'admin, soit un membre de l'association
-              if (a.admin?.id == myId) return true;
-              for (var m in (a.members ?? [])) {
-                if (m is Map && m['id'] == myId) return true;
-                if (m == myId) return true;
-              }
-              return false;
-            });
+          
+          if (myAssocs.isNotEmpty) {
+            // Si aucune sélection n'est encore faite, on prend la première
+            if (assocCtrl.selectedAssocId.value == null) {
+              assocCtrl.selectedAssocId.value = myAssocs.first.id;
+            }
+            
+            // On cherche l'association correspondant à la sélection
+            activeAssoc = myAssocs.firstWhereOrNull((a) => a.id == assocCtrl.selectedAssocId.value);
+            
+            // Si la sélection n'est plus valide (ex: association supprimée), on revient à la première
+            if (activeAssoc == null) {
+              activeAssoc = myAssocs.first;
+              assocCtrl.selectedAssocId.value = activeAssoc.id;
+            }
           }
-          // Si aucune asso trouvée, on prend la première par défaut
-          activeAssoc ??= assocCtrl.associations.isNotEmpty ? assocCtrl.associations.first : null;
 
           // 🔹 FILTRAGE DES MEMBRES
           // On ne garde que les utilisateurs du serveur qui appartiennent vraiment à cette association
           final filtered = _applyFilters(controller.users, activeAssoc);
+          final assocAdminId = activeAssoc?.admin?.id;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ─── EN-TÊTE ──────────────────────────────
-              _buildHeader(context, controller, isMobile, activeAssoc),
+              _buildHeader(context, controller, isMobile, activeAssoc, myAssocs),
               const SizedBox(height: 28),
 
               // ─── STATS CARDS ──────────────────────────
-              _buildStatsCards(filtered, isMobile),
+              _buildStatsCards(filtered, isMobile, assocAdminId: assocAdminId),
               const SizedBox(height: 24),
 
               // ─── RECHERCHE + FILTRES ──────────────────
@@ -90,8 +93,8 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
               filtered.isEmpty
                   ? _buildEmptyState()
                   : (isMobile
-                      ? _buildMobileCards(filtered, controller)
-                      : _buildDesktopGrid(filtered, controller, isMobile)),
+                      ? _buildMobileCards(filtered, controller, assocAdminId)
+                      : _buildDesktopGrid(filtered, controller, isMobile, assocAdminId)),
             ],
           );
         }),
@@ -102,7 +105,7 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   // ─────────────────────────────────────────────
   // EN-TÊTE : Affiche le nom de l'association dynamique
   // ─────────────────────────────────────────────
-  Widget _buildHeader(BuildContext context, UsersController controller, bool isMobile, Association? activeAssoc) {
+  Widget _buildHeader(BuildContext context, UsersController controller, bool isMobile, Association? activeAssoc, List<Association> myAssocs) {
     final titleCol = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -117,28 +120,58 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Association : ${activeAssoc?.name ?? 'Chargement...'}', // Affiche le vrai nom au lieu de Test Association
+          'Association : ${activeAssoc?.name ?? 'Chargement...'}', 
           style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
         ),
+        // 🔹 SELECTEUR SI PLUSIEURS ASSOCIATIONS
+        if (myAssocs.length > 1) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: activeAssoc?.id,
+                items: myAssocs.map((a) => DropdownMenuItem(
+                  value: a.id,
+                  child: Text(a.name ?? 'Sans nom', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                )).toList(),
+                onChanged: (newId) {
+                  if (newId != null) {
+                    Get.find<AssociationsController>().selectedAssocId.value = newId;
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
       ],
     );
+
+    final currentUser = Get.find<AuthController>().currentUser.value;
+    final bool isAssocAdmin = activeAssoc?.admin?.id != null && currentUser?['id'] == activeAssoc!.admin!.id;
 
     final actions = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ElevatedButton.icon(
-          onPressed: () => Get.dialog(const SendInvitationDialog()),
-          icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-          label: const Text('INVITATION', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.3)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF2563EB),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            elevation: 0,
+        if (isAssocAdmin) // Seul l'admin de l'asso peut inviter
+          ElevatedButton.icon(
+            onPressed: () => Get.dialog(const SendInvitationDialog()),
+            icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+            label: const Text('INVITATION', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.3)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
+        if (isAssocAdmin) const SizedBox(width: 10),
         // Bouton rafraîchir pour forcer le rechargement depuis le serveur
         Container(
           height: 42,
@@ -174,9 +207,10 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   // ─────────────────────────────────────────────
   // STATS CARDS : Calculées sur la liste filtrée
   // ─────────────────────────────────────────────
-  Widget _buildStatsCards(List<User> users, bool isMobile) {
+  Widget _buildStatsCards(List<User> users, bool isMobile, {int? assocAdminId}) {
     final total  = users.length;
-    final admins = users.where((u) => u.roleType.contains('admin')).length;
+    // L'admin est uniquement celui défini comme admin de l'association
+    final admins = assocAdminId != null ? users.where((u) => u.id == assocAdminId).length : 0;
     final members = total - admins;
 
     if (isMobile) {
@@ -338,9 +372,9 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
 
     // 3. Filtre par rôle (onglet 'ADMINS' ou 'MEMBRES')
     if (_activeFilter == 'ADMINS') {
-      result = result.where((u) => u.roleType.contains('admin')).toList();
+      result = result.where((u) => activeAssoc?.admin?.id == u.id).toList();
     } else if (_activeFilter == 'MEMBRES') {
-      result = result.where((u) => !u.roleType.contains('admin')).toList();
+      result = result.where((u) => activeAssoc?.admin?.id != u.id).toList();
     }
 
     return result;
@@ -349,23 +383,23 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   // ─────────────────────────────────────────────
   // GRILLE DESKTOP / LISTE MOBILE
   // ─────────────────────────────────────────────
-  Widget _buildDesktopGrid(List<User> users, UsersController controller, bool isMobile) {
+  Widget _buildDesktopGrid(List<User> users, UsersController controller, bool isMobile, int? assocAdminId) {
     return LayoutBuilder(builder: (context, constraints) {
       final columns = constraints.maxWidth > 900 ? 2 : 1;
-      return _buildGrid(users, controller, columns);
+      return _buildGrid(users, controller, columns, assocAdminId);
     });
   }
 
-  Widget _buildMobileCards(List<User> users, UsersController controller) {
-    return _buildGrid(users, controller, 1);
+  Widget _buildMobileCards(List<User> users, UsersController controller, int? assocAdminId) {
+    return _buildGrid(users, controller, 1, assocAdminId);
   }
 
-  Widget _buildGrid(List<User> users, UsersController controller, int columns) {
+  Widget _buildGrid(List<User> users, UsersController controller, int columns, int? assocAdminId) {
     if (columns == 1) {
       return Column(
         children: users.map((u) => Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: _memberCard(u, controller),
+          child: _memberCard(u, controller, assocAdminId),
         )).toList(),
       );
     }
@@ -374,10 +408,10 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
     for (int i = 0; i < users.length; i += 2) {
       rows.add(Row(
         children: [
-          Expanded(child: _memberCard(users[i], controller)),
+          Expanded(child: _memberCard(users[i], controller, assocAdminId)),
           const SizedBox(width: 16),
           if (i + 1 < users.length)
-            Expanded(child: _memberCard(users[i + 1], controller))
+            Expanded(child: _memberCard(users[i + 1], controller, assocAdminId))
           else
             const Expanded(child: SizedBox()),
         ],
@@ -390,8 +424,9 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   // ─────────────────────────────────────────────
   // CARTE MEMBRE : Individuelle pour chaque utilisateur
   // ─────────────────────────────────────────────
-  Widget _memberCard(User user, UsersController controller) {
-    final isAdmin = user.roleType.contains('admin');
+  Widget _memberCard(User user, UsersController controller, int? assocAdminId) {
+    // L'admin de la carte = celui dont l'ID correspond à l'admin de l'association (pas le rôle système)
+    final isAdmin = assocAdminId != null && user.id == assocAdminId;
     final initial = (user.username ?? '?')[0].toUpperCase();
     final avatarColor = isAdmin ? const Color(0xFF7C3AED) : const Color(0xFF2563EB);
 
@@ -407,7 +442,9 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
 
     // 👤 VÉRIFICATION "C'EST MOI" : Compare l'ID du membre avec l'ID connecté
     final currentUser = Get.find<AuthController>().currentUser.value;
-    final isMe = currentUser != null && currentUser['id'] == user.id;
+    final currentUserId = currentUser?['id'];
+    final isMe = currentUserId == user.id;
+    final bool isMeAssocAdmin = assocAdminId != null && currentUserId == assocAdminId;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -508,8 +545,8 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
             ],
           ),
 
-          // ─── Bouton RETIRER (uniquement pour les membres simples, pas pour l'admin) ───
-          if (!isAdmin) ...[
+          // ─── Bouton RETIRER (uniquement visible par l'admin de l'asso, pour retirer les autres) ───
+          if (isMeAssocAdmin && !isAdmin) ...[
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,

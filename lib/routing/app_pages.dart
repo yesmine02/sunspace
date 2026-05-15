@@ -27,7 +27,6 @@ import '../pages/student/training_page.dart' as student;
 import '../pages/student/my_courses_page.dart';
 import '../pages/student/course_catalog_page.dart';
 import '../pages/student/course_details_page.dart';
-import '../pages/student/study_spaces_page.dart';
 import '../pages/student/checkout_page.dart';
 import '../pages/association/assoc_trainings_page.dart';
 import '../pages/association/assoc_members_page.dart';
@@ -170,11 +169,6 @@ class AppPages {
     GetPage(
       name: AppRoutes.COURSE_DETAILS,
       page: () => DashboardLayout(child: const CourseDetailsPage()),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: AppRoutes.STUDY_SPACES,
-      page: () => DashboardLayout(child: const StudySpacesPage()),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(

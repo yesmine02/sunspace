@@ -80,20 +80,45 @@ class BookingDialog extends StatelessWidget {
               _buildServicesSelector(controller),
               const SizedBox(height: 24),
 
-              // 3. Paiement (si activé et si pas étudiant)
+              const Divider(height: 32),
+
+              // --- RÉCAPITULATIF DES PRIX (Toujours visible pour information) ---
+              const Text("Récapitulatif", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.shade100),
+                ),
+                child: Obx(() {
+                  final hours = controller.endDateTime.value.difference(controller.startDateTime.value).inMinutes / 60.0;
+                  final displayHours = hours < 1.0 ? 1.0 : hours;
+                  
+                  return Column(
+                    children: [
+                      if (controller.isMonthly.value)
+                        _buildPriceRow("Forfait Mensuel", "${space.monthlyPrice.toInt()} TND")
+                      else
+                        _buildPriceRow(
+                          "Espace (${space.hourlyPrice.toInt()} TND/h x ${displayHours.toStringAsFixed(displayHours == displayHours.toInt() ? 0 : 1)}h)", 
+                          "${(displayHours * space.hourlyPrice).toInt()} TND"
+                        ),
+                      
+                      if (controller.selectedServices.isNotEmpty)
+                        _buildPriceRow("Services extra", "${controller.selectedServices.fold<double>(0.0, (sum, s) => sum + ((controller.servicesCatalog[s]?['price'] as double?) ?? 0.0)).toInt()} TND"),
+                      const Divider(height: 24),
+                      _buildPriceRow("Total estimé", "${controller.totalAmount.value.toInt()} TND", isTotal: true),
+                    ],
+                  );
+                }),
+              ),
+              const SizedBox(height: 24),
+
+              // 3. Champs de Paiement (si activé et si pas étudiant)
               if (showPayment && !isStudent) ...[
                 _buildPaymentFields(controller),
-                const Divider(height: 48),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Total à payer :", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                    Obx(() => Text(
-                      "${controller.totalAmount.value.toStringAsFixed(2)} TND",
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
-                    )),
-                  ],
-                ),
                 const SizedBox(height: 24),
               ],
 
@@ -349,6 +374,27 @@ class BookingDialog extends StatelessWidget {
       hintText: hint, prefixIcon: Icon(icon, size: 20),
       filled: true, fillColor: Colors.grey.shade50,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+    );
+  }
+
+  Widget _buildPriceRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(
+            fontSize: isTotal ? 16 : 14, 
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isTotal ? const Color(0xFF1E3A8A) : const Color(0xFF1E40AF)
+          )),
+          Text(value, style: TextStyle(
+            fontSize: isTotal ? 18 : 14, 
+            fontWeight: FontWeight.bold,
+            color: isTotal ? const Color(0xFF1E3A8A) : const Color(0xFF1E40AF)
+          )),
+        ],
+      ),
     );
   }
 }

@@ -325,7 +325,7 @@ class _TrainingPageState extends State<TrainingPage> with SingleTickerProviderSt
 
   /// Construit la carte blanche détaillée pour une formation spécifique
   Widget _buildSessionCard(TrainingSession session, {required bool showUnenroll, required bool isMobile}) {
-    final bool isOnline = session.type == SessionType.enLigne || session.type == SessionType.hybride;
+    final bool isOnline = session.type == SessionType.enLigne;
     
     return Container(
       width: double.infinity,

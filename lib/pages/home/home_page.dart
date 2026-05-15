@@ -23,13 +23,14 @@ class HomePage extends StatelessWidget {
 
     debugPrint('🏠 DASHBOARD LOAD → Rôle détecté: ${authController.currentRoleType}');
 
+    final String userEmail = authController.currentUser.value?['email'] ?? '';
+    final bool isSpecialUser = userEmail.toLowerCase() == 'authenticated@sunevit.tn';
+
     Widget dashboard;
     if (authController.isInstructor) {
       dashboard = _InstructorDashboard(notifController: notifController);
-    } else if (authController.isStudent) {
-      dashboard = _StudentDashboard(notifController: notifController);
-    } else if (authController.isProfessional) {
-      dashboard = _ProfessionalDashboard(notifController: notifController);
+    } else if (authController.isStudent || authController.isProfessional || isSpecialUser) {
+      dashboard = _ModernDashboard(notifController: notifController);
     } else {
       dashboard = _AdminDashboard(notifController: notifController);
     }
@@ -43,38 +44,71 @@ class HomePage extends StatelessWidget {
 }
 
 // ============================================================
-// TABLEAU DE BORD PROFESSIONNEL
+// TABLEAU DE BORD MODERNE (POUR PROS, ÉTUDIANTS & AUTHENTICATED)
 // ============================================================
-class _ProfessionalDashboard extends StatelessWidget {
+class _ModernDashboard extends StatelessWidget {
   final NotificationController notifController;
-  const _ProfessionalDashboard({required this.notifController});
+  const _ModernDashboard({required this.notifController});
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 800;
+    
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildTopBar(notifController),
           const SizedBox(height: 24),
-          const Text('Tableau de bord', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text('Bienvenue dans votre espace professionnel', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-          const SizedBox(height: 28),
+          
+          // Header "Bienvenue"
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Bienvenue sur SUNSPACE', 
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                    const SizedBox(height: 4),
+                    Text('Gérez votre espace de travail', 
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.grid_view_rounded, color: Color(0xFF3B82F6), size: 24),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 32),
+          
           LayoutBuilder(builder: (context, constraints) {
-            if (constraints.maxWidth > 700) {
+            if (constraints.maxWidth > 900) {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(flex: 3, child: _buildProfessionalManagementCard()),
-                  const SizedBox(width: 20),
+                  // Colonne Gauche : Carte de navigation principale
+                  Expanded(
+                    flex: 3,
+                    child: _buildMainNavigationCard(),
+                  ),
+                  const SizedBox(width: 24),
+                  // Colonne Droite : CTA Bleu + Cours Populaires
                   Expanded(
                     flex: 2,
                     child: Column(
                       children: [
                         _buildOptimizeTimeCard(),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         _buildPopularCoursesCard(),
                       ],
                     ),
@@ -84,276 +118,117 @@ class _ProfessionalDashboard extends StatelessWidget {
             } else {
               return Column(
                 children: [
-                  _buildProfessionalManagementCard(),
-                  const SizedBox(height: 20),
+                  _buildMainNavigationCard(),
+                  const SizedBox(height: 24),
                   _buildOptimizeTimeCard(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                   _buildPopularCoursesCard(),
                 ],
               );
             }
           }),
-          const SizedBox(height: 28),
-          const Text('Actions rapides', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+          
+          const SizedBox(height: 40),
+          const Text('Actions rapides', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
           const SizedBox(height: 16),
-          _buildQuickActionsProfessional(),
+          _buildCommonQuickActions(context),
         ],
       ),
-    );
-  }
-
-  Widget _buildProfessionalManagementCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Gestion Professionnelle', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    const SizedBox(height: 2),
-                    Text('Vos outils de productivité', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12)),
-                child: Icon(Icons.business_center_rounded, color: Colors.blue.withOpacity(0.3), size: 22),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildActionItem(
-            icon: Icons.business_outlined, iconBg: const Color(0xFFEFF6FF), iconColor: const Color(0xFF3B82F6),
-            title: 'Mes Espaces', subtitle: 'Gérez vos espaces de travail',
-            onTap: () => Get.toNamed(AppRoutes.BOOK_SPACE), // BOUTON : Accéder à la réservation d'espaces
-          ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          _buildActionItem(
-            icon: Icons.assignment_outlined, iconBg: const Color(0xFFF0FDF4), iconColor: const Color(0xFF22C55E),
-            title: 'Mes Réservations', subtitle: 'Consultez vos réservations passées et futures',
-            onTap: () => Get.toNamed(AppRoutes.MY_RESERVATIONS), // BOUTON : Voir l'historique des réservations
-          ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          _buildActionItem(
-            icon: Icons.school_outlined, iconBg: const Color(0xFFF5F3FF), iconColor: const Color(0xFF8B5CF6),
-            title: 'Formations', subtitle: 'Explorez les sessions disponibles',
-            onTap: () => Get.toNamed(AppRoutes.TRAINING),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionsProfessional() {
-    final actions = [
-      {'label': 'Réserver', 'icon': Icons.calendar_today_rounded, 'route': AppRoutes.BOOK_SPACE, 'active': true},
-      {'label': 'Espaces', 'icon': Icons.business_outlined, 'route': AppRoutes.BOOK_SPACE, 'active': false},
-      {'label': 'Réservations', 'icon': Icons.assignment_outlined, 'route': AppRoutes.MY_RESERVATIONS, 'active': false},
-      {'label': 'Mon Profil', 'icon': Icons.person_outline_rounded, 'route': AppRoutes.PROFILE, 'active': false},
-    ];
-
-    return Row(
-      children: actions.map((a) {
-        final isActive = a['active'] as bool;
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: InkWell(
-              onTap: () => Get.toNamed(a['route'] as String),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isActive ? const Color(0xFFBFDBFE) : const Color(0xFFE2E8F0)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
-                ),
-                child: Column(
-                  children: [
-                    Icon(a['icon'] as IconData, size: 24, color: isActive ? const Color(0xFF2563EB) : Colors.grey[600]),
-                    const SizedBox(height: 8),
-                    Text(a['label'] as String, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isActive ? const Color(0xFF2563EB) : Colors.grey[700])),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }
 
-// ============================================================
-// TABLEAU DE BORD ÉTUDIANT
-// ============================================================
-class _StudentDashboard extends StatelessWidget {
-  final NotificationController notifController;
-  const _StudentDashboard({required this.notifController});
+Widget _buildMainNavigationCard() {
+  return Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: const Color(0xFFF1F5F9)),
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 10))],
+    ),
+    child: Column(
+      children: [
+        _buildActionItem(
+          icon: Icons.grid_view_rounded, iconBg: const Color(0xFFEFF6FF), iconColor: const Color(0xFF3B82F6),
+          title: 'Tableau de bord', subtitle: 'Vue d\'ensemble de votre activité',
+          onTap: () {},
+        ),
+        const Padding(
+          padding: EdgeInsets.only(left: 60),
+          child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+        ),
+        _buildActionItem(
+          icon: Icons.calendar_today_rounded, iconBg: const Color(0xFFF0FDF4), iconColor: const Color(0xFF22C55E),
+          title: 'Réserver un espace', subtitle: 'Trouvez et réservez votre bureau',
+          onTap: () => Get.toNamed(AppRoutes.BOOK_SPACE),
+        ),
+        const Padding(
+          padding: EdgeInsets.only(left: 60),
+          child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+        ),
+        _buildActionItem(
+          icon: Icons.person_outline_rounded, iconBg: const Color(0xFFF5F3FF), iconColor: const Color(0xFF8B5CF6),
+          title: 'Mon Profil', subtitle: 'Gérez vos informations personnelles',
+          onTap: () => Get.toNamed(AppRoutes.PROFILE),
+        ),
+      ],
+    ),
+  );
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTopBar(notifController),
-          const SizedBox(height: 24),
-          const Text('Tableau de bord', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text('Bienvenue dans votre espace d\'apprentissage', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-          const SizedBox(height: 28),
-          LayoutBuilder(builder: (context, constraints) {
-            if (constraints.maxWidth > 700) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 3, child: _buildLearningCard()),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      children: [
-                        _buildOptimizeTimeCard(),
-                        const SizedBox(height: 20),
-                        _buildPopularCoursesCard(),
-                      ],
-                    ),
-                  ),
+Widget _buildCommonQuickActions(BuildContext context) {
+  final actions = [
+    {'label': 'Tableau de bord', 'icon': Icons.grid_view_rounded, 'route': AppRoutes.DASHBOARD, 'active': true},
+    {'label': 'Réserver', 'icon': Icons.calendar_today_rounded, 'route': AppRoutes.BOOK_SPACE, 'active': false},
+    {'label': 'Paramètres', 'icon': Icons.settings_outlined, 'route': AppRoutes.SETTINGS, 'active': false},
+    {'label': 'Mon Profil', 'icon': Icons.person_outline_rounded, 'route': AppRoutes.PROFILE, 'active': false},
+  ];
+
+  return Row(
+    children: actions.map((a) {
+      final isActive = a['active'] as bool;
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: InkWell(
+            onTap: () {
+              if (a['route'] != AppRoutes.DASHBOARD) {
+                Get.toNamed(a['route'] as String);
+              }
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: isActive ? const Color(0xFF3B82F6).withOpacity(0.2) : const Color(0xFFF1F5F9)),
+                boxShadow: [
+                  if (isActive) 
+                    BoxShadow(color: const Color(0xFF3B82F6).withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+                  else
+                    BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10, offset: const Offset(0, 4))
                 ],
-              );
-            } else {
-              return Column(
+              ),
+              child: Column(
                 children: [
-                  _buildLearningCard(),
-                  const SizedBox(height: 20),
-                  _buildOptimizeTimeCard(),
-                  const SizedBox(height: 20),
-                  _buildPopularCoursesCard(),
+                  Icon(a['icon'] as IconData, size: 24, color: isActive ? const Color(0xFF3B82F6) : Colors.grey[400]),
+                  const SizedBox(height: 10),
+                  Text(a['label'] as String, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12, 
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.w500, 
+                        color: isActive ? const Color(0xFF3B82F6) : Colors.grey[600]
+                      )),
                 ],
-              );
-            }
-          }),
-          const SizedBox(height: 28),
-          const Text('Actions rapides', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          _buildQuickActionsStudent(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLearningCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Mon Apprentissage', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    const SizedBox(height: 2),
-                    Text('Reprenez là où vous vous étiez arrêté', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12)),
-                child: Icon(Icons.school_rounded, color: Colors.grey[300], size: 22),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildActionItem(
-            icon: Icons.menu_book_rounded, iconBg: const Color(0xFFEFF6FF), iconColor: const Color(0xFF3B82F6),
-            title: 'Consulter le catalogue', subtitle: 'Explorez les nouveaux cours disponibles',
-            onTap: () => Get.toNamed(AppRoutes.COURSE_CATALOG),
-          ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          _buildActionItem(
-            icon: Icons.location_on_rounded, iconBg: const Color(0xFFF5F3FF), iconColor: const Color(0xFF8B5CF6),
-            title: 'Réserver un espace', subtitle: 'Réservez votre place pour étudier',
-            onTap: () => Get.toNamed(AppRoutes.BOOK_SPACE),
-          ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          _buildActionItem(
-            icon: Icons.school_outlined, iconBg: const Color(0xFFFFF7ED), iconColor: const Color(0xFFF97316),
-            title: 'Mon profil e-learning', subtitle: 'Suivez votre progression et certificats',
-            onTap: () => Get.toNamed(AppRoutes.PROFILE),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionsStudent() {
-    final actions = [
-      {'label': 'Réserver', 'icon': Icons.calendar_today_rounded, 'route': AppRoutes.BOOK_SPACE, 'active': true},
-      {'label': 'Mes Cours', 'icon': Icons.menu_book_outlined, 'route': AppRoutes.MY_COURSES, 'active': false},
-      {'label': 'Catalogue', 'icon': Icons.school_outlined, 'route': AppRoutes.COURSE_CATALOG, 'active': false},
-      {'label': 'Mon Profil', 'icon': Icons.person_outline_rounded, 'route': AppRoutes.PROFILE, 'active': false},
-    ];
-
-    return Row(
-      children: actions.map((a) {
-        final isActive = a['active'] as bool;
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: InkWell(
-              onTap: () => Get.toNamed(a['route'] as String),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isActive ? const Color(0xFFBFDBFE) : const Color(0xFFE2E8F0)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
-                ),
-                child: Column(
-                  children: [
-                    Icon(a['icon'] as IconData, size: 24, color: isActive ? const Color(0xFF2563EB) : Colors.grey[600]),
-                    const SizedBox(height: 8),
-                    Text(a['label'] as String, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isActive ? const Color(0xFF2563EB) : Colors.grey[700])),
-                  ],
-                ),
               ),
             ),
           ),
-        );
-      }).toList(),
-    );
-  }
+        ),
+      );
+    }).toList(),
+  );
 }
 
 // ============================================================

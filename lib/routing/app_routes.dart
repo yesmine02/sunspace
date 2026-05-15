@@ -25,7 +25,6 @@ abstract class AppRoutes {
   static const COURSE_CATALOG = '/course-catalog';
   static const MY_COURSES = '/my-courses';
   static const COURSE_DETAILS = '/course-details';
-  static const STUDY_SPACES = '/study-spaces';
   static const CHECKOUT = '/checkout';
   // Student specific
   static const STUDENT_SESSIONS = '/student/sessions';

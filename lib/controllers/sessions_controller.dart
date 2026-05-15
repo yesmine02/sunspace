@@ -194,7 +194,7 @@ class SessionsController extends GetxController {
 
         bool isConfirmed = false;
 
-        // 1. Chercher le statut de la réservation liée (si présentiel/hybride)
+        // 1. Chercher le statut de la réservation liée (si présentiel)
         if (session.type != SessionType.enLigne) {
           isConfirmed = await _checkIfConfirmed(
             token: token, 

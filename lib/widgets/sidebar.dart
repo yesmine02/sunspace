@@ -255,12 +255,6 @@ class Sidebar extends StatelessWidget {
                       onTap: () => Get.offAllNamed(AppRoutes.COURSE_CATALOG),
                     ),
                     _buildMenuItem(
-                      title: "Espaces d'étude",
-                      icon: Icons.apartment_outlined,
-                      isActive: currentRoute == AppRoutes.STUDY_SPACES,
-                      onTap: () => Get.offAllNamed(AppRoutes.STUDY_SPACES),
-                    ),
-                    _buildMenuItem(
                       title: 'Sessions',
                       icon: Icons.calendar_today_outlined,
                       isActive: currentRoute == AppRoutes.STUDENT_SESSIONS,

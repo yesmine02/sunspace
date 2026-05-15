@@ -4,7 +4,7 @@
 //représenter une session de formation (titre, date, type, statut, participants…)
 import 'package:intl/intl.dart';
 
-enum SessionType { presentiel, hybride, enLigne }
+enum SessionType { presentiel, enLigne }
 enum SessionStatus { brouillon, publie }
 
 class TrainingSession {
@@ -48,7 +48,6 @@ class TrainingSession {
   String get typeLabel {
     switch (type) {
       case SessionType.presentiel: return 'Présentiel';
-      case SessionType.hybride: return 'Hybride';
       case SessionType.enLigne: return 'En ligne';
     }
   }
@@ -57,7 +56,6 @@ class TrainingSession {
   String get typeStrapiValue {
     switch (type) {
       case SessionType.presentiel: return 'Présentiel';
-      case SessionType.hybride: return 'Hybride';
       case SessionType.enLigne: return 'En_ligne';
     }
   }
@@ -142,12 +140,10 @@ class TrainingSession {
     if (typeStr == null) return SessionType.enLigne;
     if (typeStr == 'En_ligne') return SessionType.enLigne;
     if (typeStr == 'Presentiel') return SessionType.presentiel;
-    if (typeStr == 'Hybride') return SessionType.hybride;
     
     // Fallbacks
     String t = typeStr.toLowerCase();
     if (t.contains('présentiel') || t.contains('presentiel')) return SessionType.presentiel;
-    if (t.contains('hybride')) return SessionType.hybride;
     return SessionType.enLigne;
   }
 

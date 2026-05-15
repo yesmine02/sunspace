@@ -70,7 +70,7 @@ class MyCoursesPage extends StatelessWidget {
                     return Wrap(
                       spacing: 24,
                       runSpacing: 24,
-                      children: enrolledCourses.map<Widget>((course) => _buildCourseCard(course, isMobile)).toList(),
+                      children: enrolledCourses.map<Widget>((course) => _buildCourseCard(course, isMobile, controller)).toList(),
                     );
                   }),
                 ],
@@ -198,7 +198,7 @@ class MyCoursesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCourseCard(Course course, bool isMobile) {
+  Widget _buildCourseCard(Course course, bool isMobile, CoursesController controller) {
     return Container(
       width: isMobile ? double.infinity : 320,
       decoration: BoxDecoration(
@@ -283,27 +283,58 @@ class MyCoursesPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-                // BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Get.toNamed(AppRoutes.COURSE_DETAILS, arguments: course),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF007AFF),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      elevation: 0,
+                // BUTTONS (Leave & Access)
+                Row(
+                  children: [
+                    // LEAVE BUTTON
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Get.defaultDialog(
+                            title: "Quitter la formation",
+                            middleText: "Voulez-vous vraiment vous désinscrire de '${course.title}' ?",
+                            textConfirm: "Oui, quitter",
+                            textCancel: "Annuler",
+                            confirmTextColor: Colors.white,
+                            buttonColor: Colors.red,
+                            onConfirm: () async {
+                              Get.back(); // Fermer le dialogue
+                              await controller.unenrollFromCourse(course);
+                            },
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text("Quitter", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Text("Accéder", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-                        SizedBox(width: 12),
-                        Icon(Icons.chevron_right_rounded, size: 24),
-                      ],
+                    const SizedBox(width: 12),
+                    // ACCESS BUTTON
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Get.toNamed(AppRoutes.COURSE_DETAILS, arguments: course),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF007AFF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Text("Accéder", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                            SizedBox(width: 8),
+                            Icon(Icons.chevron_right_rounded, size: 20),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),

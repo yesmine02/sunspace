@@ -263,6 +263,71 @@ class BookingController extends GetxController {
 
   // ── Vérification dynamique de disponibilité ───────────────────
 
+  /// Vérifie si l'utilisateur a déjà une réservation active sur ce créneau (tout espace confondu)
+  Future<bool> _checkUserOverlap({
+    required String? token,
+    required dynamic userId,
+  }) async {
+    if (token == null || userId == null) return false; // Si token ou userId est null, retourne false
+
+    try {
+      final user = _auth.currentUser.value;
+      final String username = user?['username'] ?? '';
+      
+      // Utilisation d'organizer_name pour filtrer (plus cohérent avec fetchMyReservations)
+      final url = Uri.parse(
+        '$_baseUrl?filters[organizer_name][\$eq]=${Uri.encodeComponent(username)}'
+        '&filters[mystatus][\$in][0]=Confirmée'
+        '&filters[mystatus][\$in][1]=En_attente'
+        '&populate=false'
+      );
+
+      debugPrint('[BookingController] Vérification chevauchement pour $username: $url');
+
+      final response = await http.get(url, headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        debugPrint('[BookingController] Échec vérification: ${response.statusCode}');
+        return false;
+      }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final List<dynamic> existing = data['data'] ?? [];
+      
+      final newStart = startDateTime.value;
+      final newEnd = endDateTime.value;
+
+      debugPrint('[BookingController] Nouvelle résa: $newStart à $newEnd. ${existing.length} existantes trouvées.');
+
+      for (final res in existing) {
+        final dynamic rawStart = res['start_datetime'];
+        final dynamic rawEnd = res['end_datetime'];
+        
+        if (rawStart == null || rawEnd == null) continue;
+
+        final existStart = DateTime.parse(rawStart.toString()).toLocal();
+        final existEnd = DateTime.parse(rawEnd.toString()).toLocal();
+
+        debugPrint('[BookingController] Comparaison avec: $existStart à $existEnd');
+
+        // Chevauchement : (Début1 < Fin2) ET (Fin1 > Début2)
+        if (newStart.isBefore(existEnd) && newEnd.isAfter(existStart)) {
+          debugPrint('[BookingController] CONFLIT DÉTECTÉ');
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('[BookingController] Erreur vérification chevauchement: $e');
+      return false;
+    }
+
+  }
+
   /// Contacte le serveur Strapi et valide la capacité de l'espace.
   /// Algorithme : Places disponibles = (Capacité Max) - (Somme des places déjà Confirmées)
   Future<bool> _isSlotAvailable({
@@ -320,6 +385,7 @@ class BookingController extends GetxController {
       isCheckingAvailability.value = false;// Met fin à la vérification de disponibilité
     }
   }
+
 
   /// Récupère toutes les réservations d'un espace pour un jour spécifique
   Future<void> fetchSpaceReservationsOnDay(String spaceId, DateTime day) async {
@@ -380,6 +446,14 @@ class BookingController extends GetxController {
       if (!slotAllowed) {
         return false; // L'erreur de capacité est déjà gérée par _showCapacityError
       }
+
+      // Étape 2.1 : Vérifier si l'utilisateur a déjà une réservation sur ce créneau
+      final hasOverlap = await _checkUserOverlap(token: token, userId: user['id']);
+      if (hasOverlap) {
+        _showError("Réservation impossible", "Tu as déjà une réservation dans un autre espace dans ce temps.");
+        return false;
+      }
+
 
       // Étape 3 : Envoyer la réservation au serveur
       final body = {

@@ -418,16 +418,8 @@ class _AddAssocSessionDialogState extends State<AddAssocSessionDialog> {
   Widget _typeDropdown() => _dropdown<SessionType>(
         _selectedType,
         SessionType.values.map((t) {
-          final label = t == SessionType.presentiel
-              ? 'Présentiel'
-              : t == SessionType.hybride
-                  ? 'Hybride'
-                  : 'En ligne';
-          final icon = t == SessionType.presentiel
-              ? Icons.location_on
-              : t == SessionType.hybride
-                  ? Icons.domain_verification
-                  : Icons.videocam;
+          final label = t == SessionType.presentiel ? 'Présentiel' : 'En ligne';
+          final icon = t == SessionType.presentiel ? Icons.location_on : Icons.videocam;
           return DropdownMenuItem(
             value: t,
             child: Row(children: [

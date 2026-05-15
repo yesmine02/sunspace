@@ -58,20 +58,20 @@ class _SettingsPageState extends State<SettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 🔷 TITRE
-                  const Text(
+                  Text(
                     'Paramètres',
                     style: TextStyle(
-                      fontSize: 48,
+                      fontSize: isMobile ? 32 : 48,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
+                      color: const Color(0xFF0F172A),
                       letterSpacing: -1.0,
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Gérez vos préférences et votre sécurité',
                     style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0xFF64748B),
+                      fontSize: isMobile ? 15 : 18,
+                      color: const Color(0xFF64748B),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -148,7 +148,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSectionCard({required Widget child, Color? bgColor}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: bgColor ?? Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -173,13 +173,15 @@ class _SettingsPageState extends State<SettingsPage> {
           Row(
             children: [
               _buildIconBox(Icons.lock_outline_rounded, Colors.blue),
-              const SizedBox(width: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Sécurité', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                  Text('Modifier votre mot de passe', style: TextStyle(color: Color(0xFF64748B), fontSize: 15)),
-                ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('Sécurité', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                    Text('Modifier votre mot de passe', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -350,13 +352,15 @@ class _SettingsPageState extends State<SettingsPage> {
           Row(
             children: [
               _buildIconBox(Icons.notifications_none_rounded, Colors.blue),
-              const SizedBox(width: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Notifications', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                  Text('Contrôlez comment vous recevez les notifications', style: TextStyle(color: Color(0xFF64748B), fontSize: 15)),
-                ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                    Text('Contrôlez comment vous recevez les notifications', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -396,13 +400,15 @@ class _SettingsPageState extends State<SettingsPage> {
           Row(
             children: [
               _buildIconBox(Icons.account_balance_wallet_outlined, const Color(0xFF10B981)),
-              const SizedBox(width: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Compte Association', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                  Text('Gérez votre budget et vos services organisationnels', style: TextStyle(color: Color(0xFF64748B), fontSize: 15)),
-                ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('Compte Association', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                    Text('Gérez votre budget et vos services organisationnels', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                  ],
+                ),
               ),
             ],
           ),

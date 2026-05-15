@@ -270,6 +270,69 @@ class CoursesController extends GetxController {
     }
   }
 
+  // 🔹 UNENROLL FROM COURSE (Désinscription)
+  Future<bool> unenrollFromCourse(Course course) async {
+    isLoading.value = true;
+    try {
+      final auth = Get.find<AuthController>();
+      final userId = auth.currentUser.value?['id'];
+      String? token = auth.token ?? await SecureStorage.getToken();
+
+      if (token == null || userId == null) return false;
+
+      // 1. Chercher l'ID de l'enrollment pour ce cours et cet utilisateur
+      final searchUrl = 'http://193.111.250.244:3046/api/enrollments'
+          '?filters[student][id][\$eq]=$userId'
+          '&filters[course][id][\$eq]=${course.id}'
+          '&pagination[pageSize]=1';
+
+      final searchResponse = await http.get(
+        Uri.parse(searchUrl),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+      );
+
+      if (searchResponse.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(searchResponse.body)['data'] ?? [];
+        if (data.isEmpty) {
+          print("DEBUG: Aucune inscription trouvée pour le cours ${course.title}");
+          return false;
+        }
+
+        // Récupérer le documentId ou l'id de l'enrollment
+        final enrollment = data[0];
+        final enrollmentDocId = enrollment['documentId'] ?? enrollment['id'].toString();
+
+        // 2. Supprimer l'enrollment
+        final deleteUrl = 'http://193.111.250.244:3046/api/enrollments/$enrollmentDocId';
+        final deleteResponse = await http.delete(
+          Uri.parse(deleteUrl),
+          headers: _headers(token),
+        );
+
+        if (deleteResponse.statusCode == 200 || deleteResponse.statusCode == 204) {
+          print("DEBUG: Désinscription réussie pour le cours ${course.title}");
+          await fetchEnrollments(); // Mettre à jour la liste locale des inscrits
+          await loadCourses();      // Recharger pour mettre à jour l'affichage
+          
+          _showSnackbar('Succès', 'Vous avez quitté le cours : ${course.title}', Colors.orange);
+          return true;
+        } else {
+          print("DEBUG: Erreur suppression enrollment: ${deleteResponse.body}");
+          _showSnackbar('Erreur', 'Échec de la désinscription', Colors.red);
+          return false;
+        }
+      } else {
+        print("DEBUG: Erreur recherche enrollment: ${searchResponse.body}");
+        return false;
+      }
+    } catch (e) {
+      print('Erreur unenrollFromCourse: $e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // 🔹 GET ENROLLMENTS
   Future<void> fetchEnrollments() async {
     try {

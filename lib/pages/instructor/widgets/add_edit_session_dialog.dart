@@ -334,8 +334,8 @@ class _AddEditSessionDialogState extends State<AddEditSessionDialog> {
     return _buildDropdown<SessionType>(
       _selectedType,
       SessionType.values.map((t) {
-        String label = t == SessionType.presentiel ? 'Présentiel' : (t == SessionType.hybride ? 'Hybride' : 'En ligne');
-        IconData icon = t == SessionType.presentiel ? Icons.location_on : (t == SessionType.hybride ? Icons.domain_verification : Icons.videocam);
+        String label = t == SessionType.presentiel ? 'Présentiel' : 'En ligne';
+        IconData icon = t == SessionType.presentiel ? Icons.location_on : Icons.videocam;
         return DropdownMenuItem(
           value: t, 
           child: Row(

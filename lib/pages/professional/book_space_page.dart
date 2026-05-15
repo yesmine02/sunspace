@@ -646,6 +646,12 @@ class _BookSpacePageState extends State<BookSpacePage> {
                 _buildScheduleView(controller),
                 const SizedBox(height: 24),
 
+                // 1b. Nombre de personnes
+                const Text("Nombre de participants", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8),
+                _buildParticipantsSelector(controller, space),
+                const SizedBox(height: 24),
+
 
                 const Text("Services additionnels", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
@@ -703,9 +709,41 @@ class _BookSpacePageState extends State<BookSpacePage> {
                     );
                   }).toList(),
                 )),
-                const SizedBox(height: 24),
-
                 const Divider(height: 32),
+
+                // --- RÉCAPITULATIF DES PRIX ---
+                const Text("Récapitulatif", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.shade100),
+                  ),
+                  child: Obx(() {
+                    final hours = controller.endDateTime.value.difference(controller.startDateTime.value).inMinutes / 60.0;
+                    final displayHours = hours < 1.0 ? 1.0 : hours;
+                    
+                    return Column(
+                      children: [
+                        if (controller.isMonthly.value)
+                          _buildPriceRow("Forfait Mensuel", "${space.monthlyPrice.toInt()} TND")
+                        else
+                          _buildPriceRow(
+                            "Espace (${space.hourlyPrice.toInt()} TND/h x ${displayHours.toStringAsFixed(displayHours == displayHours.toInt() ? 0 : 1)}h)", 
+                            "${(displayHours * space.hourlyPrice).toInt()} TND"
+                          ),
+                        
+                        if (controller.selectedServices.isNotEmpty)
+                          _buildPriceRow("Services extra", "${controller.selectedServices.fold<double>(0.0, (sum, s) => sum + ((controller.servicesCatalog[s]?['price'] as double?) ?? 0.0)).toInt()} TND"),
+                        const Divider(height: 24),
+                        _buildPriceRow("Total estimé", "${controller.totalAmount.value.toInt()} TND", isTotal: true),
+                      ],
+                    );
+                  }),
+                ),
+                const SizedBox(height: 24),
 
                 // Bouton final de confirmation serveur
                 SizedBox(
@@ -910,6 +948,59 @@ class _BookSpacePageState extends State<BookSpacePage> {
         ],
       );
     });
+  }
+
+  /// Sélecteur de nombre de personnes (Inspiré du BookingDialog partagé)
+  Widget _buildParticipantsSelector(BookingController controller, Space space) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.people_outline, color: Colors.blue, size: 20),
+          const SizedBox(width: 12),
+          const Text("Participants", style: TextStyle(fontWeight: FontWeight.w500)),
+          const Spacer(),
+          IconButton(
+            onPressed: () { if (controller.numberOfPeople.value > 1) controller.numberOfPeople.value--; },
+            icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+          ),
+          Obx(() => Text(
+            "${controller.numberOfPeople.value}",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          )),
+          IconButton(
+            onPressed: () { if (controller.numberOfPeople.value < space.capacity) controller.numberOfPeople.value++; },
+            icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(
+            fontSize: isTotal ? 16 : 14, 
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isTotal ? Colors.blue.shade900 : Colors.blue.shade700
+          )),
+          Text(value, style: TextStyle(
+            fontSize: isTotal ? 18 : 14, 
+            fontWeight: FontWeight.bold,
+            color: isTotal ? Colors.blue.shade900 : Colors.blue.shade800
+          )),
+        ],
+      ),
+    );
   }
 }
 

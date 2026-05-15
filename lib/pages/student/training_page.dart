@@ -305,7 +305,7 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
   }
 
   Widget _buildSessionCard(TrainingSession session, {required bool showUnenroll, required bool isMobile}) {
-    final bool isOnline = session.type == SessionType.enLigne || session.type == SessionType.hybride;
+    final bool isOnline = session.type == SessionType.enLigne;
     
     return Container(
       width: double.infinity,

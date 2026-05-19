@@ -114,13 +114,13 @@ class FloorPlanPainter extends CustomPainter {
       ..color = kRoomBorder//couleur verte
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
-
+// fonction qui permet de dessiner une salle
     void room(Rect r, SpaceStatus status) {
       final color = _getStatusColor(status);
       canvas.drawRect(_s(r, sx, sy), Paint()..color = color.withOpacity(0.08));
       canvas.drawRect(_s(r, sx, sy), Paint()..color = color..style = PaintingStyle.stroke..strokeWidth = 2.5);
     }
-
+//fonction qui permet de dessiner une salle en polygone
     void roomPoly(List<Offset> pts, SpaceStatus status) {
       final p = _poly(pts, sx, sy);
       final color = _getStatusColor(status);
@@ -135,12 +135,14 @@ class FloorPlanPainter extends CustomPainter {
     ], _getAreaStatus('espace1'));
 
     // ── Right column rooms ─────────────────────────────
+    // on dessine les salles de la colonne de droite
     room(const Rect.fromLTRB(2263, 22,   2754, 452),  _getAreaStatus('espace2'));
     room(const Rect.fromLTRB(2261, 469,  2752, 840),  _getAreaStatus('espace3'));
     room(const Rect.fromLTRB(2261, 857,  2747, 1220), _getAreaStatus('espace4'));
     room(const Rect.fromLTRB(2263, 1237, 2747, 1630), _getAreaStatus('espace5'));
 
     // ── Center-right cluster ───────────────────────────
+    // on dessine les salles du cluster central-droit
     roomPoly([
       const Offset(1563, 1520), const Offset(1828, 1520), const Offset(1828, 1446),
       const Offset(2030, 1444), const Offset(2027, 1932), const Offset(1558, 1930),
@@ -155,17 +157,18 @@ class FloorPlanPainter extends CustomPainter {
     ], _getAreaStatus('espace7'));
 
     // ── Centre ────────────────────────────────────────
+    // on dessine les salles du centre
     room(const Rect.fromLTRB(829,  1122, 1205, 1512), _getAreaStatus('espace8'));
     room(const Rect.fromLTRB(470,  869,  814,  1579), _getAreaStatus('espace9'));
     room(const Rect.fromLTRB(14,   602,  453,  1458), _getAreaStatus('espace10'));
     room(const Rect.fromLTRB(473,  469,  770,  857),  _getAreaStatus('espace11'));
-
+    // on dessine les salles du cluster central-gauche
     roomPoly([
       const Offset(1065, 466), const Offset(1507, 464), const Offset(1509, 508),
       const Offset(1492, 511), const Offset(1492, 837), const Offset(1413, 840),
       const Offset(1411, 940), const Offset(1065, 943),
     ], _getAreaStatus('espace12'));
-
+// on dessine les salles du cluster central-droit
     roomPoly([
       const Offset(1499, 516), const Offset(1946, 518), const Offset(1944, 850),
       const Offset(1558, 854), const Offset(1558, 945), const Offset(1428, 943),
@@ -266,15 +269,19 @@ class FloorPlanPainter extends CustomPainter {
   }
 
   // ── 3. Interactive overlays ───────────────────────────
+  // cette partie du code permet d'afficher les zones sur le plan
+  // en survolant la souris
   void _drawInteractiveOverlays(Canvas canvas, double sx, double sy) {
     for (final area in areas) {
-      final bool isHov = area.slug == hoveredSlug;
-      final bool isSel = area.slug == selectedSlug;
-      if (!isHov && !isSel) continue;
+      final bool isHov = area.slug == hoveredSlug;// si la souris sur la zone
+      final bool isSel = area.slug == selectedSlug;// si la zone est selectionnée
+      if (!isHov && !isSel) continue;// si la souris n'est pas sur la zone et la zone n'est pas selectionnée, on passe
 
-      final path = area.getPath(sx, sy);
+      final path = area.getPath(sx, sy);// on recupere la zone
 
       // Fill
+      // Si la zone est selectionnée, on met en bleu
+      // Sinon, on met en vert
       canvas.drawPath(path,
           Paint()..color = isSel ? kSelectFill : kHoverFill);
 
@@ -288,9 +295,10 @@ class FloorPlanPainter extends CustomPainter {
   }
 
   // ── 4. Labels ─────────────────────────────────────────
+  // cette partie du code permet d'afficher les noms des espaces sur le plan
   void _drawLabels(Canvas canvas, double sx, double sy) {
     final Map<String, Offset> centres = {
-      'espace1':  const Offset(1085, 230),
+      'espace1':  const Offset(1085, 230),//milieu du rectangle
       'espace2':  const Offset(2508, 237),
       'espace3':  const Offset(2506, 654),
       'espace4':  const Offset(2504, 1038),
@@ -306,7 +314,7 @@ class FloorPlanPainter extends CustomPainter {
     };
 
     final bgPaint = Paint()..color = Colors.white.withOpacity(0.75);
-
+// pour chaque espace on recupere le slug, le centre, si la souris est sur la zone et si la zone est selectionnée
     for (final entry in centres.entries) {
       final slug = entry.key;
       final centre = entry.value;
@@ -321,7 +329,7 @@ class FloorPlanPainter extends CustomPainter {
         fontSize: 11 * math.min(sx, sy) * (W / 500),
         fontWeight: (isHov || isSel) ? FontWeight.bold : FontWeight.normal,
       );
-
+// on affiche le nom de l'espace
       final tp = TextPainter(
         text: TextSpan(text: label, style: textStyle),
         textDirection: TextDirection.ltr,
@@ -331,6 +339,7 @@ class FloorPlanPainter extends CustomPainter {
       final dy = centre.dy * sy - tp.height / 2;
 
       // Background pill
+      // on ajoute un fond blanc derriere le nom de l'espace
       final bgRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(dx - 4, dy - 2, tp.width + 8, tp.height + 4),
         const Radius.circular(4),
@@ -342,7 +351,7 @@ class FloorPlanPainter extends CustomPainter {
   }
 
   // ── Helpers ───────────────────────────────────────────
-  
+  // pour chaque espace on recupere le statut
   SpaceStatus _getAreaStatus(String slug) {
     try {
       return areas.firstWhere((a) => a.slug == slug).status;
@@ -350,7 +359,7 @@ class FloorPlanPainter extends CustomPainter {
       return SpaceStatus.disponible;
     }
   }
-
+// pour chaque statut on recupere la couleur correspondante
   Color _getStatusColor(SpaceStatus status) {
     switch (status) {
       case SpaceStatus.disponible: return kStatusFree;
@@ -378,7 +387,7 @@ class FloorPlanPainter extends CustomPainter {
     return p;
   }
 
-  /// Draw a conference table with chairs around it
+  // on dessine un table de conférence avec des chaises autour
   void _drawConferenceTable(Canvas canvas, Rect raw, int cols, int rows,
       double sx, double sy) {
     final r = _s(raw, sx, sy);
@@ -482,6 +491,7 @@ class FloorPlanPainter extends CustomPainter {
   }
 
   /// Draw a cluster of desks (rows x cols)
+  // on dessine des bureaux avec des chaises autour
   void _drawDeskCluster(Canvas canvas, Offset origin, int rows, int cols,
       double sx, double sy) {
     final dw = 130.0 * sx;
@@ -509,6 +519,7 @@ class FloorPlanPainter extends CustomPainter {
   }
 
   /// Draw a pod / cluster seating group
+  // on dessine un table ronde avec des chaises autour
   void _drawPodGroup(Canvas canvas, Offset origin, double sx, double sy) {
     final o = _sc(origin, sx, sy);
     final r = 30.0 * math.min(sx, sy);
@@ -561,6 +572,7 @@ class FloorPlanPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5);
     // Steps
+    // on dessine des escaliers en trait
     final steps = 6;
     final stepH = r.height / steps;
     for (int i = 0; i <= steps; i++) {

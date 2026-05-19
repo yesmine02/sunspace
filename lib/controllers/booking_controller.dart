@@ -474,6 +474,7 @@ class BookingController extends GetxController {
           "organizer_name": user['username'] ?? "Utilisateur",
           "organizer_phone": user['phone'] ?? "00000000",
           "space": space.documentId ?? space.id,
+          "user": user['id'], // 🔗 Liaison indispensable pour les notifications
         }
       };
 
@@ -715,18 +716,23 @@ class BookingController extends GetxController {
             final isConfirmed = statusToSend == 'Confirmée';
             final isRefused = statusToSend == 'Annulée';
             
+            debugPrint('🔔 Tentative notification user ${res.user!.id} | Status: $statusToSend');
+
             if (isConfirmed || isRefused) {
               final statusText = isConfirmed ? 'validée' : 'refusée';
               final titleText = isConfirmed ? 'Réservation confirmée !' : 'Réservation refusée !';
               final notifType = isConfirmed ? 'Confirmation_réservation' : 'Alerte';
               
-              notifCtrl.sendNotification(
+              await notifCtrl.sendNotification(
                 targetUserId: res.user!.id!,
                 title: titleText,
                 message: 'Votre réservation pour "$spaceName" a été $statusText par l\'administration.',
                 type: notifType,
+                actionUrl: '/dashboard/student/reservations',
               );
             }
+          } else {
+            debugPrint('⚠️ Notif impossible : user.id=${res.user?.id} | isAdmin=$isAdminUser');
           }
         } catch (e) {
           debugPrint('Erreur envoi notification statut: $e');

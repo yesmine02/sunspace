@@ -388,7 +388,7 @@ class CoursesController extends GetxController {
     if (course.documentId != null && enrolledCourseDocumentIds.contains(course.documentId)) return true;
     return false;
   }
-
+// recherche de cours
   void updateSearch(String query) => searchQuery.value = query;
 
   List<Course> get filteredCourses {

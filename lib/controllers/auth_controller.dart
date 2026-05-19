@@ -9,7 +9,7 @@ import 'notification_controller.dart'; // 🔔 Pour rafraîchir les notifs aprè
 class AuthController extends GetxController {
   final String baseUrl = 'http://193.111.250.244:3046/api';
 
-  var isLoggedIn = false.obs;
+  var isLoggedIn = false.obs;// vrai si l'utilisateur est connecté
   var isLoading = false.obs;
   String? token;
   final currentUser = Rxn<Map<String, dynamic>>();

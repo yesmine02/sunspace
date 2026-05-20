@@ -275,6 +275,7 @@ class BookingController extends GetxController {
         '$_baseUrl?filters[organizer_name][\$eq]=${Uri.encodeComponent(username)}'
         '&filters[mystatus][\$in][0]=Confirmée'
         '&filters[mystatus][\$in][1]=En_attente'
+        '&pagination[pageSize]=100&sort=createdAt:desc'
         '&populate=false'
       );
 
@@ -337,7 +338,8 @@ class BookingController extends GetxController {
 
     try {
       final url = Uri.parse(
-        '$_baseUrl?filters[space][documentId][\$eq]=$spaceId&filters[mystatus][\$eq]=Confirmée&populate=false'
+        '$_baseUrl?filters[space][documentId][\$eq]=$spaceId&filters[mystatus][\$eq]=Confirmée'
+        '&pagination[pageSize]=100&sort=createdAt:desc&populate=false'
       );
       
       final response = await http.get(url, headers: {

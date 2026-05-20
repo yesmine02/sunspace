@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../controllers/sessions_controller.dart';
 import '../../controllers/auth_controller.dart';
-import '../../controllers/associations_controller.dart';
 import '../../data/models/training_session.dart';
 
 class TrainingPage extends StatefulWidget {

@@ -626,7 +626,7 @@ class _AddAssocSessionDialogState extends State<AddAssocSessionDialog> {
     String sessionNotes = notes;
     if (_selectedType != SessionType.enLigne && _selectedSpace != null) {
       final spaceName = _selectedSpace!.name;
-      sessionNotes = "📍 Espace: $spaceName\n${sessionNotes}".trim();
+      sessionNotes = "📍 Espace: $spaceName\n$sessionNotes".trim();
     }
 
     final session = TrainingSession(

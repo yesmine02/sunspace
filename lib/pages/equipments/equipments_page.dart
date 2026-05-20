@@ -112,7 +112,7 @@ class EquipmentsPage extends StatelessWidget {
                         dividerColor: Colors.grey[100],
                       ),
                       child: DataTable(
-                        headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
+                        headingRowColor: WidgetStateProperty.all(const Color(0xFFFDFDFD)),
                         dataRowHeight: 72,
                         horizontalMargin: 16,
                         columnSpacing: 16,
@@ -129,7 +129,7 @@ class EquipmentsPage extends StatelessWidget {
                                               equipment.status == EquipmentStatus.enMaintenance;
                           
                           return DataRow(
-                            color: isBroken ? MaterialStateProperty.all(Colors.grey.shade50.withOpacity(0.5)) : null,
+                            color: isBroken ? WidgetStateProperty.all(Colors.grey.shade50.withOpacity(0.5)) : null,
                             cells: [
                               DataCell(Column(
                                 mainAxisAlignment: MainAxisAlignment.center,

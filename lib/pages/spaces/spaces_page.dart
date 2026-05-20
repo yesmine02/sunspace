@@ -111,7 +111,7 @@ class SpacesPage extends StatelessWidget {
                         dividerColor: Colors.grey[100],
                       ),
                       child: DataTable(
-                        headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
+                        headingRowColor: WidgetStateProperty.all(const Color(0xFFFDFDFD)),
                         dataRowHeight: 64,
                         horizontalMargin: 16,
                         columnSpacing: 16,

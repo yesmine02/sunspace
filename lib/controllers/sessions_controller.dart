@@ -11,9 +11,6 @@ import 'package:http/http.dart' as http;
 import '../data/models/training_session.dart';
 import '../data/local/secure_storage.dart';
 import 'auth_controller.dart';
-import 'notification_controller.dart';
-import 'courses_controller.dart';
-import 'spaces_controller.dart';
 import 'booking_controller.dart';
 
 

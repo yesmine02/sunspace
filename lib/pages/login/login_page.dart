@@ -168,10 +168,6 @@ class LoginPage extends StatelessWidget {
                     if (success) {
                       // Si connexion réussie, va vers le Dashboard
                       Get.offAllNamed(AppRoutes.DASHBOARD);
-                    } else {
-                      // Sinon affiche un message d'erreur
-                      Get.snackbar('Erreur', 'Email ou mot de passe incorrect',
-                          snackPosition: SnackPosition.BOTTOM);
                     }
                   },
                   style: ElevatedButton.styleFrom(

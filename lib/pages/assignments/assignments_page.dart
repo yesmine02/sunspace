@@ -12,9 +12,8 @@ import '../../routing/app_routes.dart';
 import '../../widgets/notification_bell.dart';
 import './widgets/add_edit_assignment_dialog.dart';
 import './widgets/view_assignment_dialog.dart';
-import './widgets/submit_work_dialog.dart';
 import '../../controllers/auth_controller.dart';
-import '../student/course_details_page.dart'; // Pour d'éventuels helpers si besoin
+// Pour d'éventuels helpers si besoin
 
 class AssignmentsPage extends StatelessWidget {
   const AssignmentsPage({super.key});
@@ -597,8 +596,8 @@ class AssignmentsPage extends StatelessWidget {
         data: Theme.of(Get.context!).copyWith(
           dividerColor: Colors.transparent,
           dataTableTheme: DataTableThemeData(
-            headingRowColor: MaterialStateProperty.all(Colors.white),
-            dataRowColor: MaterialStateProperty.all(Colors.white),
+            headingRowColor: WidgetStateProperty.all(Colors.white),
+            dataRowColor: WidgetStateProperty.all(Colors.white),
           ),
         ),
         child: SingleChildScrollView(

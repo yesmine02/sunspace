@@ -185,14 +185,61 @@ class AuthController extends GetxController {
         String? jwt = data['jwt'];
 
         if (jwt != null) {
+          final user = data['user'];
+          if (user != null) {
+            if (user['blocked'] == true) {
+              Get.snackbar(
+                'Accès refusé', 
+                'Votre compte a été bloqué par l\'administrateur.',
+                backgroundColor: const Color(0xFFFEE2E2),
+                colorText: const Color(0xFF991B1B),
+              );
+              return false;
+            }
+            if (user['confirmed'] == false) {
+              Get.snackbar(
+                'Accès refusé', 
+                'Votre compte n\'est pas encore confirmé.',
+                backgroundColor: const Color(0xFFFEF3C7),
+                colorText: const Color(0xFF92400E),
+              );
+              return false;
+            }
+          }
+
           await _saveToken(jwt);
-          if (data['user'] != null) {  //si les infos utilisateur sont présente
-            currentUser.value = data['user'];//met à jour l’utilisateur actuel dans l’application.
-            await SecureStorage.saveUser(data['user']);
+          if (user != null) {  //si les infos utilisateur sont présente
+            currentUser.value = user;//met à jour l’utilisateur actuel dans l’application.
+            await SecureStorage.saveUser(user);
           }
           // Fetch the exact role from the server
           try {
             await _fetchAndUpdateRole(jwt);
+            
+            // Re-check after full fetch just in case
+            final fullUser = currentUser.value;
+            if (fullUser != null) {
+              if (fullUser['blocked'] == true) {
+                await logout();
+                Get.snackbar(
+                  'Accès refusé', 
+                  'Votre compte a été bloqué par l\'administrateur.',
+                  backgroundColor: const Color(0xFFFEE2E2),
+                  colorText: const Color(0xFF991B1B),
+                );
+                return false;
+              }
+              if (fullUser['confirmed'] == false) {
+                await logout();
+                Get.snackbar(
+                  'Accès refusé', 
+                  'Votre compte n\'est pas encore confirmé.',
+                  backgroundColor: const Color(0xFFFEF3C7),
+                  colorText: const Color(0xFF92400E),
+                );
+                return false;
+              }
+            }
           } catch (e) {
             debugPrint('⚠️ Alerte : Connexion réussie mais impossible de charger le rôle : $e');
           }
@@ -206,14 +253,39 @@ class AuthController extends GetxController {
           }
         }
 
-        Get.snackbar('Succès', 'Connexion réussie');
+        Get.snackbar('Succès', 'Connexion réussie', backgroundColor: const Color(0xFFDCFCE7), colorText: const Color(0xFF166534));
         return true;
       } else {
-        Get.snackbar('Erreur', 'Email ou mot de passe incorrect');
+        String errorMsg = 'Email ou mot de passe incorrect';
+        debugPrint('🚫 LOGIN ERROR RESPONSE BODY: ${response.body}');
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData['error'] != null && errorData['error']['message'] != null) {
+            final serverMsg = errorData['error']['message'].toString().toLowerCase();
+            if (serverMsg.contains('block')) {
+              errorMsg = 'Votre compte a été bloqué par l\'administrateur.';
+            } else if (serverMsg.contains('confirm') || serverMsg.contains('active')) {
+              errorMsg = 'Votre compte n\'est pas encore confirmé.';
+            }
+          }
+        } catch (e) {
+          debugPrint('Error parsing login error: $e');
+        }
+
+        if (response.statusCode == 500) {
+          errorMsg = 'Erreur serveur (Le compte est peut-être bloqué ou inactif).';
+        }
+
+        Get.snackbar(
+          'Erreur', 
+          errorMsg, 
+          backgroundColor: const Color(0xFFFEE2E2), 
+          colorText: const Color(0xFF991B1B)
+        );
         return false;
       }
     } catch (e) {
-      Get.snackbar('Erreur', 'Impossible de se connecter au serveur: $e');
+      Get.snackbar('Erreur', 'Impossible de se connecter au serveur: $e', backgroundColor: const Color(0xFFFEE2E2), colorText: const Color(0xFF991B1B));
       return false;
     } finally {
       isLoading.value = false;
@@ -369,7 +441,7 @@ class AuthController extends GetxController {
           return true;
         } else {
           debugPrint('❌ Update User Image Error: ${updateResponse.body}');
-          Get.snackbar('Erreur Lien', 'ID: ${fileId} - Statut: ${updateResponse.statusCode}', backgroundColor: Colors.orange, colorText: Colors.white);
+          Get.snackbar('Erreur Lien', 'ID: $fileId - Statut: ${updateResponse.statusCode}', backgroundColor: Colors.orange, colorText: Colors.white);
         }
       } else {
         debugPrint('❌ Upload Request Error (${response.statusCode}): ${response.body}');

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../controllers/assignments_controller.dart';
-import '../../../data/models/assignment.dart';
 
 class SubmitWorkDialog extends StatefulWidget {
   final dynamic assignment; // Peut être un Assignment ou un objet JSON compatible

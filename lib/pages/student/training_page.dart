@@ -363,7 +363,7 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
             runSpacing: 12,
             children: [
               _buildInfoItem(Icons.calendar_today_rounded, DateFormat('d MMM yyyy', 'fr_FR').format(session.startDate ?? DateTime.now())),
-              _buildInfoItem(Icons.access_time_rounded, "${DateFormat('HH:mm').format(session.startDate ?? DateTime.now())}"),
+              _buildInfoItem(Icons.access_time_rounded, DateFormat('HH:mm').format(session.startDate ?? DateTime.now())),
               _buildInfoItem(Icons.people_alt_outlined, "${session.currentParticipants}/${session.maxParticipants}"),
               if (session.instructorName != null)
                 _buildInfoItem(Icons.person_rounded, session.instructorName!),

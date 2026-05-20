@@ -11,7 +11,6 @@ import '../../controllers/auth_controller.dart';
 import '../../controllers/associations_controller.dart';
 import '../../data/models/user.dart';
 import '../../data/models/association_model.dart';
-import '../users/widgets/edit_user_dialog.dart';
 import 'widgets/send_invitation_dialog.dart';
 
 class AssocMembersPage extends StatefulWidget {

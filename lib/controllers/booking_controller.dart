@@ -115,10 +115,6 @@ class BookingController extends GetxController {
     }
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 
   // ── Getters calculés ─────────────────────────────────────────
 // Filtre les réservations selon le filtre sélectionné

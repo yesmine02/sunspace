@@ -78,9 +78,9 @@ class FloorPlanPainter extends CustomPainter {
   static const Color kFurnBorder   = Color(0xFFBDBDBD);
   static const Color kPlantFill    = Color(0xFF7ED9A0); // green plant
   static const Color kPlantDark    = Color(0xFF4CB87A);
-  static const Color kHoverFill    = Color(0xFF7ED9A020);
+  static const Color kHoverFill    = Color(0xff7ed9a020);
   static const Color kHoverBorder  = Color(0xFF4CB87A);
-  static const Color kSelectFill   = Color(0xFF2563EB20);
+  static const Color kSelectFill   = Color(0xff2563eb20);
   static const Color kSelectBorder = Color(0xFF2563EB);
   static const Color kWall         = Color(0xFFAAAAAA);
 

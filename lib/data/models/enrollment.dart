@@ -30,7 +30,7 @@ class StudentEnrollment {
       studentEmail: student['email'] ?? '-',
       courseTitle: course['title'] ?? 'Cours inconnu',
       progressPercentage: (json['progress_percentage'] ?? 0).toDouble(),
-      enrollmentDate: json['enrolled_at'] != null ? json['enrolled_at'] : '-',
+      enrollmentDate: json['enrolled_at'] ?? '-',
     );
   }
 }

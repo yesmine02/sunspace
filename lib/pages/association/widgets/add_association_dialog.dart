@@ -207,7 +207,7 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                     Switch(
                       value: _isVerified,
                       onChanged: (v) => setState(() => _isVerified = v),
-                      activeColor: const Color(0xFF2563EB),
+                      activeThumbColor: const Color(0xFF2563EB),
                     ),
                     const SizedBox(width: 8),
                     const Text(

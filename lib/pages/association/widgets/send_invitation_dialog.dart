@@ -4,7 +4,6 @@ import '../../../controllers/users_controller.dart';
 import '../../../data/models/user.dart';
 import '../../../controllers/associations_controller.dart';
 import '../../../controllers/auth_controller.dart';
-import '../../../data/models/association_model.dart';
 
 class SendInvitationDialog extends StatefulWidget {
   const SendInvitationDialog({super.key});

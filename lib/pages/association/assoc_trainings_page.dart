@@ -495,7 +495,7 @@ class AssocTrainingsPage extends StatelessWidget {
           dataRowHeight: 80,
           horizontalMargin: 24,
           columnSpacing: 32,
-          headingRowColor: MaterialStateProperty.all(const Color(0xFFF8FAFC)),
+          headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
           columns: [
             const DataColumn(label: Text('FORMATION',     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
             const DataColumn(label: Text('TYPE',         style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),

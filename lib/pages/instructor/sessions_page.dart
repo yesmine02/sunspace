@@ -8,7 +8,6 @@ import 'package:get/get.dart';
 import '../../controllers/sessions_controller.dart';
 import '../../data/models/training_session.dart';
 import '../../controllers/auth_controller.dart';
-import '../../controllers/associations_controller.dart';
 import 'package:sunspace/pages/instructor/widgets/add_edit_session_dialog.dart';
 
 class SessionsPage extends StatelessWidget {
@@ -335,8 +334,8 @@ class SessionsPage extends StatelessWidget {
         data: Theme.of(Get.context!).copyWith(
           dividerColor: Colors.transparent,
           dataTableTheme: DataTableThemeData(
-            headingRowColor: MaterialStateProperty.all(Colors.white),
-            dataRowColor: MaterialStateProperty.all(Colors.white),
+            headingRowColor: WidgetStateProperty.all(Colors.white),
+            dataRowColor: WidgetStateProperty.all(Colors.white),
           )
         ),
         child: SingleChildScrollView(

@@ -11,7 +11,6 @@ import '../pages/instructor/students_page.dart';
 import '../pages/reservations/reservations_page.dart';
 import '../pages/instructor/courses_page.dart';
 import '../pages/instructor/sessions_page.dart';
-import '../controllers/auth_controller.dart';
 
 import '../pages/assignments/assignments_page.dart';
 import '../pages/analytics/analytics_page.dart';

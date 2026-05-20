@@ -302,7 +302,7 @@ class CoursesPage extends StatelessWidget {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
+            headingRowColor: WidgetStateProperty.all(const Color(0xFFFDFDFD)),
             dataRowHeight: 64,
             horizontalMargin: 24,
             columnSpacing: 24,

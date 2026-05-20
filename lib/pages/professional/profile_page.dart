@@ -348,8 +348,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                   // Fallback secondaire
                                   else {
                                     final fallback = user?['image'] ?? user?['photo'] ?? user?['images'];
-                                    if (fallback is Map) imageUrl = fallback['url'];
-                                    else if (fallback is List && fallback.isNotEmpty) imageUrl = fallback[0]['url'];
+                                    if (fallback is Map) {
+                                      imageUrl = fallback['url'];
+                                    } else if (fallback is List && fallback.isNotEmpty) imageUrl = fallback[0]['url'];
                                   }
 
                                   if (imageUrl != null) {

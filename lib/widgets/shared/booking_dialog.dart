@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/services.dart';
 import '../../controllers/booking_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../data/models/space.dart';
@@ -12,7 +11,7 @@ class BookingDialog extends StatelessWidget {
   final bool showPayment;
   final int? initialParticipants;
 
-  const BookingDialog({
+  const BookingDialog({super.key, 
     required this.space, 
     required this.isMobile,
     this.showPayment = true,

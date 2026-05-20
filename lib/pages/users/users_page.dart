@@ -108,7 +108,7 @@ class UsersPage extends StatelessWidget {
                         dataRowHeight: 80,
                         horizontalMargin: 24,
                         columnSpacing: 24,
-                        headingRowColor: MaterialStateProperty.all(const Color(0xFFFDFDFD)),
+                        headingRowColor: WidgetStateProperty.all(const Color(0xFFFDFDFD)),
                         dividerThickness: 1,
                         columns: const [
                           DataColumn(label: Text('Utilisateur', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),

@@ -186,8 +186,8 @@ class TrainingSession {
         'meeting_url': (meetingLink != null && meetingLink!.isNotEmpty) ? meetingLink : null,
         'notes': (notes != null && notes!.isNotEmpty) ? notes : null,
         'mystatus': statusString, // "Planifiée"
-        if (instructorId != null) 'instructor': instructorId,
-        if (numericCourseId != null) 'course': numericCourseId,
+        'instructor': ?instructorId,
+        'course': ?numericCourseId,
       }
     };
   }

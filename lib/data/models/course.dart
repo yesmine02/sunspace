@@ -3,7 +3,6 @@
 // ============================================
 //représenter une formation dans l’application (ses infos comme titre, prix, niveau…) 
 //pour pouvoir les utiliser et les envoyer au serveur.
-import 'package:get/get.dart';
 
 enum CourseLevel { debutant, intermediaire, avance }
 enum CourseStatus { brouillon, publie }
@@ -93,7 +92,7 @@ class Course {
         'price': price.toInt(),
         'description': description,
         'mystatus': statusString, // Envoie 'Brouillon' ou 'Publié'
-        if (instructorId != null) 'instructor': instructorId,
+        'instructor': ?instructorId,
       }
     };
   }

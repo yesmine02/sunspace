@@ -475,8 +475,9 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
       course = args;
     } else if (args is Map) {
       final dynamic c = args['course'];
-      if (c is Course) course = c;
-      else if (c is Assignment) {
+      if (c is Course) {
+        course = c;
+      } else if (c is Assignment) {
         final String? cid = c.courseId;
         if (cid != null) {
           course = _coursesController.courses.firstWhereOrNull((course) => course.id.toString() == cid);

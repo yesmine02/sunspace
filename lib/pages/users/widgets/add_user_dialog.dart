@@ -134,14 +134,38 @@ class _AddUserDialogState extends State<AddUserDialog> {
                 isMobile 
                   ? Column(
                       children: [
-                        _buildToggleRow('Confirmé', _isConfirmed, (val) => setState(() => _isConfirmed = val)),
-                        _buildToggleRow('Bloqué', _isBlocked, (val) => setState(() => _isBlocked = val)),
+                        _buildToggleRow('Confirmé', _isConfirmed, (val) {
+                          setState(() {
+                            _isConfirmed = val;
+                            if (val) _isBlocked = false;
+                          });
+                        }),
+                        _buildToggleRow('Bloqué', _isBlocked, (val) {
+                          setState(() {
+                            _isBlocked = val;
+                            if (val) _isConfirmed = false;
+                          });
+                        }),
                       ],
                     )
                   : Row(
                       children: [
-                        Expanded(child: _buildToggleRow('Confirmé', _isConfirmed, (val) => setState(() => _isConfirmed = val))),
-                        Expanded(child: _buildToggleRow('Bloqué', _isBlocked, (val) => setState(() => _isBlocked = val))),
+                        Expanded(
+                          child: _buildToggleRow('Confirmé', _isConfirmed, (val) {
+                            setState(() {
+                              _isConfirmed = val;
+                              if (val) _isBlocked = false;
+                            });
+                          }),
+                        ),
+                        Expanded(
+                          child: _buildToggleRow('Bloqué', _isBlocked, (val) {
+                            setState(() {
+                              _isBlocked = val;
+                              if (val) _isConfirmed = false;
+                            });
+                          }),
+                        ),
                       ],
                     ),
                 const SizedBox(height: 32),
@@ -180,7 +204,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: Colors.blue,
+          activeThumbColor: Colors.blue,
         ),
         Text(label, style: const TextStyle(fontSize: 14)),
       ],

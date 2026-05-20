@@ -130,7 +130,7 @@ class AssocListPage extends StatelessWidget {
         dataRowHeight: 72,
         horizontalMargin: 24,
         columnSpacing: 24,
-        headingRowColor: MaterialStateProperty.all(const Color(0xFFF8FAFC)),
+        headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
         columns: const [
           DataColumn(label: Text('Nom', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569)))),
           DataColumn(label: Text('Admin', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569)))),

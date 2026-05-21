@@ -418,18 +418,14 @@ class SessionsController extends GetxController {
 
   void updateSearch(String query) => searchQuery.value = query;
 
-  bool isSessionOverlapping({required int instructorId, required DateTime start, required DateTime end, required bool isAssociation, String? excludeDocumentId}) {
+  bool isSessionOverlapping({required int instructorId, required DateTime start, required DateTime end, bool? isAssociation, String? excludeDocumentId}) {
     for (final s in sessions) {
       if (s.instructorId.toString() != instructorId.toString()) continue;
       if (excludeDocumentId != null && s.documentId == excludeDocumentId) continue;
       if (s.startDate == null || s.endDate == null) continue;
       
-      // Comparer uniquement les sessions du même type :
-      // - Sessions d'association (courseId == null) vs sessions d'association
-      // - Sessions enseignant (courseId != null) vs sessions enseignant
-      final bool sIsAssociation = s.courseId == null;
-      if (isAssociation != sIsAssociation) continue;
-      
+      // Vérifier le chevauchement pour TOUTES les sessions de cet enseignant,
+      // peu importe le type (enseignant ou association)
       if (start.isBefore(s.endDate!) && end.isAfter(s.startDate!)) return true;
     }
     return false;

@@ -587,7 +587,7 @@ class _AddAssocSessionDialogState extends State<AddAssocSessionDialog> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    "Il existe déjà une formation prévue sur ce créneau pour cet administrateur d'association.",
+                    "Il existe déjà une formation (enseignant ou association) prévue sur ce créneau. Veuillez choisir un autre horaire.",
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 15, color: Colors.black87),
                   ),

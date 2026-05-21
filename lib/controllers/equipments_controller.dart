@@ -28,7 +28,8 @@ class EquipmentsController extends GetxController {
   final RxBool isLoading = false.obs;
 
   // URL de base de l'API Strapi pour les équipements
-  static const String _baseUrl = 'http://193.111.250.244:3046/api/equipment-assets';
+  static const String _baseUrl =
+      'http://193.111.250.244:3046/api/equipment-assets';
 
   // Clé utilisée pour sauvegarder les données en cache local
   static const String _storageKey = 'saved_equipments';
@@ -78,15 +79,19 @@ class EquipmentsController extends GetxController {
             final List<dynamic> list = jsonResponse['data'];
 
             // Convertit chaque élément JSON en objet Equipment et met à jour la liste
-            equipments.assignAll(list.map((item) => Equipment.fromJson(item)).toList());
-            
+            equipments.assignAll(
+              list.map((item) => Equipment.fromJson(item)).toList(),
+            );
+
             // Sauvegarde en cache local
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString(_storageKey, response.body);
             return;
           }
         } else {
-           print('Erreur serveur equipments: ${response.statusCode} - ${response.body}');
+          print(
+            'Erreur serveur equipments: ${response.statusCode} - ${response.body}',
+          );
         }
       }
     } catch (e) {
@@ -114,7 +119,9 @@ class EquipmentsController extends GetxController {
       final response = await http.post(
         Uri.parse(_baseUrl),
         headers: _headers(token),
-        body: jsonEncode(equipment.toStrapiJson()), // Convertit en JSON format Strapi
+        body: jsonEncode(
+          equipment.toStrapiJson(),
+        ), // Convertit en JSON format Strapi
       );
 
       // 200 ou 201 = création réussie
@@ -133,13 +140,14 @@ class EquipmentsController extends GetxController {
         String errorDetail = 'Erreur ${response.statusCode}';
         try {
           final Map<String, dynamic> errorData = jsonDecode(response.body);
-          if (errorData.containsKey('error') && errorData['error']['message'] != null) {
+          if (errorData.containsKey('error') &&
+              errorData['error']['message'] != null) {
             errorDetail = errorData['error']['message'];
           }
         } catch (e) {
           errorDetail = response.body;
         }
-        
+
         print('Erreur création équipement détaillée: $errorDetail');
         _showError('Erreur de création : $errorDetail');
       }
@@ -186,7 +194,9 @@ class EquipmentsController extends GetxController {
           colorText: Color(0xFF166534),
         );
       } else {
-        print('Erreur modification équipement: ${response.statusCode} - ${response.body}');
+        print(
+          'Erreur modification équipement: ${response.statusCode} - ${response.body}',
+        );
         _showError('Erreur lors de la modification (${response.statusCode})');
       }
     } catch (e) {
@@ -233,7 +243,9 @@ class EquipmentsController extends GetxController {
           colorText: Color(0xFF166534),
         );
       } else {
-        print('Erreur suppression équipement: ${response.statusCode} - ${response.body}');
+        print(
+          'Erreur suppression équipement: ${response.statusCode} - ${response.body}',
+        );
         _showError('Erreur lors de la suppression (${response.statusCode})');
       }
     } catch (e) {
@@ -265,10 +277,14 @@ class EquipmentsController extends GetxController {
       try {
         final dynamic decoded = jsonDecode(cached);
         if (decoded is Map && decoded.containsKey('data')) {
-           final List<dynamic> list = decoded['data'];
-           equipments.assignAll(list.map((item) => Equipment.fromJson(item)).toList());
+          final List<dynamic> list = decoded['data'];
+          equipments.assignAll(
+            list.map((item) => Equipment.fromJson(item)).toList(),
+          );
         } else if (decoded is List) {
-           equipments.assignAll(decoded.map((item) => Equipment.fromJson(item)).toList());
+          equipments.assignAll(
+            decoded.map((item) => Equipment.fromJson(item)).toList(),
+          );
         }
       } catch (e) {
         print('Erreur lecture cache équipements: $e');
@@ -279,8 +295,11 @@ class EquipmentsController extends GetxController {
   // Retourne la liste des équipements filtrés par nom et statut
   List<Equipment> get filteredEquipments {
     return equipments.where((equipment) {
-      final nameMatches = equipment.name.toLowerCase().startsWith(searchQuery.value.toLowerCase());
-      final statusMatches = selectedStatus.value == 'Tous les statuts' ||
+      final nameMatches = equipment.name.toLowerCase().startsWith(
+        searchQuery.value.toLowerCase(),
+      );
+      final statusMatches =
+          selectedStatus.value == 'Tous les statuts' ||
           equipment.statusString == selectedStatus.value;
       return nameMatches && statusMatches;
     }).toList();
@@ -288,9 +307,12 @@ class EquipmentsController extends GetxController {
 
   // Statistiques — comptent les équipements par statut
   int get totalEquipments => equipments.length;
-  int get availableEquipments => equipments.where((e) => e.status == EquipmentStatus.disponible).length;
-  int get brokenEquipments => equipments.where((e) => e.status == EquipmentStatus.enPanne).length;
-  int get maintenanceEquipments => equipments.where((e) => e.status == EquipmentStatus.enMaintenance).length;
+  int get availableEquipments =>
+      equipments.where((e) => e.status == EquipmentStatus.disponible).length;
+  int get brokenEquipments =>
+      equipments.where((e) => e.status == EquipmentStatus.enPanne).length;
+  int get maintenanceEquipments =>
+      equipments.where((e) => e.status == EquipmentStatus.enMaintenance).length;
 
   // Met à jour le texte de recherche
   void updateSearch(String query) {

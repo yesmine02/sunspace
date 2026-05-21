@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/equipment.dart';
 import '../../../controllers/equipments_controller.dart';
-import '../../../controllers/spaces_controller.dart';
 
 class AddEquipmentDialog extends StatefulWidget {
   const AddEquipmentDialog({super.key});
@@ -24,7 +23,6 @@ class _AddEquipmentDialogState extends State<AddEquipmentDialog> {
 
   // Récupération des contrôleurs nécessaires
   final EquipmentsController controller = Get.find<EquipmentsController>();
-  final SpacesController spacesController = Get.put(SpacesController());
 
   // Contrôleurs de texte pour les champs de saisie
   final _nameController = TextEditingController();
@@ -36,7 +34,6 @@ class _AddEquipmentDialogState extends State<AddEquipmentDialog> {
 
   // Variables d'état pour les champs non textuels
   EquipmentStatus _selectedStatus = EquipmentStatus.disponible;
-  String? _selectedSpace;
   DateTime? _purchaseDate;
   DateTime? _warrantyExpiry;
 
@@ -171,17 +168,7 @@ class _AddEquipmentDialogState extends State<AddEquipmentDialog> {
                 _buildDatePickerField('Expiration de la garantie', _warrantyExpiry, () => _selectDate(context, false)),
                 const SizedBox(height: 16),
 
-                // Association à un espace (Optionnel)
-                _buildDropdownField<String?>(
-                  'Espaces (Optionnel)',
-                  _selectedSpace,
-                  [
-                    const DropdownMenuItem(value: null, child: Text('Aucun')),
-                    ...spacesController.spaces.map((s) => DropdownMenuItem(value: s.name, child: Text(s.name))),
-                  ],
-                  (val) => setState(() => _selectedSpace = val),
-                ),
-                const SizedBox(height: 16),
+
 
                 // Description
                 _buildTextField('Description', _descriptionController, 'Description détaillée...', maxLines: 3),
@@ -358,7 +345,7 @@ class _AddEquipmentDialogState extends State<AddEquipmentDialog> {
         type: _typeController.text,
         serialNumber: _serialController.text,
         status: _selectedStatus,
-        spaceName: _selectedSpace ?? '-',
+        spaceName: '-',
         description: _descriptionController.text,
         purchaseDate: _purchaseDate,
         price: double.tryParse(_priceController.text) ?? 0,

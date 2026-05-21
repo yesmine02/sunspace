@@ -520,7 +520,7 @@ class _AddEditSessionDialogState extends State<AddEditSessionDialog> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      "existe deja une formation dans ce temps pour cet enseignant",
+                      "Il existe déjà une formation (enseignant ou association) prévue sur ce créneau. Veuillez choisir un autre horaire.",
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 15, color: Colors.black87),
                     ),

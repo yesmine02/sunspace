@@ -40,21 +40,11 @@ class _BookSpacePageState extends State<BookSpacePage> {
             _buildHeader(isMobile), // Titre et icône
             SizedBox(height: isMobile ? 10 : 20),
 
-            // Sélecteur de vue (Boutons Plan / Liste)
-            _buildViewToggle(),
-            SizedBox(height: isMobile ? 10 : 20),
 
-            // Filtres de recherche (uniquement visibles en mode Liste)
-            if (!showFloorPlan) ...[
-               _buildFilters(spacesController, isMobile),
-               const SizedBox(height: 10),
-            ],
 
-            // Contenu principal (Plan ou Grille d'espaces)
+            // Contenu principal (Plan interactif)
             Expanded(
-              child: showFloorPlan 
-                ? _buildFloorPlanView(spacesController, bookingController)
-                : _buildListView(spacesController, bookingController, isMobile),
+              child: _buildFloorPlanView(spacesController, bookingController),
             ),
           ],
         ),

@@ -59,6 +59,20 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
     super.dispose();
   }
 
+  String? _requiredValidator(String? v) => v == null || v.trim().isEmpty ? 'Ce champ est requis' : null;
+  
+  String? _emailValidator(String? v) {
+    if (v == null || v.trim().isEmpty) return 'L\'email est requis';
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) return 'Format d\'email invalide';
+    return null;
+  }
+
+  String? _phoneValidator(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Le téléphone est requis';
+    if (!RegExp(r'^\d{8}$').hasMatch(v.trim())) return 'Doit contenir exactement 8 chiffres';
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
@@ -121,31 +135,32 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                 _buildTextField(
                   _nameCtrl, 
                   hint: 'ASBL Dev', 
-                  validator: (v) => v!.isEmpty ? 'Le nom est requis' : null
+                  validator: _requiredValidator
                 ),
                 const SizedBox(height: 16),
 
                 // CHAMP : DESCRIPTION
                 _buildLabel('Description'),
-                _buildTextField(_descCtrl, hint: 'Description de l\'association...', maxLines: 3),
+                _buildTextField(_descCtrl, hint: 'Description de l\'association...', maxLines: 3, validator: _requiredValidator),
                 const SizedBox(height: 16),
 
                 // LIGNE : EMAIL + TELEPHONE (Responsive Row/Column)
                 if (isMobile) ...[
                   _buildLabel('Email'),
-                  _buildTextField(_emailCtrl, hint: 'contact@assoc.com'),
+                  _buildTextField(_emailCtrl, hint: 'contact@assoc.com', validator: _emailValidator),
                   const SizedBox(height: 16),
                   _buildLabel('Téléphone'),
-                  _buildTextField(_phoneCtrl, hint: '+212...'),
+                  _buildTextField(_phoneCtrl, hint: '12345678', keyboardType: TextInputType.phone, validator: _phoneValidator),
                 ] else
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildLabel('Email'),
-                            _buildTextField(_emailCtrl, hint: 'contact@assoc.com'),
+                            _buildTextField(_emailCtrl, hint: 'contact@assoc.com', validator: _emailValidator),
                           ],
                         ),
                       ),
@@ -155,7 +170,7 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildLabel('Téléphone'),
-                            _buildTextField(_phoneCtrl, hint: '+212...'),
+                            _buildTextField(_phoneCtrl, hint: '12345678', keyboardType: TextInputType.phone, validator: _phoneValidator),
                           ],
                         ),
                       ),
@@ -165,25 +180,26 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
 
                 // CHAMP : SITE WEB
                 _buildLabel('Site Web'),
-                _buildTextField(_websiteCtrl, hint: 'https://...'),
+                _buildTextField(_websiteCtrl, hint: 'https://...', validator: _requiredValidator),
                 const SizedBox(height: 16),
 
                 // LIGNE : BUDGET + ADMIN (Responsive Row/Column)
                 if (isMobile) ...[
                   _buildLabel('Budget initial'),
-                  _buildTextField(_budgetCtrl, hint: '0', keyboardType: TextInputType.number),
+                  _buildTextField(_budgetCtrl, hint: '0', keyboardType: TextInputType.number, validator: _requiredValidator),
                   const SizedBox(height: 16),
                   _buildLabel('Administrateur principal'),
                   _buildAdminDropdown(),
                 ] else
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildLabel('Budget initial'),
-                            _buildTextField(_budgetCtrl, hint: '0', keyboardType: TextInputType.number),
+                            _buildTextField(_budgetCtrl, hint: '0', keyboardType: TextInputType.number, validator: _requiredValidator),
                           ],
                         ),
                       ),

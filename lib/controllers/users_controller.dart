@@ -124,6 +124,21 @@ class UsersController extends GetxController {
 
       if (token == null) throw Exception("Non authentifié");
 
+      // ── Vérification locale des doublons AVANT d'envoyer au serveur ──
+      final existingUsername = users.any(
+        (u) => (u.username ?? '').toLowerCase() == (user.username ?? '').toLowerCase(),
+      );
+      if (existingUsername) {
+        throw Exception('Ce nom d\'utilisateur est déjà utilisé. Veuillez en choisir un autre.');
+      }
+
+      final existingEmail = users.any(
+        (u) => (u.email ?? '').toLowerCase() == (user.email ?? '').toLowerCase(),
+      );
+      if (existingEmail) {
+        throw Exception('Cette adresse email est déjà utilisée par un autre compte.');
+      }
+
       final response = await http.post(
         Uri.parse('http://193.111.250.244:3046/api/users'),
         headers: {
@@ -145,7 +160,13 @@ class UsersController extends GetxController {
         await loadUsers(); // Recharger depuis le serveur
       } else {
         final error = jsonDecode(response.body);
-        throw Exception(error['error']?['message'] ?? "Erreur ${response.statusCode}");
+        final rawMessage = (error['error']?['message'] ?? '').toString().toLowerCase();
+
+        if (rawMessage.contains('internal server error') || rawMessage.contains('unique')) {
+          throw Exception('Ce nom d\'utilisateur ou email existe déjà. Veuillez en choisir un autre.');
+        } else {
+          throw Exception(error['error']?['message'] ?? 'Erreur serveur (${response.statusCode})');
+        }
       }
     } finally {
       isLoading.value = false;

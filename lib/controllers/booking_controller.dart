@@ -1,9 +1,10 @@
 // ============================================
 // BookingController — Contrôleur de Réservation
-// Architecture : GetX, API REST Strapi v5 
+// Architecture : GetX, API REST Strapi v5
 //Gestion des réservations : ✅ Création ✅ Annulation ✅ Historique ✅ Filtres
 // ============================================
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -21,34 +22,83 @@ class BookingController extends GetxController {
   final AuthController _auth = Get.find<AuthController>();
   static const String _baseUrl = 'http://193.111.250.244:3046/api/reservations';
 
+  Timer? _pollingTimer;
+
+
+
+  @override
+  void onClose() {
+    _pollingTimer?.cancel();
+    super.onClose();
+  }
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_auth.isLoggedIn.value) {
+        if (_auth.isAdmin) {
+          fetchAllReservations(showLoading: false);
+        } else {
+          fetchMyReservations(showLoading: false);
+        }
+      }
+    });
+  }
+
   // ── États réactifs ───────────────────────────────────────────
   final RxList<Reservation> reservations = <Reservation>[].obs;
   final RxString selectedResFilter = 'Toutes'.obs;
   final RxString searchQuery = ''.obs;
   final RxBool isLoading = false.obs;
   final RxBool isCheckingAvailability = false.obs; // État de vérification
-  final RxList<Reservation> spaceReservationsOnDay = <Reservation>[].obs; // Réservations du jour pour l'espace sélectionné
+  final RxList<Reservation> spaceReservationsOnDay =
+      <Reservation>[].obs; // Réservations du jour pour l'espace sélectionné
   final RxBool isMonthly = true.obs;
-  
+
   // Plage horaire de travail
   final List<String> timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', 
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', 
-    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'
+    '09:00',
+    '09:30',
+    '10:00',
+    '10:30',
+    '11:00',
+    '11:30',
+    '12:00',
+    '12:30',
+    '13:00',
+    '13:30',
+    '14:00',
+    '14:30',
+    '15:00',
+    '15:30',
+    '16:00',
+    '16:30',
+    '17:00',
+    '17:30',
+    '18:00',
   ];
 
   final RxBool isAllDay = false.obs; // Réservation toute la journée
   final RxInt checkoutStep = 1.obs; // 1: Date/Heure, 2: Services, 3: Paiement
-  final RxList<String> selectedServices = <String>[].obs;// Services additionnels
+  final RxList<String> selectedServices =
+      <String>[].obs; // Services additionnels
   final RxInt numberOfPeople = 1.obs; // Demande actuelle
 
   // ── Champs de réservation ────────────────────────────────────
   final Rx<DateTime> selectedDate = DateTime.now().obs;
-  final Rx<TimeOfDay> startTime = TimeOfDay.fromDateTime(DateTime.now().add(const Duration(hours: 1))).obs;
-  final Rx<TimeOfDay> endTime = TimeOfDay.fromDateTime(DateTime.now().add(const Duration(hours: 2))).obs;
-  
-  final Rx<DateTime> startDateTime = DateTime.now().add(const Duration(hours: 1)).obs;
-  final Rx<DateTime> endDateTime = DateTime.now().add(const Duration(hours: 2)).obs;
+  final Rx<TimeOfDay> startTime = TimeOfDay.fromDateTime(
+    DateTime.now().add(const Duration(hours: 1)),
+  ).obs;
+  final Rx<TimeOfDay> endTime = TimeOfDay.fromDateTime(
+    DateTime.now().add(const Duration(hours: 2)),
+  ).obs;
+
+  final Rx<DateTime> startDateTime = DateTime.now()
+      .add(const Duration(hours: 1))
+      .obs;
+  final Rx<DateTime> endDateTime = DateTime.now()
+      .add(const Duration(hours: 2))
+      .obs;
   final RxDouble totalAmount = 0.0.obs;
 
   // Contrôleurs de paiement
@@ -65,18 +115,20 @@ class BookingController extends GetxController {
 
     // 2. Intégration des équipements physiques depuis EquipmentsController
     try {
-      final EquipmentsController eqController = Get.find<EquipmentsController>();
-      
+      final EquipmentsController eqController =
+          Get.find<EquipmentsController>();
+
       for (var eq in eqController.equipments) {
         final String name = eq.name;
         // On récupère le prix de l'équipement (strictement depuis le serveur)
-        final double rentalPrice = eq.price ?? 0.0; 
-        
+        final double rentalPrice = eq.price ?? 0.0;
+
         final bool isEqAvailable = eq.status == EquipmentStatus.disponible;
 
         if (catalog.containsKey(name)) {
           // Si on a déjà cet équipement, il est disponible si au moins un exemplaire l'est
-          catalog[name]!['available'] = catalog[name]!['available'] || isEqAvailable;
+          catalog[name]!['available'] =
+              catalog[name]!['available'] || isEqAvailable;
           // On garde le prix de l'équipement (le dernier trouvé avec ce nom)
           catalog[name]!['price'] = rentalPrice;
         } else {
@@ -97,13 +149,14 @@ class BookingController extends GetxController {
   // ── Contrôleurs de formulaire ────────────────────────────────
   // Les contrôleurs de carte ont été supprimés car le paiement n'est plus requis.
 
-
   @override
   void onInit() {
     super.onInit();
+    _startPolling();
     // Recalculer le total dès que la liste des équipements change (prix mis à jour, etc.)
     try {
-      final EquipmentsController eqController = Get.find<EquipmentsController>();
+      final EquipmentsController eqController =
+          Get.find<EquipmentsController>();
       ever(eqController.equipments, (_) {
         // On récupère le prix de l'espace actuel pour recalculer
         // Note: On pourrait avoir besoin de passer les prix réels ici
@@ -115,65 +168,74 @@ class BookingController extends GetxController {
     }
   }
 
-
   // ── Getters calculés ─────────────────────────────────────────
-// Filtre les réservations selon le filtre sélectionné
+  // Filtre les réservations selon le filtre sélectionné
   List<Reservation> get filteredReservations {
-    final now = DateTime.now();// Date actuelle
-    List<Reservation> list = List.from(reservations);// Liste des réservations
-
+    final now = DateTime.now(); // Date actuelle
+    List<Reservation> list = List.from(reservations); // Liste des réservations
 
     // Filtre selon le filtre sélectionné
-    //Prends toutes les réservations de la liste, 
+    //Prends toutes les réservations de la liste,
     //et garde uniquement celles dont la date de début est dans le futur (après maintenant).
     // Mets le résultat dans list.
     switch (selectedResFilter.value) {
-      case 'À venir':// Filtre les réservations à venir
-        list = list.where((r) => r.startDateTime.isAfter(now)).toList(); 
+      case 'À venir': // Filtre les réservations à venir
+        list = list.where((r) => r.startDateTime.isAfter(now)).toList();
         break;
       case 'Passées':
         list = list.where((r) => r.startDateTime.isBefore(now)).toList();
         break;
       case 'En attente':
-        list = list.where((r) => r.status == ReservationStatus.enAttente).toList();
+        list = list
+            .where((r) => r.status == ReservationStatus.enAttente)
+            .toList();
         break;
       case 'Confirmées':
-        list = list.where((r) => r.status == ReservationStatus.confirmee).toList();
+        list = list
+            .where((r) => r.status == ReservationStatus.confirmee)
+            .toList();
         break;
     }
 
     if (searchQuery.value.isNotEmpty) {
-      final q = searchQuery.value.toLowerCase();// Met la recherche en minuscule
-      // Prends toutes les réservations de la liste, 
+      final q = searchQuery.value
+          .toLowerCase(); // Met la recherche en minuscule
+      // Prends toutes les réservations de la liste,
       //et garde uniquement celles dont le nom de l'espace ou le nom de l'utilisateur contient la recherche.
       // Mets le résultat dans list.
-      list = list.where((r) =>
-        (r.spaceName ?? '').toLowerCase().contains(q) ||
-        (r.user?.username ?? '').toLowerCase().contains(q)
-      ).toList();
+      list = list
+          .where(
+            (r) =>
+                (r.spaceName ?? '').toLowerCase().contains(q) ||
+                (r.user?.username ?? '').toLowerCase().contains(q),
+          )
+          .toList();
     }
 
     return list;
   }
 
-// Compte le nombre de réservations à venir
-  int get upcomingCount => reservations.where((r) => r.startDateTime.isAfter(DateTime.now())).length;
+  // Compte le nombre de réservations à venir
+  int get upcomingCount =>
+      reservations.where((r) => r.startDateTime.isAfter(DateTime.now())).length;
   // Compte le nombre de réservations passées
-  int get pastCount => reservations.where((r) => r.startDateTime.isBefore(DateTime.now())).length;
+  int get pastCount => reservations
+      .where((r) => r.startDateTime.isBefore(DateTime.now()))
+      .length;
 
   // ── Méthodes utilitaires ──────────────────────────────────────
 
-  void updateResFilter(String filter) => selectedResFilter.value = filter;// Met à jour le filtre de réservation
-  void updateSearchQuery(String query) => searchQuery.value = query;// Met à jour la recherche
+  void updateResFilter(String filter) =>
+      selectedResFilter.value = filter; // Met à jour le filtre de réservation
+  void updateSearchQuery(String query) =>
+      searchQuery.value = query; // Met à jour la recherche
 
-  
-  
   void toggleService(String name, double hourlyPrice, double monthlyPrice) {
     // Vérifier la disponibilité avant de basculer
     final service = servicesCatalog[name];
     if (service != null && service['available'] == false) {
       Get.snackbar(
-        "Indisponible", 
+        "Indisponible",
         "L'équipement '$name' est actuellement en maintenance.",
         backgroundColor: Colors.orange.shade800,
         colorText: Colors.white,
@@ -182,34 +244,49 @@ class BookingController extends GetxController {
       );
       return;
     }
-    
-    selectedServices.contains(name) ? selectedServices.remove(name) : selectedServices.add(name);
+
+    selectedServices.contains(name)
+        ? selectedServices.remove(name)
+        : selectedServices.add(name);
     _calculateTotal(hourlyPrice: hourlyPrice, monthlyPrice: monthlyPrice);
   }
 
-  void updateDates(DateTime start, DateTime end, double hourlyPrice, double monthlyPrice) {
+  void updateDates(
+    DateTime start,
+    DateTime end,
+    double hourlyPrice,
+    double monthlyPrice,
+  ) {
     startDateTime.value = start;
     endDateTime.value = end;
     _calculateTotal(hourlyPrice: hourlyPrice, monthlyPrice: monthlyPrice);
   }
 
   /// Alias public pour rester compatible avec checkout_page.dart
-  void calculateTotal({required double hourlyPrice, required double monthlyPrice}) =>
-      _calculateTotal(hourlyPrice: hourlyPrice, monthlyPrice: monthlyPrice);
+  void calculateTotal({
+    required double hourlyPrice,
+    required double monthlyPrice,
+  }) => _calculateTotal(hourlyPrice: hourlyPrice, monthlyPrice: monthlyPrice);
 
-  void _calculateTotal({required double hourlyPrice, required double monthlyPrice}) {
+  void _calculateTotal({
+    required double hourlyPrice,
+    required double monthlyPrice,
+  }) {
     double base = isMonthly.value
         ? monthlyPrice
         : () {
-            double hours = endDateTime.value.difference(startDateTime.value).inMinutes / 60.0;
+            double hours =
+                endDateTime.value.difference(startDateTime.value).inMinutes /
+                60.0;
             return (hours < 1.0 ? 1.0 : hours) * hourlyPrice;
           }();
 
     final servicesCost = selectedServices.fold<double>(
-      0.0, (sum, s) => sum + ((servicesCatalog[s]?['price'] as double?) ?? 0.0)
+      0.0,
+      (sum, s) => sum + ((servicesCatalog[s]?['price'] as double?) ?? 0.0),
     );
 
-    totalAmount.value = base + servicesCost;
+    totalAmount.value = (base * numberOfPeople.value) + servicesCost;
   }
 
   /// Bascule entre réservation ponctuelle et toute la journée (09:00 - 18:00)
@@ -222,7 +299,7 @@ class BookingController extends GetxController {
         DateTime(now.year, now.month, now.day, 9, 0),
         DateTime(now.year, now.month, now.day, 18, 0),
         hourlyPrice,
-        monthlyPrice
+        monthlyPrice,
       );
     }
   }
@@ -241,13 +318,19 @@ class BookingController extends GetxController {
 
     // 2. Fin après début
     if (!end.isAfter(start)) {
-      _showError("Horaire invalide", "L'heure de fin doit être après l'heure de début.");
+      _showError(
+        "Horaire invalide",
+        "L'heure de fin doit être après l'heure de début.",
+      );
       return false;
     }
 
     // 3. Heures de travail (09:00 - 18:00)
     if (start.hour < 9 || end.hour > 18 || (end.hour == 18 && end.minute > 0)) {
-      _showError("Hors service", "Les réservations sont possibles de 09:00 à 18:00.");
+      _showError(
+        "Hors service",
+        "Les réservations sont possibles de 09:00 à 18:00.",
+      );
       return false;
     }
 
@@ -256,7 +339,6 @@ class BookingController extends GetxController {
 
   // ── Validation du formulaire de paiement (Supprimée car paiement désactivé) ──
 
-
   // ── Vérification dynamique de disponibilité ───────────────────
 
   /// Vérifie si l'utilisateur a déjà une réservation active sur ce créneau (tout espace confondu)
@@ -264,51 +346,65 @@ class BookingController extends GetxController {
     required String? token,
     required dynamic userId,
   }) async {
-    if (token == null || userId == null) return false; // Si token ou userId est null, retourne false
+    if (token == null || userId == null)
+      return false; // Si token ou userId est null, retourne false
 
     try {
       final user = _auth.currentUser.value;
       final String username = user?['username'] ?? '';
-      
+
       // Utilisation d'organizer_name pour filtrer (plus cohérent avec fetchMyReservations)
       final url = Uri.parse(
         '$_baseUrl?filters[organizer_name][\$eq]=${Uri.encodeComponent(username)}'
         '&filters[mystatus][\$in][0]=Confirmée'
         '&filters[mystatus][\$in][1]=En_attente'
         '&pagination[pageSize]=100&sort=createdAt:desc'
-        '&populate=false'
+        '&populate=false',
       );
 
-      debugPrint('[BookingController] Vérification chevauchement pour $username: $url');
+      debugPrint(
+        '[BookingController] Vérification chevauchement pour $username: $url',
+      );
 
-      final response = await http.get(url, headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      }).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        debugPrint('[BookingController] Échec vérification: ${response.statusCode}');
+        debugPrint(
+          '[BookingController] Échec vérification: ${response.statusCode}',
+        );
         return false;
       }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final List<dynamic> existing = data['data'] ?? [];
-      
+
       final newStart = startDateTime.value;
       final newEnd = endDateTime.value;
 
-      debugPrint('[BookingController] Nouvelle résa: $newStart à $newEnd. ${existing.length} existantes trouvées.');
+      debugPrint(
+        '[BookingController] Nouvelle résa: $newStart à $newEnd. ${existing.length} existantes trouvées.',
+      );
 
       for (final res in existing) {
         final dynamic rawStart = res['start_datetime'];
         final dynamic rawEnd = res['end_datetime'];
-        
+
         if (rawStart == null || rawEnd == null) continue;
 
         final existStart = DateTime.parse(rawStart.toString()).toLocal();
         final existEnd = DateTime.parse(rawEnd.toString()).toLocal();
 
-        debugPrint('[BookingController] Comparaison avec: $existStart à $existEnd');
+        debugPrint(
+          '[BookingController] Comparaison avec: $existStart à $existEnd',
+        );
 
         // Chevauchement : (Début1 < Fin2) ET (Fin1 > Début2)
         if (newStart.isBefore(existEnd) && newEnd.isAfter(existStart)) {
@@ -322,7 +418,6 @@ class BookingController extends GetxController {
       debugPrint('[BookingController] Erreur vérification chevauchement: $e');
       return false;
     }
-
   }
 
   /// Contacte le serveur Strapi et valide la capacité de l'espace.
@@ -339,19 +434,24 @@ class BookingController extends GetxController {
     try {
       final url = Uri.parse(
         '$_baseUrl?filters[space][documentId][\$eq]=$spaceId&filters[mystatus][\$eq]=Confirmée'
-        '&pagination[pageSize]=100&sort=createdAt:desc&populate=false'
+        '&pagination[pageSize]=100&sort=createdAt:desc&populate=false',
       );
-      
-      final response = await http.get(url, headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      }).timeout(const Duration(seconds: 10));
+
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) return true;
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final List<dynamic> existing = data['data'] ?? [];
-      
+
       final newStart = startDateTime.value;
       final newEnd = endDateTime.value;
 
@@ -364,7 +464,8 @@ class BookingController extends GetxController {
 
         if (newStart.isBefore(existEnd) && newEnd.isAfter(existStart)) {
           // Chevauchement détecté, on cumule les personnes
-          final int people = int.tryParse(res['attendees']?.toString() ?? '1') ?? 1;
+          final int people =
+              int.tryParse(res['attendees']?.toString() ?? '1') ?? 1;
           occupiedSeats += people;
         }
       }
@@ -378,12 +479,11 @@ class BookingController extends GetxController {
       }
 
       return true; // ✅ Capacité suffisante
-
     } finally {
-      isCheckingAvailability.value = false;// Met fin à la vérification de disponibilité
+      isCheckingAvailability.value =
+          false; // Met fin à la vérification de disponibilité
     }
   }
-
 
   /// Récupère toutes les réservations d'un espace pour un jour spécifique
   Future<void> fetchSpaceReservationsOnDay(String spaceId, DateTime day) async {
@@ -398,21 +498,30 @@ class BookingController extends GetxController {
         '$_baseUrl?filters[space][documentId][\$eq]=$spaceId'
         '&filters[mystatus][\$eq]=Confirmée'
         '&filters[start_datetime][\$contains]=$dateStr'
-        '&populate=user'
+        '&populate=user',
       );
 
       debugPrint('[BookingController] Fetch day schedule URL: $url');
 
-      final response = await http.get(url, headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      }).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final List<dynamic> list = data['data'] ?? [];
-        spaceReservationsOnDay.assignAll(list.map((item) => Reservation.fromJson(item)).toList());
-        debugPrint('[BookingController] Day schedule: ${spaceReservationsOnDay.length} items found');
+        spaceReservationsOnDay.assignAll(
+          list.map((item) => Reservation.fromJson(item)).toList(),
+        );
+        debugPrint(
+          '[BookingController] Day schedule: ${spaceReservationsOnDay.length} items found',
+        );
       }
     } catch (e) {
       debugPrint('[BookingController] Error fetching day schedule: $e');
@@ -430,11 +539,18 @@ class BookingController extends GetxController {
     isLoading.value = true;
 
     try {
-      final token = await _auth.getToken();// Récupère le token de l'utilisateur connecté
-      final user = _auth.currentUser.value;// Récupère les infos de l'utilisateur connecté
+      final token = await _auth
+          .getToken(); // Récupère le token de l'utilisateur connecté
+      final user = _auth
+          .currentUser
+          .value; // Récupère les infos de l'utilisateur connecté
 
-      if (token == null || user == null) {// Si le token ou l'utilisateur est null
-        _showError('Session expirée', 'Veuillez vous reconnecter et réessayer.');
+      if (token == null || user == null) {
+        // Si le token ou l'utilisateur est null
+        _showError(
+          'Session expirée',
+          'Veuillez vous reconnecter et réessayer.',
+        );
         return false;
       }
 
@@ -446,12 +562,17 @@ class BookingController extends GetxController {
       }
 
       // Étape 2.1 : Vérifier si l'utilisateur a déjà une réservation sur ce créneau
-      final hasOverlap = await _checkUserOverlap(token: token, userId: user['id']);
+      final hasOverlap = await _checkUserOverlap(
+        token: token,
+        userId: user['id'],
+      );
       if (hasOverlap) {
-        _showError("Réservation impossible", "Tu as déjà une réservation dans un autre espace dans ce temps.");
+        _showError(
+          "Réservation impossible",
+          "Tu as déjà une réservation dans un autre espace dans ce temps.",
+        );
         return false;
       }
-
 
       // Étape 3 : Envoyer la réservation au serveur
       final body = {
@@ -473,22 +594,26 @@ class BookingController extends GetxController {
           "organizer_phone": user['phone'] ?? "00000000",
           "space": space.documentId ?? space.id,
           "user": user['id'], // 🔗 Liaison indispensable pour les notifications
-        }
+        },
       };
 
       debugPrint('[BookingController] POST $body');
 
-      final response = await http.post(
-        Uri.parse(_baseUrl),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(
+            Uri.parse(_baseUrl),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 15));
 
-      debugPrint('[BookingController] Response ${response.statusCode}: ${response.body}');
+      debugPrint(
+        '[BookingController] Response ${response.statusCode}: ${response.body}',
+      );
 
       // Étape 4 : Réagir à la réponse du serveur
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -501,14 +626,15 @@ class BookingController extends GetxController {
           final timeFormat = DateFormat('HH:mm');
           final start = startDateTime.value;
           final end = endDateTime.value;
-          
+
           final dateStr = dateFormat.format(start);
           final startTimeStr = timeFormat.format(start);
           final endTimeStr = timeFormat.format(end);
 
           notifCtrl.notifyAdmins(
             title: 'Nouvelle réservation — $spaceName',
-            message: '$username a réservé "$spaceName" le $dateStr $startTimeStr -> $endTimeStr',
+            message:
+                '$username a réservé "$spaceName" le $dateStr $startTimeStr -> $endTimeStr',
           );
         } catch (e) {
           debugPrint('Erreur envoi notification admin: $e');
@@ -519,14 +645,20 @@ class BookingController extends GetxController {
         fetchMyReservations(); // Rafraîchit la liste
         return true;
       } else {
-        final errBody = jsonDecode(response.body);// Récupère le corps de la réponse
-        final msg = errBody['error']?['message'] ?? 'Erreur ${response.statusCode}';// Récupère le message d'erreur
-        _showError('Réservation refusée', msg);// Affiche un message d'erreur
+        final errBody = jsonDecode(
+          response.body,
+        ); // Récupère le corps de la réponse
+        final msg =
+            errBody['error']?['message'] ??
+            'Erreur ${response.statusCode}'; // Récupère le message d'erreur
+        _showError('Réservation refusée', msg); // Affiche un message d'erreur
         return false;
       }
-
     } on Exception catch (e) {
-      _showError('Problème réseau', 'Impossible de joindre le serveur. Vérifiez votre connexion.\n($e)');
+      _showError(
+        'Problème réseau',
+        'Impossible de joindre le serveur. Vérifiez votre connexion.\n($e)',
+      );
       return false;
     } finally {
       isLoading.value = false;
@@ -535,8 +667,8 @@ class BookingController extends GetxController {
 
   // ── CHARGEMENT DE TOUTES LES RÉSERVATIONS (Admin) ────────────
 
-  Future<void> fetchAllReservations() async {
-    isLoading.value = true;
+  Future<void> fetchAllReservations({bool showLoading = true}) async {
+    if (showLoading && reservations.isEmpty) isLoading.value = true;
     try {
       final token = await _auth.getToken();
       if (token == null) return;
@@ -546,18 +678,22 @@ class BookingController extends GetxController {
       //sort=createdAt:desc : pour trier par date de création (les plus récentes en premier)
       //pagination[pageSize]=100 : pour augmenter le nombre d'éléments récupérés
       final url = Uri.parse(
-        '$_baseUrl?populate=*&sort=createdAt:desc&pagination[pageSize]=100'
+        '$_baseUrl?populate=*&sort=createdAt:desc&pagination[pageSize]=100&t=${DateTime.now().millisecondsSinceEpoch}',
       );
 
-      debugPrint('[BookingController] Admin fetch URL: $url');//affiche l'URL de l'API
+      debugPrint(
+        '[BookingController] Admin fetch URL: $url',
+      ); //affiche l'URL de l'API
 
-      final response = await http.get(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
 
       debugPrint('[BookingController] Response Status: ${response.statusCode}');
 
@@ -566,9 +702,11 @@ class BookingController extends GetxController {
         if (data.containsKey('data')) {
           final List<dynamic> list = data['data'];
           debugPrint('[BookingController] Data received: ${list.length} items');
-          
+
           if (list.isNotEmpty) {
-            reservations.assignAll(list.map((item) => Reservation.fromJson(item)).toList());
+            reservations.assignAll(
+              list.map((item) => Reservation.fromJson(item)).toList(),
+            );
           } else {
             reservations.clear();
             debugPrint('[BookingController] Server returned empty list');
@@ -576,7 +714,10 @@ class BookingController extends GetxController {
         }
       } else {
         debugPrint('[BookingController] fetchAll Error Body: ${response.body}');
-        _showError('Erreur serveur', 'Code: ${response.statusCode}\nImpossible de charger les réservations.');
+        _showError(
+          'Erreur serveur',
+          'Code: ${response.statusCode}\nImpossible de charger les réservations.',
+        );
       }
     } on Exception catch (e) {
       debugPrint('[BookingController] fetchAll exception: $e');
@@ -588,8 +729,8 @@ class BookingController extends GetxController {
 
   // ── CHARGEMENT DES RÉSERVATIONS DE L'UTILISATEUR CONNECTÉ ────
 
-  Future<void> fetchMyReservations() async {
-    isLoading.value = true;
+  Future<void> fetchMyReservations({bool showLoading = true}) async {
+    if (showLoading && reservations.isEmpty) isLoading.value = true;
     try {
       final token = await _auth.getToken();
       final user = _auth.currentUser.value;
@@ -598,33 +739,51 @@ class BookingController extends GetxController {
         return;
       }
 
-      final username = Uri.encodeComponent(user['username'] ?? '');
-      final url = '$_baseUrl?filters[organizer_name][\$eq]=$username&populate=space&sort=createdAt:desc&pagination[pageSize]=100';
-      debugPrint('[BookingController] fetchMine URL: $url');
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
-      ).timeout(const Duration(seconds: 15));
+      final userId = user['id']?.toString() ?? '';
+      // Utiliser user.id pour un filtre plus robuste que organizer_name
+      final url =
+          '$_baseUrl?filters[user][id][\$eq]=$userId&populate=space&sort=createdAt:desc&pagination[pageSize]=100&t=${DateTime.now().millisecondsSinceEpoch}';
+      debugPrint('[BookingController] fetchMine URL (user.id=$userId): $url');
 
-      debugPrint('[BookingController] fetchMine Status: ${response.statusCode}');
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
+
+      debugPrint(
+        '[BookingController] fetchMine Status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         if (data.containsKey('data')) {
           final List rawList = data['data'];
-          debugPrint('[BookingController] fetchMine: Found ${rawList.length} items');
-          
+          debugPrint(
+            '[BookingController] fetchMine: Found ${rawList.length} items',
+          );
+
           try {
-            final parsedList = rawList.map((item) => Reservation.fromJson(item)).toList();
+            final parsedList = rawList
+                .map((item) => Reservation.fromJson(item))
+                .toList();
             reservations.assignAll(parsedList);
-            debugPrint('[BookingController] fetchMine: Successfully parsed all reservations');
+            reservations.refresh(); // Force UI refresh
+            debugPrint(
+              '[BookingController] fetchMine: Successfully parsed all reservations',
+            );
           } catch (e) {
             debugPrint('[BookingController] fetchMine Parsing Error: $e');
           }
         }
       } else {
-        debugPrint('[BookingController] fetchMine Error Body: ${response.body}');
+        debugPrint(
+          '[BookingController] fetchMine Error Body: ${response.body}',
+        );
       }
     } on Exception catch (e) {
       debugPrint('[BookingController] fetchMine exception: $e');
@@ -642,19 +801,23 @@ class BookingController extends GetxController {
       if (token == null) return;
 
       final id = res.documentId ?? res.id;
-      
+
       // Fonction interne pour envoyer la requête
       Future<http.Response> sendUpdate(String statusValue) async {
         debugPrint('[updateStatus] Tentative : $statusValue sur $id');
-        return await http.put(
-          Uri.parse('$_baseUrl/$id'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode({"data": {"mystatus": statusValue}}),
-        ).timeout(const Duration(seconds: 10));
+        return await http
+            .put(
+              Uri.parse('$_baseUrl/$id'),
+              headers: {
+                'Authorization': 'Bearer $token',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: jsonEncode({
+                "data": {"mystatus": statusValue},
+              }),
+            )
+            .timeout(const Duration(seconds: 10));
       }
 
       // ─── Normalisation du statut pour Strapi v5 (qui demande des accents) ───
@@ -668,7 +831,11 @@ class BookingController extends GetxController {
       // 3. Gestion globale de la réponse
       if (response.statusCode == 200) {
         // Mise à jour LOCALE de l'item spécifique pour éviter de faire sauter toute la liste
-        final idx = reservations.indexWhere((r) => r.id == res.id || (r.documentId != null && r.documentId == res.documentId));
+        final idx = reservations.indexWhere(
+          (r) =>
+              r.id == res.id ||
+              (r.documentId != null && r.documentId == res.documentId),
+        );
         if (idx != -1) {
           final old = reservations[idx];
           reservations[idx] = Reservation(
@@ -684,7 +851,8 @@ class BookingController extends GetxController {
             notes: old.notes,
             spaceName: old.spaceName,
             organizerName: old.organizerName, // FIX: On garde le nom !
-            numberOfPeople: old.numberOfPeople, // FIX: On garde le nombre de personnes !
+            numberOfPeople:
+                old.numberOfPeople, // FIX: On garde le nombre de personnes !
             user: old.user,
           );
           reservations.refresh();
@@ -702,10 +870,11 @@ class BookingController extends GetxController {
             final username = currentUser?['username'] ?? 'Un utilisateur';
             final date = res.formattedDate;
             final time = res.formattedTime;
-            
+
             notifCtrl.notifyAdmins(
               title: 'Réservation Annulée — $spaceName',
-              message: '$username a annulé sa réservation pour "$spaceName" prévue le $date ($time).',
+              message:
+                  '$username a annulé sa réservation pour "$spaceName" prévue le $date ($time).',
             );
           }
 
@@ -713,42 +882,51 @@ class BookingController extends GetxController {
           if (res.user?.id != null && isAdminUser) {
             final isConfirmed = statusToSend == 'Confirmée';
             final isRefused = statusToSend == 'Annulée';
-            
-            debugPrint('🔔 Tentative notification user ${res.user!.id} | Status: $statusToSend');
+
+            debugPrint(
+              '🔔 Tentative notification user ${res.user!.id} | Status: $statusToSend',
+            );
 
             if (isConfirmed || isRefused) {
               final statusText = isConfirmed ? 'validée' : 'refusée';
-              final titleText = isConfirmed ? 'Réservation confirmée !' : 'Réservation refusée !';
-              final notifType = isConfirmed ? 'Confirmation_réservation' : 'Alerte';
-              
+              final titleText = isConfirmed
+                  ? 'Réservation confirmée !'
+                  : 'Réservation refusée !';
+              final notifType = isConfirmed
+                  ? 'Confirmation_réservation'
+                  : 'Alerte';
+
               await notifCtrl.sendNotification(
                 targetUserId: res.user!.id!,
                 title: titleText,
-                message: 'Votre réservation pour "$spaceName" a été $statusText par l\'administration.',
+                message:
+                    'Votre réservation pour "$spaceName" a été $statusText par l\'administration.',
                 type: notifType,
                 actionUrl: '/dashboard/student/reservations',
               );
             }
           } else {
-            debugPrint('⚠️ Notif impossible : user.id=${res.user?.id} | isAdmin=$isAdminUser');
+            debugPrint(
+              '⚠️ Notif impossible : user.id=${res.user?.id} | isAdmin=$isAdminUser',
+            );
           }
         } catch (e) {
           debugPrint('Erreur envoi notification statut: $e');
         }
 
         Get.snackbar(
-          "Succès", 
+          "Succès",
           "La réservation de ${res.spaceName ?? 'l\'espace'} est maintenant validée.",
-          backgroundColor: const Color(0xFFDCFCE7), 
+          backgroundColor: const Color(0xFFDCFCE7),
           colorText: const Color(0xFF166534),
           icon: const Icon(Icons.check_circle, color: Color(0xFF166534)),
         );
       } else {
         final errBody = jsonDecode(response.body);
-        final msg = errBody['error']?['message'] ?? 'Erreur ${response.statusCode}';
+        final msg =
+            errBody['error']?['message'] ?? 'Erreur ${response.statusCode}';
         _showError('Mise à jour refusée', 'Détail Strapi: $msg');
       }
-
     } on Exception catch (e) {
       debugPrint('[BookingController] updateStatus exception: $e');
       _showError('Erreur réseau', 'Impossible de joindre le serveur. $e');
@@ -773,8 +951,12 @@ class BookingController extends GetxController {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         reservations.remove(res);
-        Get.snackbar("Supprimée", "La réservation a été supprimée.",
-            backgroundColor: const Color(0xFFF3F4F6), colorText: Colors.black87);
+        Get.snackbar(
+          "Supprimée",
+          "La réservation a été supprimée.",
+          backgroundColor: const Color(0xFFF3F4F6),
+          colorText: Colors.black87,
+        );
       } else {
         _showError('Erreur', 'Suppression échouée (${response.statusCode})');
       }
@@ -789,7 +971,8 @@ class BookingController extends GetxController {
 
   void _showError(String title, String message) {
     Get.snackbar(
-      title, message,
+      title,
+      message,
       backgroundColor: Colors.red.shade700,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
@@ -814,12 +997,20 @@ class BookingController extends GetxController {
                   color: Colors.orange.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.event_busy_rounded, color: Colors.orange, size: 64),
+                child: const Icon(
+                  Icons.event_busy_rounded,
+                  color: Colors.orange,
+                  size: 64,
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
                 "Créneau Indisponible",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -835,9 +1026,17 @@ class BookingController extends GetxController {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text("Modifier l'horaire", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Modifier l'horaire",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -862,12 +1061,20 @@ class BookingController extends GetxController {
                   color: Colors.green.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 80),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.green,
+                  size: 80,
+                ),
               ),
               const SizedBox(height: 24),
               const Text(
                 "Réservation Confirmée !",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -883,9 +1090,18 @@ class BookingController extends GetxController {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text("Super !", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Super !",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -910,7 +1126,11 @@ class BookingController extends GetxController {
               const Text(
                 "Action impossible : Capacité insuffisante",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -923,8 +1143,13 @@ class BookingController extends GetxController {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Get.back(),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade800),
-                  child: const Text("Compris", style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade800,
+                  ),
+                  child: const Text(
+                    "Compris",
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],

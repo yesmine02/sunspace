@@ -28,54 +28,61 @@ class MyReservationsPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // En-tête avec Illustration et Bienvenue
-            _buildHeader(context, username, isMobile, controller),
-            
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Cartes de statistiques
-                  _buildStatsCards(controller, isMobile),
-                  const SizedBox(height: 48),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await controller.fetchMyReservations();
+        },
+        color: const Color(0xFF007AFF),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // En-tête avec Illustration et Bienvenue
+              _buildHeader(context, username, isMobile, controller),
+              
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Cartes de statistiques
+                    _buildStatsCards(controller, isMobile),
+                    const SizedBox(height: 48),
 
-                  // Section Titre + Recherche
-                  _buildSectionHeader(controller, isMobile),
-                  const SizedBox(height: 24),
+                    // Section Titre + Recherche
+                    _buildSectionHeader(controller, isMobile),
+                    const SizedBox(height: 24),
 
-                  // Liste des réservations
-                  Obx(() {
-                    if (controller.isLoading.value) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 40),
-                        child: Center(child: CircularProgressIndicator()),
+                    // Liste des réservations
+                    Obx(() {
+                      if (controller.isLoading.value && controller.reservations.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      final filteredList = controller.filteredReservations;
+                      if (filteredList.isEmpty) {
+                        return _buildEmptyState(isMobile);
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: filteredList.length,
+                        itemBuilder: (context, index) {
+                          final res = filteredList[index];
+                          return _buildReservationCard(context, res, isMobile);
+                        },
                       );
-                    }
-
-                    final filteredList = controller.filteredReservations;
-                    if (filteredList.isEmpty) {
-                      return _buildEmptyState(isMobile);
-                    }
-
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: filteredList.length,
-                      itemBuilder: (context, index) {
-                        final res = filteredList[index];
-                        return _buildReservationCard(context, res, isMobile);
-                      },
-                    );
-                  }),
-                ],
+                    }),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

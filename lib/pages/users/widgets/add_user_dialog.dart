@@ -282,9 +282,10 @@ class _AddUserDialogState extends State<AddUserDialog> {
           colorText: const Color(0xFF166534),
         );
       } catch (e) {
+        final errorMsg = e.toString().replaceFirst('Exception: ', '');
         Get.snackbar(
-          'Erreur d\'enregistrement',
-          'Une erreur est survenue : $e',
+          'Erreur',
+          errorMsg,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red[100],
           colorText: Colors.red[900],

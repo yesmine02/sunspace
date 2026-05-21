@@ -543,8 +543,8 @@ class _AddEditSessionDialogState extends State<AddEditSessionDialog> {
       }
 
       // ── VÉRIFICATION DE L'ESPACE (Requis par l'enseignant) ──
-      if (_selectedSpace == null) {
-        Get.snackbar('Espace requis', 'Un enseignant doit obligatoirement réserver un espace pour sa session.', 
+      if (_selectedType != SessionType.enLigne && _selectedSpace == null) {
+        Get.snackbar('Espace requis', 'Un enseignant doit obligatoirement réserver un espace pour sa session en présentiel.', 
           backgroundColor: Colors.orange, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
         return;
       }

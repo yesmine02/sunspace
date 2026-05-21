@@ -17,8 +17,10 @@ class MyReservationsPage extends StatelessWidget {
     final controller = Get.put(BookingController());
     final authController = Get.find<AuthController>();
     final user = authController.currentUser.value;
-    final String username = user != null ? (user['username'] ?? 'Utilisateur') : 'Utilisateur';
-    
+    final String username = user != null
+        ? (user['username'] ?? 'Utilisateur')
+        : 'Utilisateur';
+
     // Charger au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.fetchMyReservations();
@@ -34,9 +36,12 @@ class MyReservationsPage extends StatelessWidget {
           children: [
             // En-tête avec Illustration et Bienvenue
             _buildHeader(context, username, isMobile, controller),
-            
+
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: 24),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : 40,
+                vertical: 24,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -81,18 +86,26 @@ class MyReservationsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, String username, bool isMobile, BookingController controller) {
+  Widget _buildHeader(
+    BuildContext context,
+    String username,
+    bool isMobile,
+    BookingController controller,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(
-        isMobile ? 16 : 40, 
-        isMobile ? 40 : 60, 
-        isMobile ? 16 : 40, 
-        isMobile ? 24 : 40
+        isMobile ? 16 : 40,
+        isMobile ? 40 : 60,
+        isMobile ? 16 : 40,
+        isMobile ? 24 : 40,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
       ),
       child: Stack(
         children: [
@@ -104,7 +117,11 @@ class MyReservationsPage extends StatelessWidget {
               bottom: 0,
               child: Opacity(
                 opacity: 0.1,
-                child: Icon(Icons.calendar_month_rounded, size: 200, color: Colors.blue.shade900),
+                child: Icon(
+                  Icons.calendar_month_rounded,
+                  size: 200,
+                  color: Colors.blue.shade900,
+                ),
               ),
             ),
 
@@ -113,7 +130,10 @@ class MyReservationsPage extends StatelessWidget {
             children: [
               // Badge Espace Personnel
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE0F2FE),
                   borderRadius: BorderRadius.circular(20),
@@ -124,7 +144,10 @@ class MyReservationsPage extends StatelessWidget {
                     Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(color: Color(0xFF007AFF), shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF007AFF),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     const Text(
@@ -182,8 +205,13 @@ class MyReservationsPage extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF1E293B),
                       side: BorderSide(color: Colors.grey.shade300),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   ElevatedButton(
@@ -192,13 +220,21 @@ class MyReservationsPage extends StatelessWidget {
                       backgroundColor: const Color(0xFF007AFF),
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Text('Nouvelle Réservation', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                          'Nouvelle Réservation',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         SizedBox(width: 8),
                         Icon(Icons.arrow_forward_rounded, size: 18),
                       ],
@@ -216,32 +252,84 @@ class MyReservationsPage extends StatelessWidget {
   Widget _buildStatsCards(BookingController controller, bool isMobile) {
     return Obx(() {
       final total = controller.reservations.length;
-      final confirmes = controller.reservations.where((r) => r.status == ReservationStatus.confirmee).length;
-      final enAttente = controller.reservations.where((r) => r.status == ReservationStatus.enAttente).length;
+      final confirmes = controller.reservations
+          .where((r) => r.status == ReservationStatus.confirmee)
+          .length;
+      final enAttente = controller.reservations
+          .where((r) => r.status == ReservationStatus.enAttente)
+          .length;
 
-      return isMobile 
-        ? Column(
-            children: [
-              _buildStatCard('TOTAL', total.toString(), Icons.calendar_today_rounded, const Color(0xFFF8FAFC), isMobile),
-              const SizedBox(height: 12),
-              _buildStatCard('CONFIRMÉES', confirmes.toString(), Icons.check_circle_outline_rounded, const Color(0xFFF0FDF4), isMobile),
-              const SizedBox(height: 12),
-              _buildStatCard('EN ATTENTE', enAttente.toString(), Icons.access_time_rounded, const Color(0xFFFFFBEB), isMobile),
-            ],
-          )
-        : Row(
-            children: [
-              Expanded(child: _buildStatCard('TOTAL', total.toString(), Icons.calendar_today_rounded, const Color(0xFFF8FAFC), isMobile)),
-              const SizedBox(width: 20),
-              Expanded(child: _buildStatCard('CONFIRMÉES', confirmes.toString(), Icons.check_circle_outline_rounded, const Color(0xFFF0FDF4), isMobile)),
-              const SizedBox(width: 20),
-              Expanded(child: _buildStatCard('EN ATTENTE', enAttente.toString(), Icons.access_time_rounded, const Color(0xFFFFFBEB), isMobile)),
-            ],
-          );
+      return isMobile
+          ? Column(
+              children: [
+                _buildStatCard(
+                  'TOTAL',
+                  total.toString(),
+                  Icons.calendar_today_rounded,
+                  const Color(0xFFF8FAFC),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _buildStatCard(
+                  'CONFIRMÉES',
+                  confirmes.toString(),
+                  Icons.check_circle_outline_rounded,
+                  const Color(0xFFF0FDF4),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _buildStatCard(
+                  'EN ATTENTE',
+                  enAttente.toString(),
+                  Icons.access_time_rounded,
+                  const Color(0xFFFFFBEB),
+                  isMobile,
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    'TOTAL',
+                    total.toString(),
+                    Icons.calendar_today_rounded,
+                    const Color(0xFFF8FAFC),
+                    isMobile,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: _buildStatCard(
+                    'CONFIRMÉES',
+                    confirmes.toString(),
+                    Icons.check_circle_outline_rounded,
+                    const Color(0xFFF0FDF4),
+                    isMobile,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: _buildStatCard(
+                    'EN ATTENTE',
+                    enAttente.toString(),
+                    Icons.access_time_rounded,
+                    const Color(0xFFFFFBEB),
+                    isMobile,
+                  ),
+                ),
+              ],
+            );
     });
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color bgColor, bool isMobile) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color bgColor,
+    bool isMobile,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -342,7 +430,11 @@ class MyReservationsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: TextField(
@@ -362,15 +454,25 @@ class MyReservationsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildReservationCard(BuildContext context, Reservation res, bool isMobile) {
+  Widget _buildReservationCard(
+    BuildContext context,
+    Reservation res,
+    bool isMobile,
+  ) {
     final Color statusColor = _getStatusColor(res.status);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: InkWell(
         onTap: () => _showReservationDetails(context, res),
@@ -379,51 +481,118 @@ class MyReservationsPage extends StatelessWidget {
           child: Row(
             children: [
               // Barre latérale de couleur selon le statut
-              Container(width: 6, decoration: BoxDecoration(color: statusColor, borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), bottomLeft: Radius.circular(16)))),
-              
+              Container(
+                width: 6,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                ),
+              ),
+
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Row(
                     children: [
                       // Icône selon type ou défaut
-                      Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.calendar_month_rounded, color: Color(0xFF007AFF))),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.calendar_month_rounded,
+                          color: Color(0xFF007AFF),
+                        ),
+                      ),
                       const SizedBox(width: 16),
-                      
+
                       // Infos principales
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(res.spaceName ?? "Espace", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E293B))),
+                            Text(
+                              res.spaceName ?? "Espace",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text(res.formattedDate, style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500)),
-                            Text(res.formattedTime, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                            Text(
+                              res.formattedDate,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              res.formattedTime,
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 13,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      
+
                       if (!isMobile) ...[
                         // Montant
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            const Text("Montant total", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                            Text("${res.totalAmount.toStringAsFixed(2)} TND", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            const Text(
+                              "Montant total",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Text(
+                              "${res.totalAmount.toStringAsFixed(2)} TND",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(width: 32),
                       ],
-                      
+
                       // Statut Badge
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                        child: Text(res.statusString, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          res.statusString,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
-                      
+
                       const SizedBox(width: 16),
-                      const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                     ],
                   ),
                 ),
@@ -452,33 +621,70 @@ class MyReservationsPage extends StatelessWidget {
                 children: [
                   const Expanded(
                     child: Text(
-                      "Détails de la réservation", 
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      "Détails de la réservation",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  IconButton(onPressed: () => Get.back(), icon: const Icon(Icons.close)),
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
               const Divider(height: 32),
-              
-              _detailRow(Icons.business_rounded, "Espace", res.spaceName ?? "Non spécifié"),
-              _detailRow(Icons.calendar_today_rounded, "Date", res.formattedDate),
-              _detailRow(Icons.access_time_rounded, "Horaire", res.formattedTime),
-              _detailRow(Icons.info_outline_rounded, "Statut", res.statusString, color: _getStatusColor(res.status)),
-              _detailRow(Icons.payment_rounded, "Montant total", "${res.totalAmount.toStringAsFixed(2)} TND", isBold: true),
-              
+
+              _detailRow(
+                Icons.business_rounded,
+                "Espace",
+                res.spaceName ?? "Non spécifié",
+              ),
+              _detailRow(
+                Icons.calendar_today_rounded,
+                "Date",
+                res.formattedDate,
+              ),
+              _detailRow(
+                Icons.access_time_rounded,
+                "Horaire",
+                res.formattedTime,
+              ),
+              _detailRow(
+                Icons.info_outline_rounded,
+                "Statut",
+                res.statusString,
+                color: _getStatusColor(res.status),
+              ),
+              _detailRow(
+                Icons.payment_rounded,
+                "Montant total",
+                "${res.totalAmount.toStringAsFixed(2)} TND",
+                isBold: true,
+              ),
+
               if (res.notes != null && res.notes!.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                const Text("Services & Notes :", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                const Text(
+                  "Services & Notes :",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Text(res.notes!, style: const TextStyle(fontSize: 14)),
                 ),
               ],
-              
+
               const SizedBox(height: 32),
 
               // ─── BOUTON ANNULER (Seulement si En attente) ───
@@ -488,17 +694,29 @@ class MyReservationsPage extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () {
                       Get.back(); // Ferme le détail
-                      _confirmCancellation(context, res, Get.find<BookingController>());
+                      _confirmCancellation(
+                        context,
+                        res,
+                        Get.find<BookingController>(),
+                      );
                     },
-                    icon: const Icon(Icons.cancel_outlined, color: Color(0xFFEF4444)),
+                    icon: const Icon(
+                      Icons.cancel_outlined,
+                      color: Color(0xFFEF4444),
+                    ),
                     label: const Text(
-                      "Annuler ma réservation", 
-                      style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold),
+                      "Annuler ma réservation",
+                      style: TextStyle(
+                        color: Color(0xFFEF4444),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFEF4444)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -512,9 +730,14 @@ class MyReservationsPage extends StatelessWidget {
                     backgroundColor: const Color(0xFF007AFF),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text("Fermer", style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Fermer",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -524,14 +747,23 @@ class MyReservationsPage extends StatelessWidget {
     );
   }
 
-  Widget _detailRow(IconData icon, String label, String value, {Color? color, bool isBold = false}) {
+  Widget _detailRow(
+    IconData icon,
+    String label,
+    String value, {
+    Color? color,
+    bool isBold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
           Icon(icon, size: 20, color: Colors.grey[400]),
           const SizedBox(width: 12),
-          Text("$label : ", style: const TextStyle(color: Colors.grey, fontSize: 15)),
+          Text(
+            "$label : ",
+            style: const TextStyle(color: Colors.grey, fontSize: 15),
+          ),
           Expanded(
             child: Text(
               value,
@@ -558,7 +790,7 @@ class MyReservationsPage extends StatelessWidget {
             Text(
               "Aucune de vos prochaines sessions ne correspond à votre recherche.",
               style: TextStyle(
-                fontSize: isMobile ? 14 : 16, 
+                fontSize: isMobile ? 14 : 16,
                 color: const Color(0xFF94A3B8),
                 fontStyle: FontStyle.italic,
               ),
@@ -570,7 +802,11 @@ class MyReservationsPage extends StatelessWidget {
     );
   }
 
-  void _confirmCancellation(BuildContext context, Reservation res, BookingController controller) {
+  void _confirmCancellation(
+    BuildContext context,
+    Reservation res,
+    BookingController controller,
+  ) {
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -585,18 +821,30 @@ class MyReservationsPage extends StatelessWidget {
                   color: const Color(0xFFEF4444).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 52),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xFFEF4444),
+                  size: 52,
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
                 "Annuler la réservation ?",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF111827),
+                ),
               ),
               const SizedBox(height: 10),
               const Text(
                 "Êtes-vous sûr de vouloir annuler votre réservation ?\nCette action est irréversible.",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6B7280),
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 28),
               Row(
@@ -606,10 +854,15 @@ class MyReservationsPage extends StatelessWidget {
                       onPressed: () => Get.back(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         side: const BorderSide(color: Color(0xFFE5E7EB)),
                       ),
-                      child: const Text("Non, garder", style: TextStyle(color: Color(0xFF6B7280))),
+                      child: const Text(
+                        "Non, garder",
+                        style: TextStyle(color: Color(0xFF6B7280)),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -622,10 +875,18 @@ class MyReservationsPage extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFEF4444),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         elevation: 0,
                       ),
-                      child: const Text("Oui, annuler", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "Oui, annuler",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -639,10 +900,14 @@ class MyReservationsPage extends StatelessWidget {
 
   Color _getStatusColor(ReservationStatus status) {
     switch (status) {
-      case ReservationStatus.confirmee: return const Color(0xFF166534);
-      case ReservationStatus.terminee: return const Color(0xFF1E293B);
-      case ReservationStatus.annulee: return const Color(0xFF991B1B);
-      case ReservationStatus.enAttente: return const Color(0xFF9A3412);
+      case ReservationStatus.confirmee:
+        return const Color(0xFF166534);
+      case ReservationStatus.terminee:
+        return const Color(0xFF1E293B);
+      case ReservationStatus.annulee:
+        return const Color(0xFF991B1B);
+      case ReservationStatus.enAttente:
+        return const Color(0xFF9A3412);
     }
   }
 }

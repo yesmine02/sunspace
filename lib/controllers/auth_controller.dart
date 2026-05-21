@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../data/local/secure_storage.dart';
+import 'booking_controller.dart';
 import 'notification_controller.dart'; // 🔔 Pour rafraîchir les notifs après login
 //C’est le cerveau de l’authentification Il gère :✅ login✅ register✅ logout✅ rôle
 //✅ update profil✅ password✅ delete account
@@ -85,9 +86,9 @@ class AuthController extends GetxController {
   Future<bool> register(String username, String email, String password) async {
     final url = Uri.parse('$baseUrl/auth/local/register');
     
-    // On ajoute un suffixe au username pour garantir l'unicité côté serveur,
-    // car l'utilisateur veut que la contrainte ne porte que sur l'email.
-    final uniqueUsername = "${username.trim()}_${DateTime.now().millisecondsSinceEpoch.toString().substring(10)}";
+    // Suppression du suffixe aléatoire pour que le nom soit exactement celui saisi.
+    // Si le nom est déjà pris, Strapi renverra une erreur que l'application affichera.
+    final uniqueUsername = username.trim();
 //Prépare le corps de la requête POST à envoyer au serveur.
     final body = {
       'username': uniqueUsername,
@@ -361,6 +362,7 @@ class AuthController extends GetxController {
     token = null;
     isLoggedIn.value = false;
     currentUser.value = null;
+    Get.delete<BookingController>(force: true); // Nettoie le contrôleur pour éviter les données résiduelles
     Get.offAllNamed('/login');
   }
 

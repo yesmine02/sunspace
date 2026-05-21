@@ -423,8 +423,13 @@ class SessionsController extends GetxController {
       if (s.instructorId.toString() != instructorId.toString()) continue;
       if (excludeDocumentId != null && s.documentId == excludeDocumentId) continue;
       if (s.startDate == null || s.endDate == null) continue;
-      final bool sIsAssociation = (s.courseId == null || s.courseId.toString() == "null");
+      
+      // Comparer uniquement les sessions du même type :
+      // - Sessions d'association (courseId == null) vs sessions d'association
+      // - Sessions enseignant (courseId != null) vs sessions enseignant
+      final bool sIsAssociation = s.courseId == null;
       if (isAssociation != sIsAssociation) continue;
+      
       if (start.isBefore(s.endDate!) && end.isAfter(s.startDate!)) return true;
     }
     return false;

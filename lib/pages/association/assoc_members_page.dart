@@ -346,20 +346,21 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   // 🧠 LE FILTRE INTELLIGENT
   // ─────────────────────────────────────────────
   List<User> _applyFilters(List<User> users, Association? activeAssoc) {
+    // Si aucune association active → rien à afficher
+    if (activeAssoc == null) return [];
+
     // 1. On liste tous les IDs d'utilisateurs qui ont le droit de figurer sur cette page
     final validIds = <int>{};
-    if (activeAssoc != null) {
-      if (activeAssoc.admin?.id != null) validIds.add(activeAssoc.admin!.id!);
-      for (var m in (activeAssoc.members ?? [])) {
-        if (m is Map && m['id'] != null) validIds.add(m['id']);
-        if (m is int) validIds.add(m);
-      }
+    if (activeAssoc.admin?.id != null) validIds.add(activeAssoc.admin!.id!);
+    for (var m in (activeAssoc.members ?? [])) {
+      if (m is Map && m['id'] != null) validIds.add(m['id']);
+      if (m is int) validIds.add(m);
     }
 
     // 2. On filtre la liste globale 'users' (qui contient tout le serveur)
     var result = users.where((u) {
       // SI l'utilisateur n'est pas lié à l'association active => ON LE CACHE
-      if (activeAssoc != null && u.id != null && !validIds.contains(u.id)) {
+      if (u.id != null && !validIds.contains(u.id)) {
         return false;
       }
       
@@ -371,9 +372,9 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
 
     // 3. Filtre par rôle (onglet 'ADMINS' ou 'MEMBRES')
     if (_activeFilter == 'ADMINS') {
-      result = result.where((u) => activeAssoc?.admin?.id == u.id).toList();
+      result = result.where((u) => activeAssoc.admin?.id == u.id).toList();
     } else if (_activeFilter == 'MEMBRES') {
-      result = result.where((u) => activeAssoc?.admin?.id != u.id).toList();
+      result = result.where((u) => activeAssoc.admin?.id != u.id).toList();
     }
 
     return result;

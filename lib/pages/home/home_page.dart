@@ -29,6 +29,8 @@ class HomePage extends StatelessWidget {
     Widget dashboard;
     if (authController.isInstructor) {
       dashboard = _InstructorDashboard(notifController: notifController);
+    } else if (authController.isAuthenticatedOnly && !isSpecialUser) {
+      dashboard = _AuthenticatedDashboard(notifController: notifController);
     } else if (authController.isStudent || authController.isProfessional || isSpecialUser) {
       dashboard = _ModernDashboard(notifController: notifController);
     } else {
@@ -706,3 +708,133 @@ Widget _buildPopularCoursesCard() {
     ),
   );
 }
+// ============================================================
+// TABLEAU DE BORD AUTHENTICATED
+// ============================================================
+class _AuthenticatedDashboard extends StatelessWidget {
+  final NotificationController notifController;
+  const _AuthenticatedDashboard({required this.notifController});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 800;
+    final authController = Get.find<AuthController>();
+    final username = authController.currentUser.value?['username'] ?? 'authenticated';
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isMobile ? 16 : 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildTopBar(notifController),
+          const SizedBox(height: 24),
+          
+          Text('Tableau de bord', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          const SizedBox(height: 4),
+          Text('Bienvenue $username', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+          
+          const SizedBox(height: 32),
+          
+          LayoutBuilder(builder: (context, constraints) {
+            if (constraints.maxWidth > 900) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 3, child: _buildAuthNavigationCard()),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      children: [
+                        _buildOptimizeTimeCard(),
+                        const SizedBox(height: 24),
+                        _buildPopularCoursesCard(),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              return Column(
+                children: [
+                  _buildAuthNavigationCard(),
+                  const SizedBox(height: 24),
+                  _buildOptimizeTimeCard(),
+                  const SizedBox(height: 24),
+                  _buildPopularCoursesCard(),
+                ],
+              );
+            }
+          }),
+          
+          const SizedBox(height: 40),
+          const Text('Actions rapides', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+          const SizedBox(height: 16),
+          _buildCommonQuickActions(context),
+        ],
+      ),
+    );
+  }
+}
+
+Widget _buildAuthNavigationCard() {
+  return Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: const Color(0xFFE2E8F0)),
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5))],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Bienvenue sur SUNSPACE', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  const SizedBox(height: 4),
+                  Text('Gérez votre espace de travail', style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
+              child: const Icon(Icons.grid_view_rounded, color: Color(0xFF3B82F6), size: 24),
+            ),
+          ],
+        ),
+        const SizedBox(height: 32),
+        _buildActionItem(
+          icon: Icons.grid_view_rounded, iconBg: const Color(0xFFEFF6FF), iconColor: const Color(0xFF3B82F6),
+          title: 'Tableau de bord', subtitle: 'Vue d\'ensemble de votre activité',
+          onTap: () {},
+        ),
+        const Padding(
+          padding: EdgeInsets.only(left: 60),
+          child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+        ),
+        _buildActionItem(
+          icon: Icons.calendar_today_rounded, iconBg: const Color(0xFFF0FDF4), iconColor: const Color(0xFF22C55E),
+          title: 'Réserver un espace', subtitle: 'Trouvez et réservez votre bureau',
+          onTap: () => Get.toNamed(AppRoutes.BOOK_SPACE),
+        ),
+        const Padding(
+          padding: EdgeInsets.only(left: 60),
+          child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+        ),
+        _buildActionItem(
+          icon: Icons.person_outline_rounded, iconBg: const Color(0xFFF5F3FF), iconColor: const Color(0xFF8B5CF6),
+          title: 'Mon Profil', subtitle: 'Gérez vos informations personnelles',
+          onTap: () => Get.toNamed(AppRoutes.PROFILE),
+        ),
+      ],
+    ),
+  );
+}
+

@@ -76,11 +76,8 @@ class AssocTrainingsPage extends StatelessWidget {
                 final displaySessions = controller.sessions.where((s) {
                   if (assocAdminId == null) return false; // Ne rien afficher si l'admin n'est pas identifié
                   if (s.instructorId != assocAdminId) return false;
-                  
-                  // CRUCIAL: Si la session a un cours associé, c'est une session d'enseignant!
-                  // Les sessions d'association n'ont jamais de cours.
+                  // Les sessions d'association n'ont jamais de cours
                   if (s.courseId != null) return false;
-                  
                   return true;
                 }).where((s) {
                   // Filtre recherche local

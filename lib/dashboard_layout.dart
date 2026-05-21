@@ -6,7 +6,8 @@ import 'routing/app_routes.dart';
 /// 🔹 Layout principal utilisé pour toutes les pages du dashboard
 /// Il contient : Sidebar (Desktop) ou Drawer (Mobile) + contenu de la page
 class DashboardLayout extends StatelessWidget {
-  final Widget child; // 👉 Contenu de la page actuelle (dashboard, settings, etc.)
+  final Widget
+  child; // 👉 Contenu de la page actuelle (dashboard, settings, etc.)
 
   DashboardLayout({super.key, required this.child});
 
@@ -45,9 +46,7 @@ class DashboardLayout extends StatelessWidget {
           if (isDesktop) const Sidebar(),
 
           // Contenu de la page
-          Expanded(
-            child: child,
-          ),
+          Expanded(child: child),
         ],
       ),
 
@@ -73,7 +72,9 @@ class DashboardLayout extends StatelessWidget {
               },
               type: BottomNavigationBarType.fixed,
               backgroundColor: Colors.white,
-              selectedItemColor: const Color(0xFF64748B), // Slate 500 pour correspondre à l'image
+              selectedItemColor: const Color(
+                0xFF64748B,
+              ), // Slate 500 pour correspondre à l'image
               unselectedItemColor: const Color(0xFF64748B),
               showUnselectedLabels: true,
               selectedLabelStyle: const TextStyle(fontSize: 12),

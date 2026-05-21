@@ -8,18 +8,21 @@
 enum EquipmentStatus { disponible, enMaintenance, enPanne }
 
 class Equipment {
-  final String id;              // Identifiant unique (numérique converti en String)
-  final String? documentId;     // Identifiant Strapi utilisé pour modifier/supprimer
-  final String name;            // Nom de l'équipement
-  final String type;            // Type (ex: "Imprimante", "Écran", etc.)
-  final String serialNumber;    // Numéro de série
+  final String id; // Identifiant unique (numérique converti en String)
+  final String?
+  documentId; // Identifiant Strapi utilisé pour modifier/supprimer
+  final String name; // Nom de l'équipement
+  final String type; // Type (ex: "Imprimante", "Écran", etc.)
+  final String serialNumber; // Numéro de série
   final EquipmentStatus status; // Statut actuel
-  final String? spaceName;      // Nom de l'espace où se trouve l'équipement (optionnel)
-  final String? description;    // Description détaillée (optionnel)
+  final String?
+  spaceName; // Nom de l'espace où se trouve l'équipement (optionnel)
+  final String? description; // Description détaillée (optionnel)
   final DateTime? purchaseDate; // Date d'achat (optionnel)
-  final double? price;          // Prix d'achat (optionnel)
-  final DateTime? warrantyExpiry; // Date d'expiration de la garantie (optionnel)
-  final String? notes;          // Notes additionnelles (optionnel)
+  final double? price; // Prix d'achat (optionnel)
+  final DateTime?
+  warrantyExpiry; // Date d'expiration de la garantie (optionnel)
+  final String? notes; // Notes additionnelles (optionnel)
 
   // Constructeur — les champs "required" sont obligatoires
   Equipment({
@@ -62,20 +65,31 @@ class Equipment {
   //   - "purchase_price" sur le serveur → "price" dans le modèle
   factory Equipment.fromJson(Map<String, dynamic> json) {
     // Strapi v4/v5 peut emballer les données dans un objet 'attributes'
-    final Map<String, dynamic> data = json.containsKey('attributes') ? json['attributes'] : json;
-    
+    final Map<String, dynamic> data = json.containsKey('attributes')
+        ? json['attributes']
+        : json;
+
     return Equipment(
       id: json['id'].toString(),
-      documentId: json['documentId']?.toString() ?? data['documentId']?.toString(),
+      documentId:
+          json['documentId']?.toString() ?? data['documentId']?.toString(),
       name: data['name'] ?? '',
       type: data['type'] ?? '',
-      serialNumber: (data['serial_number'] ?? data['serialNumber'] ?? '').toString(),
+      serialNumber: (data['serial_number'] ?? data['serialNumber'] ?? '')
+          .toString(),
       status: _parseStatus(data['mystatus'] ?? data['status']),
       spaceName: data['spaceName']?.toString(),
       description: data['description']?.toString(),
       purchaseDate: _parseDate(data['purchase_date'] ?? data['purchaseDate']),
-      price: (data['purchase_price'] ?? data['purchasePrice'] ?? data['daily_price'] ?? data['rental_price'])?.toDouble(),
-      warrantyExpiry: _parseDate(data['warranty_expiry'] ?? data['warrantyExpiry']),
+      price:
+          (data['purchase_price'] ??
+                  data['purchasePrice'] ??
+                  data['daily_price'] ??
+                  data['rental_price'])
+              ?.toDouble(),
+      warrantyExpiry: _parseDate(
+        data['warranty_expiry'] ?? data['warrantyExpiry'],
+      ),
       notes: data['notes']?.toString(),
     );
   }
@@ -124,7 +138,7 @@ class Equipment {
         'purchase_price': price,
         'warranty_expiry': warrantyExpiry?.toIso8601String(),
         'notes': notes ?? '',
-      }
+      },
     };
   }
 

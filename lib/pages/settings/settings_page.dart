@@ -34,7 +34,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void dispose() {
-    _currentPasswordController.dispose();
+    _currentPasswordController
+        .dispose(); // Libère les ressources des TextEditingControllers
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -53,7 +54,10 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildTopBar(),
 
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: 40),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : 40,
+                vertical: 40,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -118,7 +122,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 decoration: InputDecoration(
                   hintText: "Rechercher...",
                   hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 15),
-                  prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Color(0xFF94A3B8),
+                    size: 20,
+                  ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -178,8 +186,18 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text('Sécurité', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                    Text('Modifier votre mot de passe', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                    Text(
+                      'Sécurité',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      'Modifier votre mot de passe',
+                      style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                    ),
                   ],
                 ),
               ),
@@ -195,10 +213,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   backgroundColor: const Color(0xFFF1F5F9),
                   foregroundColor: const Color(0xFF0F172A),
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('Changer le mot de passe', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: const Text(
+                  'Changer le mot de passe',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             )
           else
@@ -210,7 +233,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   controller: _currentPasswordController,
                   hint: "Entrez votre mot de passe actuel",
                   obscure: _obscureCurrent,
-                  onToggle: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                  onToggle: () =>
+                      setState(() => _obscureCurrent = !_obscureCurrent),
                 ),
                 const SizedBox(height: 20),
                 _buildLabel("Nouveau mot de passe"),
@@ -226,7 +250,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   controller: _confirmPasswordController,
                   hint: "Confirmez votre nouveau mot de passe",
                   obscure: _obscureConfirm,
-                  onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                  onToggle: () =>
+                      setState(() => _obscureConfirm = !_obscureConfirm),
                 ),
                 const SizedBox(height: 32),
                 Row(
@@ -234,19 +259,28 @@ class _SettingsPageState extends State<SettingsPage> {
                     ElevatedButton(
                       onPressed: () async {
                         final authController = Get.find<AuthController>();
-                        
+
                         // Validation locale
-                        if (_currentPasswordController.text.isEmpty || 
-                            _newPasswordController.text.isEmpty || 
+                        if (_currentPasswordController.text.isEmpty ||
+                            _newPasswordController.text.isEmpty ||
                             _confirmPasswordController.text.isEmpty) {
-                          Get.snackbar('Erreur', 'Veuillez remplir tous les champs', 
-                              backgroundColor: Colors.red, colorText: Colors.white);
+                          Get.snackbar(
+                            'Erreur',
+                            'Veuillez remplir tous les champs',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
                           return;
                         }
 
-                        if (_newPasswordController.text != _confirmPasswordController.text) {
-                          Get.snackbar('Erreur', 'Les nouveaux mots de passe ne correspondent pas', 
-                              backgroundColor: Colors.red, colorText: Colors.white);
+                        if (_newPasswordController.text !=
+                            _confirmPasswordController.text) {
+                          Get.snackbar(
+                            'Erreur',
+                            'Les nouveaux mots de passe ne correspondent pas',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
                           return;
                         }
 
@@ -266,25 +300,54 @@ class _SettingsPageState extends State<SettingsPage> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF007AFF),
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         elevation: 0,
                       ),
-                      child: Obx(() => Get.find<AuthController>().isLoading.value 
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                      child: Obx(
+                        () => Get.find<AuthController>().isLoading.value
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Enregistrer',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () => setState(() => isChangingPassword = false),
+                      onPressed: () =>
+                          setState(() => isChangingPassword = false),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF1F5F9),
                         foregroundColor: const Color(0xFF475569),
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         elevation: 0,
                       ),
-                      child: const Text('Annuler', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Annuler',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
@@ -339,7 +402,10 @@ class _SettingsPageState extends State<SettingsPage> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFF007AFF), width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
     );
   }
@@ -357,34 +423,72 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text('Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                    Text('Contrôlez comment vous recevez les notifications', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                    Text(
+                      'Notifications',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      'Contrôlez comment vous recevez les notifications',
+                      style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 32),
-          _buildSwitchItem("Notifications par email", "Recevez les mises à jour importantes par email", emailNotifications, (v) => setState(() => emailNotifications = v)),
+          _buildSwitchItem(
+            "Notifications par email",
+            "Recevez les mises à jour importantes par email",
+            emailNotifications,
+            (v) => setState(() => emailNotifications = v),
+          ),
           const SizedBox(height: 16),
-          _buildSwitchItem("Notifications par SMS", "Recevez les alertes critiques par SMS", smsNotifications, (v) => setState(() => smsNotifications = v)),
+          _buildSwitchItem(
+            "Notifications par SMS",
+            "Recevez les alertes critiques par SMS",
+            smsNotifications,
+            (v) => setState(() => smsNotifications = v),
+          ),
           const SizedBox(height: 16),
-          _buildSwitchItem("Notifications push", "Recevez les notifications en temps réel", pushNotifications, (v) => setState(() => pushNotifications = v)),
+          _buildSwitchItem(
+            "Notifications push",
+            "Recevez les notifications en temps réel",
+            pushNotifications,
+            (v) => setState(() => pushNotifications = v),
+          ),
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Get.snackbar('Succès', 'Vos préférences ont été enregistrées', 
-                  backgroundColor: const Color(0xFF10B981), colorText: Colors.white);
+                Get.snackbar(
+                  'Succès',
+                  'Vos préférences ont été enregistrées',
+                  backgroundColor: const Color(0xFF10B981),
+                  colorText: Colors.white,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF007AFF),
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
-              child: const Text('Enregistrer les préférences', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16)),
+              child: const Text(
+                'Enregistrer les préférences',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+              ),
             ),
           ),
         ],
@@ -399,14 +503,27 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           Row(
             children: [
-              _buildIconBox(Icons.account_balance_wallet_outlined, const Color(0xFF10B981)),
+              _buildIconBox(
+                Icons.account_balance_wallet_outlined,
+                const Color(0xFF10B981),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text('Compte Association', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                    Text('Gérez votre budget et vos services organisationnels', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                    Text(
+                      'Compte Association',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      'Gérez votre budget et vos services organisationnels',
+                      style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                    ),
                   ],
                 ),
               ),
@@ -416,11 +533,19 @@ class _SettingsPageState extends State<SettingsPage> {
           Row(
             children: [
               Expanded(
-                child: _buildSmallDetailCard("Solde Restant", "3 259,50 €", const Color(0xFF10B981)),
+                child: _buildSmallDetailCard(
+                  "Solde Restant",
+                  "3 259,50 €",
+                  const Color(0xFF10B981),
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildSmallDetailCard("Dépenses Mois", "1 240,50 €", Colors.orange),
+                child: _buildSmallDetailCard(
+                  "Dépenses Mois",
+                  "1 240,50 €",
+                  Colors.orange,
+                ),
               ),
             ],
           ),
@@ -432,9 +557,18 @@ class _SettingsPageState extends State<SettingsPage> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 side: const BorderSide(color: Color(0xFF007AFF), width: 1.5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Voir le rapport détaillé', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF007AFF), fontSize: 16)),
+              child: const Text(
+                'Voir le rapport détaillé',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF007AFF),
+                  fontSize: 16,
+                ),
+              ),
             ),
           ),
         ],
@@ -453,9 +587,23 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w900)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ],
       ),
     );
@@ -469,9 +617,19 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Quitter', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF991B1B))),
+          const Text(
+            'Quitter',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF991B1B),
+            ),
+          ),
           const SizedBox(height: 8),
-          const Text('Déconnectez-vous de votre compte', style: TextStyle(color: Color(0xFFEF4444), fontSize: 15)),
+          const Text(
+            'Déconnectez-vous de votre compte',
+            style: TextStyle(color: Color(0xFFEF4444), fontSize: 15),
+          ),
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
@@ -484,7 +642,14 @@ class _SettingsPageState extends State<SettingsPage> {
                   side: const BorderSide(color: Color(0xFFEF4444), width: 1.2),
                 ),
               ),
-              child: const Text('Se déconnecter', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFEF4444), fontSize: 16)),
+              child: const Text(
+                'Se déconnecter',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFEF4444),
+                  fontSize: 16,
+                ),
+              ),
             ),
           ),
         ],
@@ -503,7 +668,12 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildSwitchItem(String title, String subtitle, bool value, Function(bool) onChanged) {
+  Widget _buildSwitchItem(
+    String title,
+    String subtitle,
+    bool value,
+    Function(bool) onChanged,
+  ) {
     return Row(
       children: [
         Checkbox(
@@ -517,8 +687,18 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
-              Text(subtitle, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+              ),
             ],
           ),
         ),

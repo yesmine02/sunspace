@@ -11,6 +11,7 @@ class EditUserDialog extends StatefulWidget {
   State<EditUserDialog> createState() => _EditUserDialogState();
 }
 
+// Dialog pour éditer les informations d'un utilisateur (admin uniquement)
 class _EditUserDialogState extends State<EditUserDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _usernameController;
@@ -19,17 +20,20 @@ class _EditUserDialogState extends State<EditUserDialog> {
   late String _selectedRole;
   late bool _isConfirmed;
   late bool _isBlocked;
-
+  // Initialisation des controllers avec les données de l'utilisateur à éditer
   @override
   void initState() {
     super.initState();
     _usernameController = TextEditingController(text: widget.user.username);
     _emailController = TextEditingController(text: widget.user.email);
-    _selectedRole = widget.user.roleName.isNotEmpty ? widget.user.roleName : 'Authenticated';
+    _selectedRole = widget.user.roleName.isNotEmpty
+        ? widget.user.roleName
+        : 'Authenticated';
     _isConfirmed = widget.user.confirmed ?? false;
     _isBlocked = widget.user.blocked ?? false;
   }
 
+  // Dispose des controllers pour éviter les fuites de mémoire
   @override
   void dispose() {
     _usernameController.dispose();
@@ -46,11 +50,16 @@ class _EditUserDialogState extends State<EditUserDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
-      insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: 24),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 40,
+        vertical: 24,
+      ),
       child: Container(
         padding: EdgeInsets.all(isMobile ? 16 : 24),
         width: isMobile ? double.infinity : 500,
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -76,7 +85,10 @@ class _EditUserDialogState extends State<EditUserDialog> {
                           const SizedBox(height: 4),
                           Text(
                             'Modifiez les informations de l\'utilisateur ici.',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -121,19 +133,23 @@ class _EditUserDialogState extends State<EditUserDialog> {
                       value: _selectedRole,
                       isExpanded: true,
                       icon: const Icon(Icons.keyboard_arrow_down, size: 20),
-                      items: [
-                        'Admin', 
-                        'Authenticated', 
-                        'Etudiant', 
-                        'Enseignant', 
-                        'Gestionnaire d\'espace', 
-                        'Professionnel'
-                      ].map((role) {
-                        return DropdownMenuItem(
-                          value: role,
-                          child: Text(role, style: const TextStyle(fontSize: 14)),
-                        );
-                      }).toList(),
+                      items:
+                          [
+                            'Admin',
+                            'Authenticated',
+                            'Etudiant',
+                            'Enseignant',
+                            'Gestionnaire d\'espace',
+                            'Professionnel',
+                          ].map((role) {
+                            return DropdownMenuItem(
+                              value: role,
+                              child: Text(
+                                role,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            );
+                          }).toList(),
                       onChanged: (val) => setState(() => _selectedRole = val!),
                     ),
                   ),
@@ -151,43 +167,45 @@ class _EditUserDialogState extends State<EditUserDialog> {
                 const SizedBox(height: 16),
 
                 // Toggles
-                isMobile 
-                  ? Column(
-                      children: [
-                        _buildToggleRow('Confirmé', _isConfirmed, (val) {
-                          setState(() {
-                            _isConfirmed = val;
-                            if (val) _isBlocked = false;
-                          });
-                        }),
-                        _buildToggleRow('Bloqué', _isBlocked, (val) {
-                          setState(() {
-                            _isBlocked = val;
-                            if (val) _isConfirmed = false;
-                          });
-                        }),
-                      ],
-                    )
-                  : Row(
-                      children: [
-                        Expanded(
-                          child: _buildToggleRow('Confirmé', _isConfirmed, (val) {
+                isMobile
+                    ? Column(
+                        children: [
+                          _buildToggleRow('Confirmé', _isConfirmed, (val) {
                             setState(() {
                               _isConfirmed = val;
                               if (val) _isBlocked = false;
                             });
                           }),
-                        ),
-                        Expanded(
-                          child: _buildToggleRow('Bloqué', _isBlocked, (val) {
+                          _buildToggleRow('Bloqué', _isBlocked, (val) {
                             setState(() {
                               _isBlocked = val;
                               if (val) _isConfirmed = false;
                             });
                           }),
-                        ),
-                      ],
-                    ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _buildToggleRow('Confirmé', _isConfirmed, (
+                              val,
+                            ) {
+                              setState(() {
+                                _isConfirmed = val;
+                                if (val) _isBlocked = false;
+                              });
+                            }),
+                          ),
+                          Expanded(
+                            child: _buildToggleRow('Bloqué', _isBlocked, (val) {
+                              setState(() {
+                                _isBlocked = val;
+                                if (val) _isConfirmed = false;
+                              });
+                            }),
+                          ),
+                        ],
+                      ),
                 const SizedBox(height: 32),
 
                 // Save Button
@@ -206,7 +224,10 @@ class _EditUserDialogState extends State<EditUserDialog> {
                     ),
                     child: const Text(
                       'Enregistrer les modifications',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
@@ -257,7 +278,10 @@ class _EditUserDialogState extends State<EditUserDialog> {
         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey[200]!),
@@ -268,7 +292,8 @@ class _EditUserDialogState extends State<EditUserDialog> {
         ),
       ),
       validator: (value) {
-        if (isRequired && (value == null || value.isEmpty)) return 'Ce champ est obligatoire';
+        if (isRequired && (value == null || value.isEmpty))
+          return 'Ce champ est obligatoire';
         return null;
       },
     );
@@ -287,9 +312,14 @@ class _EditUserDialogState extends State<EditUserDialog> {
         createdAt: widget.user.createdAt,
         updatedAt: DateTime.now().toIso8601String(),
       );
-      
+
       debugPrint("Form validated. Updating user: ${updatedUser.username}");
-      controller.updateUser(updatedUser, password: _passwordController.text.isNotEmpty ? _passwordController.text : null);
+      controller.updateUser(
+        updatedUser,
+        password: _passwordController.text.isNotEmpty
+            ? _passwordController.text
+            : null,
+      );
       Get.back();
     } else {
       debugPrint("Form validation failed");

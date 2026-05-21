@@ -18,12 +18,17 @@ class AuthMiddleware extends GetMiddleware {
 
       // 🔹 Si l'utilisateur n'est pas localement connecté → LOGIN
       if (!authController.isLoggedIn.value) {
-        return const RouteSettings(name: AppRoutes.LOGIN);
+        return const RouteSettings(
+          name: AppRoutes.LOGIN,
+        ); // Redirige vers la page de login
       }
 
       // 🔹 Vérification serveur avec SessionService
       if (Get.isRegistered<SessionService>()) {
-        final sessionService = Get.find<SessionService>();
+        final sessionService =
+            Get.find<
+              SessionService
+            >(); // Lance une validation de session asynchrone
 
         // ⚠️ On ne peut pas attendre async dans redirect, donc on lance un check
         sessionService.validateSession().then((isValid) {

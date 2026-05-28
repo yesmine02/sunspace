@@ -12,8 +12,9 @@ class UsersController extends GetxController {
   final RxList<User> users = <User>[].obs;
   final RxString searchQuery = ''.obs;
   final RxBool isLoading = false.obs;
-  
-  final String apiUrl = 'http://193.111.250.244:3046/api/users?populate=*';
+
+  final String apiUrl =
+      'http://193.111.250.244:3046/api/users?populate=*'; // URL de l'API pour les utilisateurs
   static const String _storageKey = 'saved_users';
 
   /// Mapping dynamique des noms de rôles vers leurs IDs
@@ -29,6 +30,7 @@ class UsersController extends GetxController {
   }
 
   /// 🔹 Extrait les IDs de rôles depuis les utilisateurs chargés
+  // Cette méthode met à jour le mapping des rôles en fonction des données récupérées du serveur
   void _updateRoleMapping() {
     for (var user in users) {
       if (user.role is Map && user.role['id'] != null) {
@@ -61,18 +63,20 @@ class UsersController extends GetxController {
 
           if (response.statusCode == 200) {
             try {
-              File('c:\\Dev_mobile\\sunspace\\users.json').writeAsStringSync(response.body);
-            } catch(e) {}
+              File(
+                'c:\\Dev_mobile\\sunspace\\users.json',
+              ).writeAsStringSync(response.body);
+            } catch (e) {}
             final List<dynamic> list = jsonDecode(response.body);
-            
+
             try {
               final f = await SharedPreferences.getInstance();
               await f.setString('debug_users_dump', response.body);
-            } catch(e){}
+            } catch (e) {}
 
             users.assignAll(list.map((item) => User.fromJson(item)).toList());
             _updateRoleMapping();
-            
+
             // Sauvegarde en cache local
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString(_storageKey, response.body);
@@ -82,7 +86,7 @@ class UsersController extends GetxController {
       } catch (e) {
         print('Erreur réseau utilisateurs: $e');
       }
-      
+
       // Fallback cache local si le serveur ne répond pas
       final prefs = await SharedPreferences.getInstance();
       final String? cached = prefs.getString(_storageKey);
@@ -108,8 +112,12 @@ class UsersController extends GetxController {
   List<User> get filteredUsers {
     if (searchQuery.value.isEmpty) return users;
     return users.where((user) {
-      final usernameMatches = (user.username ?? '').toLowerCase().contains(searchQuery.value.toLowerCase());
-      final emailMatches = (user.email ?? '').toLowerCase().contains(searchQuery.value.toLowerCase());
+      final usernameMatches = (user.username ?? '').toLowerCase().contains(
+        searchQuery.value.toLowerCase(),
+      );
+      final emailMatches = (user.email ?? '').toLowerCase().contains(
+        searchQuery.value.toLowerCase(),
+      );
       return usernameMatches || emailMatches;
     }).toList();
   }
@@ -126,17 +134,24 @@ class UsersController extends GetxController {
 
       // ── Vérification locale des doublons AVANT d'envoyer au serveur ──
       final existingUsername = users.any(
-        (u) => (u.username ?? '').toLowerCase() == (user.username ?? '').toLowerCase(),
+        (u) =>
+            (u.username ?? '').toLowerCase() ==
+            (user.username ?? '').toLowerCase(),
       );
       if (existingUsername) {
-        throw Exception('Ce nom d\'utilisateur est déjà utilisé. Veuillez en choisir un autre.');
+        throw Exception(
+          'Ce nom d\'utilisateur est déjà utilisé. Veuillez en choisir un autre.',
+        );
       }
 
       final existingEmail = users.any(
-        (u) => (u.email ?? '').toLowerCase() == (user.email ?? '').toLowerCase(),
+        (u) =>
+            (u.email ?? '').toLowerCase() == (user.email ?? '').toLowerCase(),
       );
       if (existingEmail) {
-        throw Exception('Cette adresse email est déjà utilisée par un autre compte.');
+        throw Exception(
+          'Cette adresse email est déjà utilisée par un autre compte.',
+        );
       }
 
       final response = await http.post(
@@ -152,7 +167,9 @@ class UsersController extends GetxController {
           'password': password,
           'confirmed': user.confirmed,
           'blocked': user.blocked,
-          'role': roleMapping[user.roleName] ?? (user.role is Map ? user.role['id'] : 1),
+          'role':
+              roleMapping[user.roleName] ??
+              (user.role is Map ? user.role['id'] : 1),
         }),
       );
 
@@ -160,12 +177,20 @@ class UsersController extends GetxController {
         await loadUsers(); // Recharger depuis le serveur
       } else {
         final error = jsonDecode(response.body);
-        final rawMessage = (error['error']?['message'] ?? '').toString().toLowerCase();
+        final rawMessage = (error['error']?['message'] ?? '')
+            .toString()
+            .toLowerCase();
 
-        if (rawMessage.contains('internal server error') || rawMessage.contains('unique')) {
-          throw Exception('Ce nom d\'utilisateur ou email existe déjà. Veuillez en choisir un autre.');
+        if (rawMessage.contains('internal server error') ||
+            rawMessage.contains('unique')) {
+          throw Exception(
+            'Ce nom d\'utilisateur ou email existe déjà. Veuillez en choisir un autre.',
+          );
         } else {
-          throw Exception(error['error']?['message'] ?? 'Erreur serveur (${response.statusCode})');
+          throw Exception(
+            error['error']?['message'] ??
+                'Erreur serveur (${response.statusCode})',
+          );
         }
       }
     } finally {
@@ -182,7 +207,7 @@ class UsersController extends GetxController {
       if (token == null) return;
 
       final url = 'http://193.111.250.244:3046/api/users/${user.id}';
-      
+
       // Préparation du body
       final Map<String, dynamic> body = {
         'username': user.username,
@@ -196,7 +221,9 @@ class UsersController extends GetxController {
       }
 
       // Gestion du rôle : On utilise l'ID mappé si disponible, sinon l'ID actuel
-      final int? roleId = roleMapping[user.roleName] ?? (user.role is Map ? user.role['id'] : null);
+      final int? roleId =
+          roleMapping[user.roleName] ??
+          (user.role is Map ? user.role['id'] : null);
       if (roleId != null) {
         body['role'] = roleId;
       } else {
@@ -218,7 +245,10 @@ class UsersController extends GetxController {
         await loadUsers();
         Get.snackbar('Succès', 'Utilisateur mis à jour sur le serveur');
       } else {
-        Get.snackbar('Erreur', 'Échec de la mise à jour (Code: ${response.statusCode})');
+        Get.snackbar(
+          'Erreur',
+          'Échec de la mise à jour (Code: ${response.statusCode})',
+        );
       }
     } catch (e) {
       print('Erreur updateUser: $e');
@@ -235,7 +265,7 @@ class UsersController extends GetxController {
 
       if (token != null) {
         final url = 'http://193.111.250.244:3046/api/users/$id';
-        
+
         final response = await http.delete(
           Uri.parse(url),
           headers: {

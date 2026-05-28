@@ -33,6 +33,11 @@ class BookingDialog extends StatelessWidget {
 
       controller.updateDates(start, end, space.hourlyPrice, space.monthlyPrice);
       controller.numberOfPeople.value = initialParticipants ?? 1;
+      // Force le recalcul immédiat après avoir défini le nombre de personnes
+      controller.calculateTotal(
+        hourlyPrice: space.hourlyPrice,
+        monthlyPrice: space.monthlyPrice,
+      );
     });
 
     return Dialog(
@@ -122,18 +127,19 @@ class BookingDialog extends StatelessWidget {
                           .inMinutes /
                       60.0;
                   final displayHours = hours < 1.0 ? 1.0 : hours;
+                  final int participants = controller.numberOfPeople.value;
 
                   return Column(
                     children: [
                       if (controller.isMonthly.value)
                         _buildPriceRow(
-                          "Forfait Mensuel",
-                          "${space.monthlyPrice.toInt()} TND",
+                          "Espace (${space.monthlyPrice.toInt()} TND/mois x $participants pers)",
+                          "${(space.monthlyPrice * participants).toInt()} TND",
                         )
                       else
                         _buildPriceRow(
-                          "Espace (${space.hourlyPrice.toInt()} TND/h x ${displayHours.toStringAsFixed(displayHours == displayHours.toInt() ? 0 : 1)}h)",
-                          "${(displayHours * space.hourlyPrice).toInt()} TND",
+                          "Espace (${space.hourlyPrice.toInt()} TND/h x ${displayHours.toStringAsFixed(displayHours == displayHours.toInt() ? 0 : 1)}h x $participants pers)",
+                          "${(displayHours * space.hourlyPrice * participants).toInt()} TND",
                         ),
 
                       if (controller.selectedServices.isNotEmpty)
@@ -287,8 +293,13 @@ class BookingDialog extends StatelessWidget {
           const Spacer(),
           IconButton(
             onPressed: () {
-              if (controller.numberOfPeople.value > 1)
+              if (controller.numberOfPeople.value > 1) {
                 controller.numberOfPeople.value--;
+                controller.calculateTotal(
+                  hourlyPrice: space.hourlyPrice,
+                  monthlyPrice: space.monthlyPrice,
+                );
+              }
             },
             icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
           ),
@@ -300,8 +311,13 @@ class BookingDialog extends StatelessWidget {
           ),
           IconButton(
             onPressed: () {
-              if (controller.numberOfPeople.value < space.capacity)
+              if (controller.numberOfPeople.value < space.capacity) {
                 controller.numberOfPeople.value++;
+                controller.calculateTotal(
+                  hourlyPrice: space.hourlyPrice,
+                  monthlyPrice: space.monthlyPrice,
+                );
+              }
             },
             icon: const Icon(Icons.add_circle_outline, color: Colors.green),
           ),
@@ -612,16 +628,19 @@ class BookingDialog extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isTotal ? 16 : 14,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isTotal
-                  ? const Color(0xFF1E3A8A)
-                  : const Color(0xFF1E40AF),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: isTotal ? 16 : 14,
+                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                color: isTotal
+                    ? const Color(0xFF1E3A8A)
+                    : const Color(0xFF1E40AF),
+              ),
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             value,
             style: TextStyle(

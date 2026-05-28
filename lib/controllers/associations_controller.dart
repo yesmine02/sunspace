@@ -10,7 +10,7 @@ import 'notification_controller.dart';
 class AssociationsController extends GetxController {
   final RxList<Association> associations = <Association>[].obs;
   final RxBool isLoading = false.obs;
-  
+
   /// ID de l'association sélectionnée par l'utilisateur (si multi-association)
   final RxnInt selectedAssocId = RxnInt();
 
@@ -19,7 +19,7 @@ class AssociationsController extends GetxController {
     final auth = Get.find<AuthController>();
     final myId = int.tryParse(auth.currentUser.value?['id']?.toString() ?? '');
     if (myId == null) return [];
-    
+
     return associations.where((a) {
       if (a.admin?.id == myId) return true;
       return (a.members ?? []).any((m) => (m is Map ? m['id'] : m) == myId);
@@ -49,7 +49,8 @@ class AssociationsController extends GetxController {
       });
     });
   }
-//✅ On charge les associations au démarrage.
+
+  //✅ On charge les associations au démarrage.
   @override
   void onInit() {
     super.onInit();
@@ -74,7 +75,9 @@ class AssociationsController extends GetxController {
         if (response.statusCode == 200) {
           final Map<String, dynamic> body = jsonDecode(response.body);
           final List<dynamic> data = body['data'] ?? [];
-          associations.assignAll(data.map((item) => Association.fromJson(item)).toList());
+          associations.assignAll(
+            data.map((item) => Association.fromJson(item)).toList(),
+          );
         }
       } else {
         // Mock data if no token (for development)
@@ -102,17 +105,27 @@ class AssociationsController extends GetxController {
     ]);
   }
 
-  Future<bool> addMemberToAssociation(String associationDocId, int userId, {String? newMemberUsername, String? associationName}) async {
+  //✅ Ajoute un membre à une association via son documentId
+  Future<bool> addMemberToAssociation(
+    String associationDocId,
+    int userId, {
+    String? newMemberUsername,
+    String? associationName,
+  }) async {
     isLoading.value = true;
     try {
       final auth = Get.find<AuthController>();
-      String? token = auth.token ?? await SecureStorage.getToken();//✅ On récupère le token.
+      String? token =
+          auth.token ??
+          await SecureStorage.getToken(); //✅ On récupère le token.
 
       if (token == null) return false;
 
       // 1. On récupère l'association actuelle via son documentId (avec admin ET membres)
       final responseGet = await http.get(
-        Uri.parse('$apiUrl/$associationDocId?populate[0]=members&populate[1]=admin'),
+        Uri.parse(
+          '$apiUrl/$associationDocId?populate[0]=members&populate[1]=admin',
+        ),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -127,7 +140,7 @@ class AssociationsController extends GetxController {
       if (responseGet.statusCode == 200) {
         final body = jsonDecode(responseGet.body);
         final data = body['data'];
-        
+
         // Extraire les IDs des membres actuels (Strapi v5 structure)
         List<int> memberIds = [];
         if (data != null && data['members'] != null) {
@@ -149,9 +162,7 @@ class AssociationsController extends GetxController {
             'Content-Type': 'application/json',
           },
           body: jsonEncode({
-            'data': {
-              'members': memberIds,
-            }
+            'data': {'members': memberIds},
           }),
         );
 
@@ -164,7 +175,8 @@ class AssociationsController extends GetxController {
           // 📢 Notifier l'admin de l'association
           try {
             final adminId = data?['admin']?['id'];
-            final assocName = associationName ?? data?['name'] ?? 'votre association';
+            final assocName =
+                associationName ?? data?['name'] ?? 'votre association';
             final memberName = newMemberUsername ?? 'Un utilisateur';
 
             debugPrint('🔎 Admin data: ${data?['admin']}');
@@ -200,7 +212,10 @@ class AssociationsController extends GetxController {
   }
 
   /// Retire un membre d'une association via son documentId
-  Future<bool> removeMemberFromAssociation(String associationDocId, int userId) async {
+  Future<bool> removeMemberFromAssociation(
+    String associationDocId,
+    int userId,
+  ) async {
     isLoading.value = true;
     try {
       final auth = Get.find<AuthController>();
@@ -210,7 +225,10 @@ class AssociationsController extends GetxController {
       // 1. Récupérer la liste actuelle des membres
       final responseGet = await http.get(
         Uri.parse('$apiUrl/$associationDocId?populate[0]=members'),
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
 
       if (responseGet.statusCode != 200) {
@@ -237,7 +255,9 @@ class AssociationsController extends GetxController {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'data': {'members': memberIds}}),
+        body: jsonEncode({
+          'data': {'members': memberIds},
+        }),
       );
 
       if (responsePut.statusCode == 200) {
@@ -268,9 +288,7 @@ class AssociationsController extends GetxController {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'data': data
-        }),
+        body: jsonEncode({'data': data}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -301,7 +319,10 @@ class AssociationsController extends GetxController {
     }
   }
 
-  Future<bool> updateAssociation(String documentId, Map<String, dynamic> data) async {
+  Future<bool> updateAssociation(
+    String documentId,
+    Map<String, dynamic> data,
+  ) async {
     isLoading.value = true;
     try {
       final auth = Get.find<AuthController>();
@@ -315,9 +336,7 @@ class AssociationsController extends GetxController {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'data': data
-        }),
+        body: jsonEncode({'data': data}),
       );
 
       if (response.statusCode == 200) {

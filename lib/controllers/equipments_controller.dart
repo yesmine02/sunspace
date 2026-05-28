@@ -76,7 +76,8 @@ class EquipmentsController extends GetxController {
 
           // Strapi v5 met les données dans une clé "data"
           if (jsonResponse.containsKey('data')) {
-            final List<dynamic> list = jsonResponse['data'];
+            final List<dynamic> list =
+                jsonResponse['data']; // Convertit chaque élément JSON en objet Equipment et met à jour la liste
 
             // Convertit chaque élément JSON en objet Equipment et met à jour la liste
             equipments.assignAll(

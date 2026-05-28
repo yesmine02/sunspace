@@ -5,6 +5,7 @@
 import 'package:intl/intl.dart';
 
 enum SessionType { presentiel, enLigne }
+
 enum SessionStatus { brouillon, publie }
 
 class TrainingSession {
@@ -47,19 +48,23 @@ class TrainingSession {
   // Libellés pour l'UI
   String get typeLabel {
     switch (type) {
-      case SessionType.presentiel: return 'Présentiel';
-      case SessionType.enLigne: return 'En ligne';
+      case SessionType.presentiel:
+        return 'Présentiel';
+      case SessionType.enLigne:
+        return 'En ligne';
     }
   }
 
   // Valeurs pour le serveur Strapi
   String get typeStrapiValue {
     switch (type) {
-      case SessionType.presentiel: return 'Présentiel';
-      case SessionType.enLigne: return 'En_ligne';
+      case SessionType.presentiel:
+        return 'Présentiel';
+      case SessionType.enLigne:
+        return 'En_ligne';
     }
   }
-  
+
   String get statusString {
     return status == SessionStatus.publie ? 'Planifiée' : 'Brouillon';
   }
@@ -98,7 +103,9 @@ class TrainingSession {
 
   factory TrainingSession.fromJson(Map<String, dynamic> json) {
     // Détection auto Strapi v5 (si enveloppé dans 'attributes')
-    final Map<String, dynamic> data = (json['attributes'] != null) ? json['attributes'] : json;
+    final Map<String, dynamic> data = (json['attributes'] != null)
+        ? json['attributes']
+        : json;
 
     // Le serveur Strapi utilise start_datetime et end_datetime
     final startStr = data['start_datetime'];
@@ -106,32 +113,58 @@ class TrainingSession {
 
     return TrainingSession(
       id: json['id']?.toString() ?? data['id']?.toString() ?? '',
-      documentId: json['documentId']?.toString() ?? data['documentId']?.toString(),
+      documentId:
+          json['documentId']?.toString() ?? data['documentId']?.toString(),
       title: data['title'] ?? 'Sans titre',
-      courseName: data['course'] is Map 
-          ? (data['course']['title'] ?? data['course']['data']?['attributes']?['title'] ?? data['course']['data']?['title'] ?? '-')
+      courseName: data['course'] is Map
+          ? (data['course']['title'] ??
+                data['course']['data']?['attributes']?['title'] ??
+                data['course']['data']?['title'] ??
+                '-')
           : (data['courseName'] ?? '-'),
       courseId: data['course'] != null
           ? (data['course'] is Map
-              ? (data['course']['id'] ?? data['course']['data']?['id'] ?? data['course']['documentId'] ?? data['course']['data']?['documentId'])?.toString()
-              : data['course'].toString())
+                ? (data['course']['id'] ??
+                          data['course']['data']?['id'] ??
+                          data['course']['documentId'] ??
+                          data['course']['data']?['documentId'])
+                      ?.toString()
+                : data['course'].toString())
           : null,
       type: _parseType(data['type']),
       startDate: startStr != null ? DateTime.parse(startStr).toLocal() : null,
       endDate: endStr != null ? DateTime.parse(endStr).toLocal() : null,
-      status: data['mystatus'] == 'Planifiée' ? SessionStatus.publie : SessionStatus.brouillon,
+      status: data['mystatus'] == 'Planifiée'
+          ? SessionStatus.publie
+          : SessionStatus.brouillon,
       maxParticipants: data['max_participants'] ?? 10,
-      currentParticipants: (data['attendees'] as List?)?.length ?? data['currentParticipants'] ?? 0,
-      attendeeIds: (data['attendees'] as List?)?.map((e) => (e['id'] as num).toInt()).toList() ?? [],
-      meetingLink: data['meeting_url'] ?? data['recording_url'] ?? data['meetingLink'],
+      currentParticipants:
+          (data['attendees'] as List?)?.length ??
+          data['currentParticipants'] ??
+          0,
+      attendeeIds:
+          (data['attendees'] as List?)
+              ?.map((e) => (e['id'] as num).toInt())
+              .toList() ??
+          [],
+      meetingLink:
+          data['meeting_url'] ?? data['recording_url'] ?? data['meetingLink'],
       notes: data['notes'],
       instructorId: data['instructor'] != null
           ? (data['instructor'] is Map
-              ? int.tryParse((data['instructor']['id'] ?? data['instructor']['data']?['id'] ?? '').toString())
-              : int.tryParse(data['instructor'].toString()))
+                ? int.tryParse(
+                    (data['instructor']['id'] ??
+                            data['instructor']['data']?['id'] ??
+                            '')
+                        .toString(),
+                  )
+                : int.tryParse(data['instructor'].toString()))
           : null,
       instructorName: data['instructor'] != null && data['instructor'] is Map
-          ? (data['instructor']['username'] ?? data['instructor']['data']?['attributes']?['username'] ?? data['instructor']['data']?['username'] ?? 'Instructeur')
+          ? (data['instructor']['username'] ??
+                data['instructor']['data']?['attributes']?['username'] ??
+                data['instructor']['data']?['username'] ??
+                'Instructeur')
           : null,
     );
   }
@@ -140,10 +173,11 @@ class TrainingSession {
     if (typeStr == null) return SessionType.enLigne;
     if (typeStr == 'En_ligne') return SessionType.enLigne;
     if (typeStr == 'Presentiel') return SessionType.presentiel;
-    
+
     // Fallbacks
     String t = typeStr.toLowerCase();
-    if (t.contains('présentiel') || t.contains('presentiel')) return SessionType.presentiel;
+    if (t.contains('présentiel') || t.contains('presentiel'))
+      return SessionType.presentiel;
     return SessionType.enLigne;
   }
 
@@ -183,12 +217,14 @@ class TrainingSession {
         'start_datetime': startDate?.toUtc().toIso8601String(),
         'end_datetime': endDate?.toUtc().toIso8601String(),
         'max_participants': maxParticipants,
-        'meeting_url': (meetingLink != null && meetingLink!.isNotEmpty) ? meetingLink : null,
+        'meeting_url': (meetingLink != null && meetingLink!.isNotEmpty)
+            ? meetingLink
+            : null,
         'notes': (notes != null && notes!.isNotEmpty) ? notes : null,
         'mystatus': statusString, // "Planifiée"
         'instructor': ?instructorId,
         'course': ?numericCourseId,
-      }
+      },
     };
   }
 }

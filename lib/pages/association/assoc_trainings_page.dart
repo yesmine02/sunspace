@@ -22,7 +22,7 @@ class AssocTrainingsPage extends StatelessWidget {
     final controller = Get.put(SessionsController());
     final assocController = Get.find<AssociationsController>();
     final authController = Get.find<AuthController>();
-    
+
     final bool isMobile = MediaQuery.of(context).size.width < 800;
 
     return Scaffold(
@@ -34,19 +34,24 @@ class AssocTrainingsPage extends StatelessWidget {
         ),
         child: Obx(() {
           // 🔹 IDENTIFICATION DE L'ASSOCIATION ACTIVE VIA LE CONTROLLER
-          final List<Association> myAssocs = assocController.myAssociations;
+          final List<Association> myAssocs = assocController
+              .myAssociations; // Liste des associations dont l'utilisateur est membre
           Association? activeAssoc;
-          
+          // Si l'utilisateur a plusieurs associations, on utilise selectedAssocId pour identifier laquelle est active, sinon on prend la première de la liste
           if (myAssocs.isNotEmpty) {
             if (assocController.selectedAssocId.value == null) {
               assocController.selectedAssocId.value = myAssocs.first.id;
             }
-            activeAssoc = myAssocs.firstWhereOrNull((a) => a.id == assocController.selectedAssocId.value);
+            activeAssoc = myAssocs.firstWhereOrNull(
+              (a) => a.id == assocController.selectedAssocId.value,
+            );
             activeAssoc ??= myAssocs.first;
             assocController.selectedAssocId.value = activeAssoc.id;
           }
-          
-          final int? myId = int.tryParse(authController.currentUser.value?['id']?.toString() ?? '');
+
+          final int? myId = int.tryParse(
+            authController.currentUser.value?['id']?.toString() ?? '',
+          );
           final bool canManage = activeAssoc?.admin?.id == myId;
           final int? assocAdminId = activeAssoc?.admin?.id;
 
@@ -73,27 +78,42 @@ class AssocTrainingsPage extends StatelessWidget {
                 }
 
                 // FILTRE : Seulement les formations créées par cette association (via son admin)
-                final displaySessions = controller.sessions.where((s) {
-                  if (assocAdminId == null) return false; // Ne rien afficher si l'admin n'est pas identifié
-                  if (s.instructorId != assocAdminId) return false;
-                  // Les sessions d'association n'ont jamais de cours
-                  if (s.courseId != null) return false;
-                  return true;
-                }).where((s) {
-                  // Filtre recherche local
-                  final query = controller.searchQuery.value.toLowerCase();
-                  if (query.isEmpty) return true;
-                  return s.title.toLowerCase().contains(query) || 
-                         (s.courseName?.toLowerCase().contains(query) ?? false);
-                }).toList();
+                final displaySessions = controller.sessions
+                    .where((s) {
+                      if (assocAdminId == null)
+                        return false; // Ne rien afficher si l'admin n'est pas identifié
+                      if (s.instructorId != assocAdminId) return false;
+                      // Les sessions d'association n'ont jamais de cours
+                      if (s.courseId != null) return false;
+                      return true;
+                    })
+                    .where((s) {
+                      // Filtre recherche local
+                      final query = controller.searchQuery.value.toLowerCase();
+                      if (query.isEmpty) return true;
+                      return s.title.toLowerCase().contains(query) ||
+                          (s.courseName?.toLowerCase().contains(query) ??
+                              false);
+                    })
+                    .toList();
 
                 if (displaySessions.isEmpty) {
                   return _buildEmptyState(context, canManage);
                 }
 
                 return isMobile
-                    ? _buildTrainingsList(context, controller, canManage, displaySessions)
-                    : _buildTrainingsTable(context, controller, canManage, displaySessions);
+                    ? _buildTrainingsList(
+                        context,
+                        controller,
+                        canManage,
+                        displaySessions,
+                      )
+                    : _buildTrainingsTable(
+                        context,
+                        controller,
+                        canManage,
+                        displaySessions,
+                      );
               }),
             ],
           );
@@ -105,7 +125,13 @@ class AssocTrainingsPage extends StatelessWidget {
   // ─────────────────────────────────────────────
   // EN-TÊTE : Titre + Bouton Nouveau Parcours
   // ─────────────────────────────────────────────
-  Widget _buildHeader(BuildContext context, bool isMobile, bool canManage, Association? activeAssoc, List<Association> myAssocs) {
+  Widget _buildHeader(
+    BuildContext context,
+    bool isMobile,
+    bool canManage,
+    Association? activeAssoc,
+    List<Association> myAssocs,
+  ) {
     final titleSection = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -131,13 +157,24 @@ class AssocTrainingsPage extends StatelessWidget {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 value: activeAssoc?.id,
-                items: myAssocs.map((a) => DropdownMenuItem(
-                  value: a.id,
-                  child: Text(a.name ?? 'Sans nom', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                )).toList(),
+                items: myAssocs
+                    .map(
+                      (a) => DropdownMenuItem(
+                        value: a.id,
+                        child: Text(
+                          a.name ?? 'Sans nom',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (newId) {
                   if (newId != null) {
-                    Get.find<AssociationsController>().selectedAssocId.value = newId;
+                    Get.find<AssociationsController>().selectedAssocId.value =
+                        newId;
                   }
                 },
               ),
@@ -145,9 +182,9 @@ class AssocTrainingsPage extends StatelessWidget {
           ),
         ],
         Text(
-          canManage 
-            ? 'Créez et gérez les parcours d\'apprentissage pour vos membres.'
-            : 'Consultez les formations organisées par votre association.',
+          canManage
+              ? 'Créez et gérez les parcours d\'apprentissage pour vos membres.'
+              : 'Consultez les formations organisées par votre association.',
           style: TextStyle(
             color: const Color(0xFF64748B),
             fontSize: isMobile ? 13 : 15,
@@ -164,10 +201,7 @@ class AssocTrainingsPage extends StatelessWidget {
           titleSection,
           if (canManage) ...[
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: _buildAddButton(),
-            ),
+            SizedBox(width: double.infinity, child: _buildAddButton()),
           ],
         ],
       );
@@ -177,20 +211,18 @@ class AssocTrainingsPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(child: titleSection),
-        if (canManage) ...[
-          const SizedBox(width: 24),
-          _buildAddButton(),
-        ],
+        if (canManage) ...[const SizedBox(width: 24), _buildAddButton()],
       ],
     );
   }
 
+  // ─────────────────────────────────────────────
+  // BOUTON "NOUVEAU PARCOURS" (Ouvre le dialogue de création)
+  // ─────────────────────────────────────────────
   Widget _buildAddButton() {
     return ElevatedButton.icon(
-      onPressed: () => Get.dialog(
-        const AddAssocSessionDialog(),
-        barrierDismissible: true,
-      ),
+      onPressed: () =>
+          Get.dialog(const AddAssocSessionDialog(), barrierDismissible: true),
       icon: const Icon(Icons.add_rounded, size: 18),
       label: const Text(
         'Nouveau Parcours',
@@ -230,7 +262,11 @@ class AssocTrainingsPage extends StatelessWidget {
         decoration: InputDecoration(
           hintText: 'Rechercher une formation...',
           hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-          icon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
+          icon: const Icon(
+            Icons.search_rounded,
+            color: Color(0xFF94A3B8),
+            size: 20,
+          ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: isMobile ? 16 : 18),
         ),
@@ -282,9 +318,9 @@ class AssocTrainingsPage extends StatelessWidget {
 
           // Sous-titre
           Text(
-            canManage 
-              ? 'Votre liste de formations est vide. Commencez par\nplanifier une nouvelle session pour vos membres.'
-              : 'Votre association n\'a pas encore publié de formations.',
+            canManage
+                ? 'Votre liste de formations est vide. Commencez par\nplanifier une nouvelle session pour vos membres.'
+                : 'Votre association n\'a pas encore publié de formations.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Color(0xFF64748B),
@@ -308,8 +344,13 @@ class AssocTrainingsPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2563EB),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 elevation: 0,
               ),
             ),
@@ -322,7 +363,12 @@ class AssocTrainingsPage extends StatelessWidget {
   // ─────────────────────────────────────────────
   // LISTE MOBILE des formations
   // ─────────────────────────────────────────────
-  Widget _buildTrainingsList(BuildContext context, SessionsController controller, bool canManage, List<TrainingSession> displaySessions) {
+  Widget _buildTrainingsList(
+    BuildContext context,
+    SessionsController controller,
+    bool canManage,
+    List<TrainingSession> displaySessions,
+  ) {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -331,7 +377,7 @@ class AssocTrainingsPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final session = displaySessions[index];
         final bool isOnline = session.type == SessionType.enLigne;
-        
+
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -384,14 +430,21 @@ class AssocTrainingsPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              _infoRow(Icons.access_time_rounded, "Durée: ${session.formattedTimeRange}"),
+              _infoRow(
+                Icons.access_time_rounded,
+                "Durée: ${session.formattedTimeRange}",
+              ),
               const SizedBox(height: 8),
               if (!isOnline && session.spaceName != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
-                      Icon(Icons.location_on_rounded, size: 16, color: Colors.orange[700]),
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: Colors.orange[700],
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         session.spaceName!,
@@ -404,10 +457,16 @@ class AssocTrainingsPage extends StatelessWidget {
                     ],
                   ),
                 ),
-              _infoRow(Icons.people_alt_rounded, 'Participants: ${session.currentParticipants} / ${session.maxParticipants}'),
+              _infoRow(
+                Icons.people_alt_rounded,
+                'Participants: ${session.currentParticipants} / ${session.maxParticipants}',
+              ),
               const SizedBox(height: 20),
-              
-              if (isOnline && session.meetingLink != null && session.meetingLink!.isNotEmpty && !session.isExpired)
+
+              if (isOnline &&
+                  session.meetingLink != null &&
+                  session.meetingLink!.isNotEmpty &&
+                  !session.isExpired)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: SizedBox(
@@ -415,18 +474,26 @@ class AssocTrainingsPage extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () => _launchURL(session.meetingLink!),
                       icon: const Icon(Icons.videocam_rounded, size: 20),
-                      label: const Text('REJOINDRE LA SESSION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                      label: const Text(
+                        'REJOINDRE LA SESSION',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 0,
                       ),
                     ),
                   ),
                 ),
-                
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -437,7 +504,9 @@ class AssocTrainingsPage extends StatelessWidget {
                         _buildActionButton(
                           icon: Icons.edit_outlined,
                           color: const Color(0xFF2563EB),
-                          onTap: () => Get.dialog(AddAssocSessionDialog(session: session)),
+                          onTap: () => Get.dialog(
+                            AddAssocSessionDialog(session: session),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         _buildActionButton(
@@ -447,10 +516,17 @@ class AssocTrainingsPage extends StatelessWidget {
                         ),
                       ],
                     )
-                  else if (!isOnline || session.meetingLink == null || session.meetingLink!.isEmpty)
+                  else if (!isOnline ||
+                      session.meetingLink == null ||
+                      session.meetingLink!.isEmpty)
                     const Text(
                       "Infos en présentiel",
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic),
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                 ],
               ),
@@ -466,7 +542,10 @@ class AssocTrainingsPage extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: const Color(0xFF94A3B8)),
         const SizedBox(width: 8),
-        Text(text, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+        Text(
+          text,
+          style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+        ),
       ],
     );
   }
@@ -474,14 +553,23 @@ class AssocTrainingsPage extends StatelessWidget {
   // ─────────────────────────────────────────────
   // TABLEAU DESKTOP des formations
   // ─────────────────────────────────────────────
-  Widget _buildTrainingsTable(BuildContext context, SessionsController controller, bool canManage, List<TrainingSession> displaySessions) {
+  Widget _buildTrainingsTable(
+    BuildContext context,
+    SessionsController controller,
+    bool canManage,
+    List<TrainingSession> displaySessions,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 5)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -494,82 +582,235 @@ class AssocTrainingsPage extends StatelessWidget {
           columnSpacing: 32,
           headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
           columns: [
-            const DataColumn(label: Text('FORMATION',     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-            const DataColumn(label: Text('TYPE',         style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-            const DataColumn(label: Text('DÉBUT',         style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-            const DataColumn(label: Text('FIN',           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-            const DataColumn(label: Text('STATUT',       style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-            const DataColumn(label: Text('PARTICIPANTS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-            const DataColumn(label: Text('ACCÈS',        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-            if (canManage) const DataColumn(label: Text('ACTIONS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
+            const DataColumn(
+              label: Text(
+                'FORMATION',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const DataColumn(
+              label: Text(
+                'TYPE',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const DataColumn(
+              label: Text(
+                'DÉBUT',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const DataColumn(
+              label: Text(
+                'FIN',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const DataColumn(
+              label: Text(
+                'STATUT',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const DataColumn(
+              label: Text(
+                'PARTICIPANTS',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const DataColumn(
+              label: Text(
+                'ACCÈS',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            if (canManage)
+              const DataColumn(
+                label: Text(
+                  'ACTIONS',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
           ],
           rows: displaySessions.map((session) {
             final bool isOnline = session.type == SessionType.enLigne;
-            return DataRow(cells: [
-              DataCell(
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(session.title, style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1E293B), fontSize: 15)),
-                    if (session.courseName != null)
-                      Text(session.courseName!, style: TextStyle(color: Colors.blue.shade600, fontSize: 12, fontWeight: FontWeight.w500)),
-                  ],
+            return DataRow(
+              cells: [
+                DataCell(
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        session.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF1E293B),
+                          fontSize: 15,
+                        ),
+                      ),
+                      if (session.courseName != null)
+                        Text(
+                          session.courseName!,
+                          style: TextStyle(
+                            color: Colors.blue.shade600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              DataCell(_buildTypeBadge(session.typeLabel, isOnline)),
-              DataCell(Text(session.formattedStartDate, style: const TextStyle(color: Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500))),
-              DataCell(Text(session.formattedEndDate, style: const TextStyle(color: Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500))),
-              DataCell(_buildStatusBadge(session.status, session.isExpired)),
-              DataCell(
-                Row(
-                  children: [
-                    const Icon(Icons.people_alt_rounded, size: 14, color: Color(0xFF94A3B8)),
-                    const SizedBox(width: 8),
-                    Text('${session.currentParticipants} / ${session.maxParticipants}', style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF334155))),
-                  ],
-                ),
-              ),
-              DataCell(
-                isOnline && session.meetingLink != null && session.meetingLink!.isNotEmpty && !session.isExpired
-                ? ElevatedButton(
-                    onPressed: () => _launchURL(session.meetingLink!),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEFF6FF),
-                      foregroundColor: const Color(0xFF2563EB),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                DataCell(_buildTypeBadge(session.typeLabel, isOnline)),
+                DataCell(
+                  Text(
+                    session.formattedStartDate,
+                    style: const TextStyle(
+                      color: Color(0xFF475569),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
-                    child: const Text('Rejoindre', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                  )
-                : Text(
-                    isOnline ? 'Lien non dispo' : 'Présentiel',
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 12, fontWeight: FontWeight.w600),
-                  )
-              ),
-              if (canManage)
-                DataCell(Row(children: [
-                  _buildActionButton(
-                    icon: Icons.edit_outlined,
-                    color: const Color(0xFF64748B),
-                    onTap: () => Get.dialog(AddAssocSessionDialog(session: session)),
                   ),
-                  const SizedBox(width: 4),
-                  _buildActionButton(
-                    icon: Icons.delete_outline_rounded,
-                    color: const Color(0xFFEF4444),
-                    onTap: () => _confirmDelete(session, controller),
+                ),
+                DataCell(
+                  Text(
+                    session.formattedEndDate,
+                    style: const TextStyle(
+                      color: Color(0xFF475569),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ])),
-            ]);
+                ),
+                DataCell(_buildStatusBadge(session.status, session.isExpired)),
+                DataCell(
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.people_alt_rounded,
+                        size: 14,
+                        color: Color(0xFF94A3B8),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${session.currentParticipants} / ${session.maxParticipants}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                DataCell(
+                  isOnline &&
+                          session.meetingLink != null &&
+                          session.meetingLink!.isNotEmpty &&
+                          !session.isExpired
+                      ? ElevatedButton(
+                          onPressed: () => _launchURL(session.meetingLink!),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFEFF6FF),
+                            foregroundColor: const Color(0xFF2563EB),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'Rejoindre',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          isOnline ? 'Lien non dispo' : 'Présentiel',
+                          style: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+                if (canManage)
+                  DataCell(
+                    Row(
+                      children: [
+                        _buildActionButton(
+                          icon: Icons.edit_outlined,
+                          color: const Color(0xFF64748B),
+                          onTap: () => Get.dialog(
+                            AddAssocSessionDialog(session: session),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        _buildActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          color: const Color(0xFFEF4444),
+                          onTap: () => _confirmDelete(session, controller),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            );
           }).toList(),
         ),
       ),
     );
   }
 
-  Widget _buildActionButton({required IconData icon, required Color color, required VoidCallback onTap}) {
+  Widget _buildActionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -593,16 +834,28 @@ class AssocTrainingsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: isOnline ? const Color(0xFFEEF2FF) : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isOnline ? const Color(0xFFC7D2FE) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isOnline ? const Color(0xFFC7D2FE) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isOnline ? Icons.videocam_rounded : Icons.location_on_rounded, size: 12, color: isOnline ? const Color(0xFF4F46E5) : const Color(0xFF475569)),
+          Icon(
+            isOnline ? Icons.videocam_rounded : Icons.location_on_rounded,
+            size: 12,
+            color: isOnline ? const Color(0xFF4F46E5) : const Color(0xFF475569),
+          ),
           const SizedBox(width: 6),
           Text(
             type,
-            style: TextStyle(color: isOnline ? const Color(0xFF4F46E5) : const Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 11),
+            style: TextStyle(
+              color: isOnline
+                  ? const Color(0xFF4F46E5)
+                  : const Color(0xFF475569),
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+            ),
           ),
         ],
       ),
@@ -619,7 +872,11 @@ class AssocTrainingsPage extends StatelessWidget {
         ),
         child: const Text(
           'Terminée',
-          style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w800, fontSize: 11),
+          style: TextStyle(
+            color: Color(0xFF94A3B8),
+            fontWeight: FontWeight.w800,
+            fontSize: 11,
+          ),
         ),
       );
     }
@@ -634,7 +891,9 @@ class AssocTrainingsPage extends StatelessWidget {
       child: Text(
         isPublished ? 'Planifiée' : 'Brouillon',
         style: TextStyle(
-          color: isPublished ? const Color(0xFF166534) : const Color(0xFF854D0E),
+          color: isPublished
+              ? const Color(0xFF166534)
+              : const Color(0xFF854D0E),
           fontWeight: FontWeight.w800,
           fontSize: 11,
         ),
@@ -673,7 +932,8 @@ class AssocTrainingsPage extends StatelessWidget {
 
     Get.defaultDialog(
       title: 'Supprimer la formation',
-      middleText: 'Voulez-vous vraiment supprimer "${session.title}" ? Cette action est irréversible.',
+      middleText:
+          'Voulez-vous vraiment supprimer "${session.title}" ? Cette action est irréversible.',
       textConfirm: 'Supprimer',
       textCancel: 'Annuler',
       confirmTextColor: Colors.white,

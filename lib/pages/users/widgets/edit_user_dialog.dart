@@ -292,8 +292,15 @@ class _EditUserDialogState extends State<EditUserDialog> {
         ),
       ),
       validator: (value) {
-        if (isRequired && (value == null || value.isEmpty))
+        if (isRequired && (value == null || value.isEmpty)) {
           return 'Ce champ est obligatoire';
+        }
+        if (controller == _emailController && value != null && value.isNotEmpty) {
+          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+          if (!emailRegex.hasMatch(value)) {
+            return 'Format d\'email invalide. Veuillez le modifier (ex: nom@domaine.com)';
+          }
+        }
         return null;
       },
     );

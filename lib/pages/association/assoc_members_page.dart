@@ -1,4 +1,5 @@
 // ===============================================
+//Onglets de filtrage : Tous, Admins, Membres
 // Page Membres (AssocMembersPage)
 // Pour les Associations : Gérer les membres du groupe
 // Design conforme à la capture fournie
@@ -25,7 +26,8 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   String _activeFilter = 'TOUS';
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchText = '';
-  int? _selectedAssocId; // ID de l'association actuellement sélectionnée pour affichage
+  int?
+  _selectedAssocId; // ID de l'association actuellement sélectionnée pour affichage
 
   @override
   void dispose() {
@@ -51,16 +53,19 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
           // 🔹 IDENTIFICATION DE L'ASSOCIATION ACTIVE VIA LE CONTROLLER
           final List<Association> myAssocs = assocCtrl.myAssociations;
           Association? activeAssoc;
-          
+          // Si l'utilisateur appartient à plusieurs associations,
+          //on utilise le selectedAssocId pour déterminer laquelle afficher
           if (myAssocs.isNotEmpty) {
             // Si aucune sélection n'est encore faite, on prend la première
             if (assocCtrl.selectedAssocId.value == null) {
               assocCtrl.selectedAssocId.value = myAssocs.first.id;
             }
-            
+
             // On cherche l'association correspondant à la sélection
-            activeAssoc = myAssocs.firstWhereOrNull((a) => a.id == assocCtrl.selectedAssocId.value);
-            
+            activeAssoc = myAssocs.firstWhereOrNull(
+              (a) => a.id == assocCtrl.selectedAssocId.value,
+            );
+
             // Si la sélection n'est plus valide (ex: association supprimée), on revient à la première
             if (activeAssoc == null) {
               activeAssoc = myAssocs.first;
@@ -77,7 +82,13 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ─── EN-TÊTE ──────────────────────────────
-              _buildHeader(context, controller, isMobile, activeAssoc, myAssocs),
+              _buildHeader(
+                context,
+                controller,
+                isMobile,
+                activeAssoc,
+                myAssocs,
+              ),
               const SizedBox(height: 28),
 
               // ─── STATS CARDS ──────────────────────────
@@ -92,8 +103,13 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
               filtered.isEmpty
                   ? _buildEmptyState()
                   : (isMobile
-                      ? _buildMobileCards(filtered, controller, assocAdminId)
-                      : _buildDesktopGrid(filtered, controller, isMobile, assocAdminId)),
+                        ? _buildMobileCards(filtered, controller, assocAdminId)
+                        : _buildDesktopGrid(
+                            filtered,
+                            controller,
+                            isMobile,
+                            assocAdminId,
+                          )),
             ],
           );
         }),
@@ -104,7 +120,13 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   // ─────────────────────────────────────────────
   // EN-TÊTE : Affiche le nom de l'association dynamique
   // ─────────────────────────────────────────────
-  Widget _buildHeader(BuildContext context, UsersController controller, bool isMobile, Association? activeAssoc, List<Association> myAssocs) {
+  Widget _buildHeader(
+    BuildContext context,
+    UsersController controller,
+    bool isMobile,
+    Association? activeAssoc,
+    List<Association> myAssocs,
+  ) {
     final titleCol = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -119,7 +141,7 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Association : ${activeAssoc?.name ?? 'Chargement...'}', 
+          'Association : ${activeAssoc?.name ?? 'Chargement...'}',
           style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
         ),
         // 🔹 SELECTEUR SI PLUSIEURS ASSOCIATIONS
@@ -135,13 +157,24 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 value: activeAssoc?.id,
-                items: myAssocs.map((a) => DropdownMenuItem(
-                  value: a.id,
-                  child: Text(a.name ?? 'Sans nom', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                )).toList(),
+                items: myAssocs
+                    .map(
+                      (a) => DropdownMenuItem(
+                        value: a.id,
+                        child: Text(
+                          a.name ?? 'Sans nom',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (newId) {
                   if (newId != null) {
-                    Get.find<AssociationsController>().selectedAssocId.value = newId;
+                    Get.find<AssociationsController>().selectedAssocId.value =
+                        newId;
                   }
                 },
               ),
@@ -151,9 +184,16 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
       ],
     );
 
-    final currentUser = Get.find<AuthController>().currentUser.value;
-    final bool isAssocAdmin = activeAssoc?.admin?.id != null && currentUser?['id'] == activeAssoc!.admin!.id;
-
+    final currentUser = Get.find<AuthController>()
+        .currentUser
+        .value; // Récupère les infos de l'utilisateur connecté pour vérifier s'il est admin de l'association
+    final bool isAssocAdmin =
+        activeAssoc?.admin?.id != null &&
+        currentUser?['id'] ==
+            activeAssoc!
+                .admin!
+                .id; // Seule la personne qui est admin de l'association peut voir les boutons d'invitation et de rafraîchissement
+    // Seul l'admin de l'association peut inviter ou rafraîchir la liste des membres
     final actions = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -161,12 +201,21 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
           ElevatedButton.icon(
             onPressed: () => Get.dialog(const SendInvitationDialog()),
             icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-            label: const Text('INVITATION', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.3)),
+            label: const Text(
+              'INVITATION',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                letterSpacing: 0.3,
+              ),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2563EB),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               elevation: 0,
             ),
           ),
@@ -181,7 +230,11 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF475569), size: 20),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: Color(0xFF475569),
+              size: 20,
+            ),
             padding: EdgeInsets.zero,
             onPressed: () => controller.loadUsers(),
             tooltip: 'Actualiser',
@@ -199,38 +252,56 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: [Expanded(child: titleCol), actions],
+      children: [
+        Expanded(child: titleCol),
+        actions,
+      ],
     );
   }
 
   // ─────────────────────────────────────────────
   // STATS CARDS : Calculées sur la liste filtrée
   // ─────────────────────────────────────────────
-  Widget _buildStatsCards(List<User> users, bool isMobile, {int? assocAdminId}) {
-    final total  = users.length;
+  // Affiche le nombre total de membres, le nombre d'admins (calculé à partir de l'association active) et le nombre de membres (total - admins)
+  Widget _buildStatsCards(
+    List<User> users,
+    bool isMobile, {
+    int? assocAdminId,
+  }) {
+    final total = users.length;
     // L'admin est uniquement celui défini comme admin de l'association
-    final admins = assocAdminId != null ? users.where((u) => u.id == assocAdminId).length : 0;
+    final admins = assocAdminId != null
+        ? users.where((u) => u.id == assocAdminId).length
+        : 0;
     final members = total - admins;
 
     if (isMobile) {
       return Row(
         children: [
-          Expanded(child: _statCard('TOTAL',   '$total',   null)),
+          Expanded(child: _statCard('TOTAL', '$total', null)),
           const SizedBox(width: 12),
-          Expanded(child: _statCard('ADMINS',  '$admins',  const Color(0xFF7C3AED))),
+          Expanded(
+            child: _statCard('ADMINS', '$admins', const Color(0xFF7C3AED)),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _statCard('MEMBRES', '$members', const Color(0xFF2563EB))),
+          Expanded(
+            child: _statCard('MEMBRES', '$members', const Color(0xFF2563EB)),
+          ),
         ],
       );
     }
 
     return Row(
       children: [
-        Expanded(child: _statCard('TOTAL',   '$total',   null)),
+        Expanded(child: _statCard('TOTAL', '$total', null)),
         const SizedBox(width: 16),
-        Expanded(child: _statCard('ADMINS',  '$admins',  const Color(0xFF7C3AED))),
+        Expanded(
+          child: _statCard('ADMINS', '$admins', const Color(0xFF7C3AED)),
+        ),
         const SizedBox(width: 16),
-        Expanded(child: _statCard('MEMBRES', '$members', const Color(0xFF2563EB))),
+        Expanded(
+          child: _statCard('MEMBRES', '$members', const Color(0xFF2563EB)),
+        ),
       ],
     );
   }
@@ -246,7 +317,15 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8), letterSpacing: 1.0)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF94A3B8),
+              letterSpacing: 1.0,
+            ),
+          ),
           const SizedBox(height: 12),
           Text(
             count,
@@ -267,11 +346,7 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   Widget _buildSearchAndFilters(bool isMobile) {
     if (isMobile) {
       return Column(
-        children: [
-          _searchField(),
-          const SizedBox(height: 12),
-          _filterTabs(),
-        ],
+        children: [_searchField(), const SizedBox(height: 12), _filterTabs()],
       );
     }
 
@@ -307,6 +382,7 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
     );
   }
 
+  // Filtre des onglets : Tous, Admins, Membres
   Widget _filterTabs() {
     return Container(
       decoration: BoxDecoration(
@@ -318,7 +394,9 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
         mainAxisSize: MainAxisSize.min,
         children: ['TOUS', 'ADMINS', 'MEMBRES'].map((tab) {
           final isActive = _activeFilter == tab;
+          // Onglet actif = fond coloré + texte blanc, Onglet inactif = fond transparent + texte gris
           return GestureDetector(
+            // Au clic, on change le filtre actif et on rafraîchit l'affichage
             onTap: () => setState(() => _activeFilter = tab),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
@@ -363,17 +441,19 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
       if (u.id != null && !validIds.contains(u.id)) {
         return false;
       }
-      
+
       // Filtre texte (recherche par nom ou email)
-      final name  = (u.username ?? '').toLowerCase();
+      final name = (u.username ?? '').toLowerCase();
       final email = (u.email ?? '').toLowerCase();
       return name.contains(_searchText) || email.contains(_searchText);
     }).toList();
 
     // 3. Filtre par rôle (onglet 'ADMINS' ou 'MEMBRES')
     if (_activeFilter == 'ADMINS') {
+      // Seul l'admin de l'association est considéré comme admin, même si d'autres utilisateurs ont un rôle système d'admin
       result = result.where((u) => activeAssoc.admin?.id == u.id).toList();
     } else if (_activeFilter == 'MEMBRES') {
+      // Tous les autres membres que l'admin de l'association
       result = result.where((u) => activeAssoc.admin?.id != u.id).toList();
     }
 
@@ -383,39 +463,63 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
   // ─────────────────────────────────────────────
   // GRILLE DESKTOP / LISTE MOBILE
   // ─────────────────────────────────────────────
-  Widget _buildDesktopGrid(List<User> users, UsersController controller, bool isMobile, int? assocAdminId) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final columns = constraints.maxWidth > 900 ? 2 : 1;
-      return _buildGrid(users, controller, columns, assocAdminId);
-    });
+  Widget _buildDesktopGrid(
+    List<User> users,
+    UsersController controller,
+    bool isMobile,
+    int? assocAdminId,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth > 900 ? 2 : 1;
+        return _buildGrid(users, controller, columns, assocAdminId);
+      },
+    );
   }
 
-  Widget _buildMobileCards(List<User> users, UsersController controller, int? assocAdminId) {
+  Widget _buildMobileCards(
+    List<User> users,
+    UsersController controller,
+    int? assocAdminId,
+  ) {
     return _buildGrid(users, controller, 1, assocAdminId);
   }
 
-  Widget _buildGrid(List<User> users, UsersController controller, int columns, int? assocAdminId) {
+  Widget _buildGrid(
+    List<User> users,
+    UsersController controller,
+    int columns,
+    int? assocAdminId,
+  ) {
     if (columns == 1) {
       return Column(
-        children: users.map((u) => Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: _memberCard(u, controller, assocAdminId),
-        )).toList(),
+        children: users
+            .map(
+              (u) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _memberCard(u, controller, assocAdminId),
+              ),
+            )
+            .toList(),
       );
     }
 
     final rows = <Widget>[];
     for (int i = 0; i < users.length; i += 2) {
-      rows.add(Row(
-        children: [
-          Expanded(child: _memberCard(users[i], controller, assocAdminId)),
-          const SizedBox(width: 16),
-          if (i + 1 < users.length)
-            Expanded(child: _memberCard(users[i + 1], controller, assocAdminId))
-          else
-            const Expanded(child: SizedBox()),
-        ],
-      ));
+      rows.add(
+        Row(
+          children: [
+            Expanded(child: _memberCard(users[i], controller, assocAdminId)),
+            const SizedBox(width: 16),
+            if (i + 1 < users.length)
+              Expanded(
+                child: _memberCard(users[i + 1], controller, assocAdminId),
+              )
+            else
+              const Expanded(child: SizedBox()),
+          ],
+        ),
+      );
       if (i + 2 < users.length) rows.add(const SizedBox(height: 16));
     }
     return Column(children: rows);
@@ -423,12 +527,15 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
 
   // ─────────────────────────────────────────────
   // CARTE MEMBRE : Individuelle pour chaque utilisateur
+  // Affiche les infos de l'utilisateur, son rôle (admin ou membre), la date d'adhésion, et un bouton de suppression si l'utilisateur connecté est admin de l'association et que la carte n'est pas celle de l'admin
   // ─────────────────────────────────────────────
   Widget _memberCard(User user, UsersController controller, int? assocAdminId) {
     // L'admin de la carte = celui dont l'ID correspond à l'admin de l'association (pas le rôle système)
     final isAdmin = assocAdminId != null && user.id == assocAdminId;
     final initial = (user.username ?? '?')[0].toUpperCase();
-    final avatarColor = isAdmin ? const Color(0xFF7C3AED) : const Color(0xFF2563EB);
+    final avatarColor = isAdmin
+        ? const Color(0xFF7C3AED)
+        : const Color(0xFF2563EB);
 
     // Formater la date de création : de yyyy-mm-dd... vers dd/mm/yyyy
     String formattedDate = 'N/A';
@@ -441,10 +548,12 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
     final joinDate = 'Depuis $formattedDate';
 
     // 👤 VÉRIFICATION "C'EST MOI" : Compare l'ID du membre avec l'ID connecté
+    // Cela permet d'afficher un badge "VOUS" sur sa propre carte, et de ne pas afficher le bouton de suppression sur sa propre carte même si on est admin
     final currentUser = Get.find<AuthController>().currentUser.value;
     final currentUserId = currentUser?['id'];
     final isMe = currentUserId == user.id;
-    final bool isMeAssocAdmin = assocAdminId != null && currentUserId == assocAdminId;
+    final bool isMeAssocAdmin =
+        assocAdminId != null && currentUserId == assocAdminId;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -470,8 +579,19 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
                 ),
                 child: Center(
                   child: isAdmin
-                      ? const Icon(Icons.shield_rounded, color: Colors.white, size: 22)
-                      : Text(initial, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18)),
+                      ? const Icon(
+                          Icons.shield_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        )
+                      : Text(
+                          initial,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -485,7 +605,11 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
                         Flexible(
                           child: Text(
                             user.username ?? '-',
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF0F172A)),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                              color: Color(0xFF0F172A),
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -493,13 +617,25 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
                         if (isMe) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
-                            child: const Text('VOUS', style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              'VOUS',
+                              style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ],
                       ],
@@ -507,12 +643,19 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.email_outlined, size: 12, color: Color(0xFF94A3B8)),
+                        const Icon(
+                          Icons.email_outlined,
+                          size: 12,
+                          color: Color(0xFF94A3B8),
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             user.email ?? '-',
-                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 12,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -534,14 +677,28 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
               Row(
                 children: [
                   Container(
-                    width: 8, height: 8,
-                    decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle),
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF16A34A),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                   const SizedBox(width: 6),
-                  const Text('Actif', style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w700, fontSize: 13)),
+                  const Text(
+                    'Actif',
+                    style: TextStyle(
+                      color: Color(0xFF16A34A),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
               ),
-              Text(joinDate, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+              Text(
+                joinDate,
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+              ),
             ],
           ),
 
@@ -552,15 +709,26 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => _confirmDelete(user, controller),
-                icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 16),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFFEF4444),
+                  size: 16,
+                ),
                 label: const Text(
                   'RETIRER',
-                  style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5),
+                  style: TextStyle(
+                    color: Color(0xFFEF4444),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    letterSpacing: 0.5,
+                  ),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFE2E8F0)),
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   backgroundColor: const Color(0xFFFFF1F2),
                 ),
               ),
@@ -580,7 +748,9 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
       decoration: BoxDecoration(
         color: isAdmin ? const Color(0xFFF3E8FF) : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isAdmin ? const Color(0xFFD8B4FE) : const Color(0xFFBFDBFE)),
+        border: Border.all(
+          color: isAdmin ? const Color(0xFFD8B4FE) : const Color(0xFFBFDBFE),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -594,7 +764,9 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
           Text(
             isAdmin ? 'ADMIN' : 'MEMBRE',
             style: TextStyle(
-              color: isAdmin ? const Color(0xFF7C3AED) : const Color(0xFF2563EB),
+              color: isAdmin
+                  ? const Color(0xFF7C3AED)
+                  : const Color(0xFF2563EB),
               fontWeight: FontWeight.w800,
               fontSize: 11,
             ),
@@ -619,14 +791,30 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
       child: Column(
         children: [
           Container(
-            width: 64, height: 64,
-            decoration: const BoxDecoration(color: Color(0xFFEFF6FF), shape: BoxShape.circle),
-            child: const Icon(Icons.group_add_rounded, color: Color(0xFF2563EB), size: 32),
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color: Color(0xFFEFF6FF),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.group_add_rounded,
+              color: Color(0xFF2563EB),
+              size: 32,
+            ),
           ),
           const SizedBox(height: 20),
-          const Text('Aucun membre trouvé', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+          const Text(
+            'Aucun membre trouvé',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF0F172A),
+            ),
+          ),
           const SizedBox(height: 8),
-          const Text('Invitez des membres pour commencer à gérer votre association.',
+          const Text(
+            'Invitez des membres pour commencer à gérer votre association.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
           ),
@@ -643,7 +831,8 @@ class _AssocMembersPageState extends State<AssocMembersPage> {
 
     Get.defaultDialog(
       title: 'Retirer le membre',
-      middleText: 'Voulez-vous vraiment retirer "${user.username ?? ''}" de votre association ?',
+      middleText:
+          'Voulez-vous vraiment retirer "${user.username ?? ''}" de votre association ?',
       textConfirm: 'Retirer',
       textCancel: 'Annuler',
       confirmTextColor: Colors.white,

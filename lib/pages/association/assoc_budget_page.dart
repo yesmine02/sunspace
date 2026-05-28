@@ -571,7 +571,12 @@ class _AssocBudgetPageState extends State<AssocBudgetPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('GESTION DU SOLDE', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const Expanded(
+                        child: Text(
+                          'GESTION DU SOLDE',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
                       IconButton(onPressed: () => Get.back(), icon: const Icon(Icons.close)),
                     ],
                   ),

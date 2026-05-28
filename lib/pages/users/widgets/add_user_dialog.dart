@@ -248,9 +248,14 @@ class _AddUserDialogState extends State<AddUserDialog> {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) return 'Ce champ est obligatoire';
-        // Empêcher les chiffres dans le nom d'utilisateur (si c'est bien ce que l'utilisateur veut pour tous les noms)
         if (controller == _usernameController && RegExp(r'[0-9]').hasMatch(value)) {
           return 'Le nom d\'utilisateur ne doit pas contenir de chiffres';
+        }
+        if (controller == _emailController) {
+          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+          if (!emailRegex.hasMatch(value)) {
+            return 'Format d\'email invalide. Veuillez le modifier (ex: nom@domaine.com)';
+          }
         }
         return null;
       },

@@ -9,6 +9,23 @@ import 'package:intl/intl.dart';
 class StudentsController extends GetxController {
   final RxList<StudentEnrollment> enrollments = <StudentEnrollment>[].obs;
   final RxBool isLoading = false.obs;
+  final RxString searchQuery = ''.obs;
+
+  List<StudentEnrollment> get filteredEnrollments {
+    if (searchQuery.value.isEmpty) {
+      return enrollments;
+    }
+    return enrollments.where((enr) {
+      final query = searchQuery.value.toLowerCase();
+      return enr.studentName.toLowerCase().contains(query) ||
+             enr.studentEmail.toLowerCase().contains(query) ||
+             enr.courseTitle.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  void updateSearch(String query) {
+    searchQuery.value = query;
+  }
 
   @override
   void onInit() {

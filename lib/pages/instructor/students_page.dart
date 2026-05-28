@@ -50,7 +50,36 @@ class StudentsPage extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
+
+            // 🔹 SEARCH BAR
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                onChanged: controller.updateSearch,
+                decoration: const InputDecoration(
+                  hintText: "Rechercher un étudiant, un cours...",
+                  hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 15),
+                  prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
 
             // 🔹 TABLE CARD
             Expanded(
@@ -73,17 +102,17 @@ class StudentsPage extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator(color: Color(0xFF007AFF)));
                   }
 
-                  if (controller.enrollments.isEmpty) {
+                  if (controller.filteredEnrollments.isEmpty) {
                     return _buildEmptyState();
                   }
 
                   if (isMobile) {
                     return ListView.separated(
                       padding: const EdgeInsets.all(20),
-                      itemCount: controller.enrollments.length,
+                      itemCount: controller.filteredEnrollments.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
-                        final enr = controller.enrollments[index];
+                        final enr = controller.filteredEnrollments[index];
                         return _buildStudentMobileCard(enr);
                       },
                     );
@@ -113,7 +142,7 @@ class StudentsPage extends StatelessWidget {
                             DataColumn(label: Text('Progression')),
                             DataColumn(label: Text('Date d\'inscription')),
                           ],
-                          rows: controller.enrollments.map((enr) => DataRow(
+                          rows: controller.filteredEnrollments.map((enr) => DataRow(
                             cells: [
                               DataCell(Text(enr.studentName, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)))),
                               DataCell(Text(enr.studentEmail, style: const TextStyle(color: Color(0xFF64748B)))),

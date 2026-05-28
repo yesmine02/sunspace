@@ -1,3 +1,5 @@
+// Ce fichier contient le widget de dialogue pour ajouter ou modifier une association.
+// Il gère un formulaire avec validation, pré-remplit les champs en mode édition, et construit le payload attendu par le serveur lors de la soumission.
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/associations_controller.dart';
@@ -18,7 +20,7 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
   final usersController = Get.find<UsersController>();
 
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers pour les champs
   late TextEditingController _nameCtrl;
   late TextEditingController _descCtrl;
@@ -26,7 +28,7 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
   late TextEditingController _phoneCtrl;
   late TextEditingController _websiteCtrl;
   late TextEditingController _budgetCtrl;
-  
+
   User? _selectedAdmin;
   bool _isVerified = false;
 
@@ -41,10 +43,12 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
     _websiteCtrl = TextEditingController(text: a?.website ?? '');
     _budgetCtrl = TextEditingController(text: a?.budget.toString() ?? '0');
     _isVerified = a?.isVerified ?? false;
-    
+
     // Tenter de retrouver l'admin dans la liste des utilisateurs
     if (a?.admin != null) {
-      _selectedAdmin = usersController.users.firstWhereOrNull((u) => u.id == a!.admin!.id);
+      _selectedAdmin = usersController.users.firstWhereOrNull(
+        (u) => u.id == a!.admin!.id,
+      );
     }
   }
 
@@ -59,17 +63,20 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
     super.dispose();
   }
 
-  String? _requiredValidator(String? v) => v == null || v.trim().isEmpty ? 'Ce champ est requis' : null;
-  
+  String? _requiredValidator(String? v) =>
+      v == null || v.trim().isEmpty ? 'Ce champ est requis' : null;
+
   String? _emailValidator(String? v) {
     if (v == null || v.trim().isEmpty) return 'L\'email est requis';
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) return 'Format d\'email invalide';
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim()))
+      return 'Format d\'email invalide';
     return null;
   }
 
   String? _phoneValidator(String? v) {
     if (v == null || v.trim().isEmpty) return 'Le téléphone est requis';
-    if (!RegExp(r'^\d{8}$').hasMatch(v.trim())) return 'Doit contenir exactement 8 chiffres';
+    if (!RegExp(r'^\d{8}$').hasMatch(v.trim()))
+      return 'Doit contenir exactement 8 chiffres';
     return null;
   }
 
@@ -103,7 +110,9 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.association == null ? 'Nouvelle association' : 'Modifier l\'association',
+                            widget.association == null
+                                ? 'Nouvelle association'
+                                : 'Modifier l\'association',
                             style: TextStyle(
                               fontSize: isMobile ? 20 : 22,
                               fontWeight: FontWeight.w900,
@@ -112,17 +121,24 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            widget.association == null 
-                              ? 'Ajoutez une nouvelle association au système.' 
-                              : 'Modifiez les informations de l\'association ici.',
-                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                            widget.association == null
+                                ? 'Ajoutez une nouvelle association au système.'
+                                : 'Modifiez les informations de l\'association ici.',
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
                       onPressed: () => Get.back(),
-                      icon: const Icon(Icons.close, color: Color(0xFF64748B), size: 20),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Color(0xFF64748B),
+                        size: 20,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
@@ -133,24 +149,38 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                 // CHAMP : NOM
                 _buildLabel('Nom de l\'association'),
                 _buildTextField(
-                  _nameCtrl, 
-                  hint: 'ASBL Dev', 
-                  validator: _requiredValidator
+                  _nameCtrl,
+                  hint: 'ASBL Dev',
+                  validator: _requiredValidator,
                 ),
                 const SizedBox(height: 16),
 
                 // CHAMP : DESCRIPTION
                 _buildLabel('Description'),
-                _buildTextField(_descCtrl, hint: 'Description de l\'association...', maxLines: 3, validator: _requiredValidator),
+                _buildTextField(
+                  _descCtrl,
+                  hint: 'Description de l\'association...',
+                  maxLines: 3,
+                  validator: _requiredValidator,
+                ),
                 const SizedBox(height: 16),
 
                 // LIGNE : EMAIL + TELEPHONE (Responsive Row/Column)
                 if (isMobile) ...[
                   _buildLabel('Email'),
-                  _buildTextField(_emailCtrl, hint: 'contact@assoc.com', validator: _emailValidator),
+                  _buildTextField(
+                    _emailCtrl,
+                    hint: 'contact@assoc.com',
+                    validator: _emailValidator,
+                  ),
                   const SizedBox(height: 16),
                   _buildLabel('Téléphone'),
-                  _buildTextField(_phoneCtrl, hint: '12345678', keyboardType: TextInputType.phone, validator: _phoneValidator),
+                  _buildTextField(
+                    _phoneCtrl,
+                    hint: '12345678',
+                    keyboardType: TextInputType.phone,
+                    validator: _phoneValidator,
+                  ),
                 ] else
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,7 +190,11 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildLabel('Email'),
-                            _buildTextField(_emailCtrl, hint: 'contact@assoc.com', validator: _emailValidator),
+                            _buildTextField(
+                              _emailCtrl,
+                              hint: 'contact@assoc.com',
+                              validator: _emailValidator,
+                            ),
                           ],
                         ),
                       ),
@@ -170,7 +204,12 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildLabel('Téléphone'),
-                            _buildTextField(_phoneCtrl, hint: '12345678', keyboardType: TextInputType.phone, validator: _phoneValidator),
+                            _buildTextField(
+                              _phoneCtrl,
+                              hint: '12345678',
+                              keyboardType: TextInputType.phone,
+                              validator: _phoneValidator,
+                            ),
                           ],
                         ),
                       ),
@@ -180,13 +219,22 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
 
                 // CHAMP : SITE WEB
                 _buildLabel('Site Web'),
-                _buildTextField(_websiteCtrl, hint: 'https://...', validator: _requiredValidator),
+                _buildTextField(
+                  _websiteCtrl,
+                  hint: 'https://...',
+                  validator: _requiredValidator,
+                ),
                 const SizedBox(height: 16),
 
                 // LIGNE : BUDGET + ADMIN (Responsive Row/Column)
                 if (isMobile) ...[
                   _buildLabel('Budget initial'),
-                  _buildTextField(_budgetCtrl, hint: '0', keyboardType: TextInputType.number, validator: _requiredValidator),
+                  _buildTextField(
+                    _budgetCtrl,
+                    hint: '0',
+                    keyboardType: TextInputType.number,
+                    validator: _requiredValidator,
+                  ),
                   const SizedBox(height: 16),
                   _buildLabel('Administrateur principal'),
                   _buildAdminDropdown(),
@@ -199,7 +247,12 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildLabel('Budget initial'),
-                            _buildTextField(_budgetCtrl, hint: '0', keyboardType: TextInputType.number, validator: _requiredValidator),
+                            _buildTextField(
+                              _budgetCtrl,
+                              hint: '0',
+                              keyboardType: TextInputType.number,
+                              validator: _requiredValidator,
+                            ),
                           ],
                         ),
                       ),
@@ -228,7 +281,11 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                     const SizedBox(width: 8),
                     const Text(
                       'Association vérifiée',
-                      style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 14),
+                      style: TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -240,19 +297,38 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                   children: [
                     Expanded(
                       flex: isMobile ? 1 : 0,
-                      child: Obx(() => ElevatedButton(
-                        onPressed: assocController.isLoading.value ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          elevation: 0,
+                      child: Obx(
+                        () => ElevatedButton(
+                          onPressed: assocController.isLoading.value
+                              ? null
+                              : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2563EB),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: assocController.isLoading.value
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Enregistrer',
+                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                ),
                         ),
-                        child: assocController.isLoading.value
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.w800)),
-                      )),
+                      ),
                     ),
                   ],
                 ),
@@ -264,6 +340,7 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
     );
   }
 
+  // Widget pour les labels des champs
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -278,7 +355,13 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
     );
   }
 
-  Widget _buildTextField(TextEditingController ctrl, {String? hint, int maxLines = 1, TextInputType? keyboardType, String? Function(String?)? validator}) {
+  Widget _buildTextField(
+    TextEditingController ctrl, {
+    String? hint,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -295,12 +378,16 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
           hintText: hint,
           hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
       ),
     );
   }
 
+  // Widget pour le dropdown de sélection de l'administrateur
   Widget _buildAdminDropdown() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -312,12 +399,18 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<User>(
           isExpanded: true,
-          hint: const Text('Choisir un admin', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+          hint: const Text(
+            'Choisir un admin',
+            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+          ),
           value: _selectedAdmin,
           items: usersController.users.map((User user) {
             return DropdownMenuItem<User>(
               value: user,
-              child: Text(user.username ?? '-', style: const TextStyle(fontSize: 14)),
+              child: Text(
+                user.username ?? '-',
+                style: const TextStyle(fontSize: 14),
+              ),
             );
           }).toList(),
           onChanged: (val) => setState(() => _selectedAdmin = val),
@@ -343,17 +436,20 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
       'members': _selectedAdmin != null ? [_selectedAdmin!.id] : [],
     };
 
-    final success = widget.association == null 
-      ? await assocController.createAssociation(data)
-      : await assocController.updateAssociation(widget.association!.documentId!, data);
-    
+    final success = widget.association == null
+        ? await assocController.createAssociation(data)
+        : await assocController.updateAssociation(
+            widget.association!.documentId!,
+            data,
+          );
+
     if (success) {
       Get.back();
       Get.snackbar(
         'Succès',
-        widget.association == null 
-          ? 'L\'association a été créée avec succès.' 
-          : 'L\'association a été mise à jour.',
+        widget.association == null
+            ? 'L\'association a été créée avec succès.'
+            : 'L\'association a été mise à jour.',
         backgroundColor: const Color(0xFFDCFCE7),
         colorText: const Color(0xFF166534),
         snackPosition: SnackPosition.BOTTOM,

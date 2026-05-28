@@ -914,12 +914,41 @@ class BookingController extends GetxController {
           debugPrint('Erreur envoi notification statut: $e');
         }
 
+        final bool isAnnulled = statusToSend == 'Annulée';
+        final bool isTerminated = statusToSend == 'Terminée';
+
+        String snackTitle = "Succès";
+        String snackMessage = "La réservation de ${res.spaceName ?? 'l\'espace'} est maintenant validée.";
+        Color snackBg = const Color(0xFFDCFCE7);
+        Color snackText = const Color(0xFF166534);
+        IconData snackIcon = Icons.check_circle;
+
+        if (isAnnulled) {
+          snackTitle = "Annulée";
+          snackMessage = "La réservation de ${res.spaceName ?? 'l\'espace'} a été annulée.";
+          snackBg = const Color(0xFFFEE2E2);
+          snackText = const Color(0xFF991B1B);
+          snackIcon = Icons.cancel_outlined;
+        } else if (isTerminated) {
+          snackTitle = "Terminée";
+          snackMessage = "La réservation de ${res.spaceName ?? 'l\'espace'} est maintenant terminée.";
+          snackBg = const Color(0xFFF3F4F6);
+          snackText = const Color(0xFF374151);
+          snackIcon = Icons.info_outline;
+        } else if (statusToSend == 'En_attente') {
+          snackTitle = "En attente";
+          snackMessage = "La réservation de ${res.spaceName ?? 'l\'espace'} est maintenant en attente.";
+          snackBg = const Color(0xFFFFF7ED);
+          snackText = const Color(0xFFD97706);
+          snackIcon = Icons.hourglass_empty;
+        }
+
         Get.snackbar(
-          "Succès",
-          "La réservation de ${res.spaceName ?? 'l\'espace'} est maintenant validée.",
-          backgroundColor: const Color(0xFFDCFCE7),
-          colorText: const Color(0xFF166534),
-          icon: const Icon(Icons.check_circle, color: Color(0xFF166534)),
+          snackTitle,
+          snackMessage,
+          backgroundColor: snackBg,
+          colorText: snackText,
+          icon: Icon(snackIcon, color: snackText),
         );
       } else {
         final errBody = jsonDecode(response.body);
@@ -938,6 +967,15 @@ class BookingController extends GetxController {
   // ── SUPPRESSION D'UNE RÉSERVATION (Admin) ────────────────────
 
   Future<void> deleteReservation(Reservation res) async {
+    if (res.status == ReservationStatus.enAttente ||
+        res.status == ReservationStatus.confirmee) {
+      // Si la réservation est en attente ou confirmée, on ne la supprime pas physiquement.
+      // À la place, on change son statut en "Annulée" pour que l'utilisateur la voie annulée
+      // et que son créneau soit libéré dans l'emploi du temps du jour de réservation.
+      await updateReservationStatus(res, 'Annulée');
+      return;
+    }
+
     isLoading.value = true;
     try {
       final token = await _auth.getToken();
@@ -953,7 +991,7 @@ class BookingController extends GetxController {
         reservations.remove(res);
         Get.snackbar(
           "Supprimée",
-          "La réservation a été supprimée.",
+          "La réservation a été supprimée définitivement.",
           backgroundColor: const Color(0xFFF3F4F6),
           colorText: Colors.black87,
         );

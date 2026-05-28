@@ -13,13 +13,13 @@ import '../data/local/secure_storage.dart';
 import 'auth_controller.dart';
 import 'booking_controller.dart';
 
-
 class SessionsController extends GetxController {
   final RxList<TrainingSession> sessions = <TrainingSession>[].obs;
   final RxString searchQuery = ''.obs;
   final RxBool isLoading = false.obs;
 
-  static const String _baseUrl = 'http://193.111.250.244:3046/api/training-sessions';
+  static const String _baseUrl =
+      'http://193.111.250.244:3046/api/training-sessions';
   static const String _storageKey = 'saved_sessions';
 
   @override
@@ -28,6 +28,7 @@ class SessionsController extends GetxController {
     loadSessions();
   }
 
+  // En-têtes HTTP avec token d'authentification
   Map<String, String> _headers(String token) => {
     'Authorization': 'Bearer $token',
     'Content-Type': 'application/json',
@@ -37,14 +38,24 @@ class SessionsController extends GetxController {
   Future<void> loadSessions() async {
     isLoading.value = true;
     try {
-      final auth = Get.find<AuthController>();
+      final auth =
+          Get.find<
+            AuthController
+          >(); // Récupérer le token du AuthController ou du stockage sécurisé
       String? token = auth.token ?? await SecureStorage.getToken();
       if (token != null) {
-        final response = await http.get(Uri.parse('$_baseUrl?populate=*&pagination[pageSize]=100'), headers: _headers(token));
+        // Récupérer les sessions depuis le serveur avec le token
+        final response = await http.get(
+          Uri.parse('$_baseUrl?populate=*&pagination[pageSize]=100'),
+          headers: _headers(token),
+        );
         if (response.statusCode == 200) {
+          // Parse et mettre à jour la liste des sessions
           final Map<String, dynamic> responseData = jsonDecode(response.body);
           final List<dynamic> data = responseData['data'] ?? [];
-          sessions.value = data.map((item) => TrainingSession.fromJson(item)).toList();
+          sessions.value = data
+              .map((item) => TrainingSession.fromJson(item))
+              .toList();
           await _saveToLocal();
         } else {
           await _loadFromLocal();
@@ -65,7 +76,11 @@ class SessionsController extends GetxController {
       int? instructorId = auth.currentUser.value?['id'];
       if (token != null) {
         final bodyData = session.toStrapiJson(instructorId, courseId);
-        final response = await http.post(Uri.parse(_baseUrl), headers: _headers(token), body: jsonEncode(bodyData));
+        final response = await http.post(
+          Uri.parse(_baseUrl),
+          headers: _headers(token),
+          body: jsonEncode(bodyData),
+        );
         if (response.statusCode == 200 || response.statusCode == 201) {
           await loadSessions();
           Get.back();
@@ -77,18 +92,36 @@ class SessionsController extends GetxController {
     }
   }
 
-  Future<void> addSessionWithReservation({required TrainingSession session, required dynamic courseId, required String spaceId, required double totalAmount}) async {
+  Future<void> addSessionWithReservation({
+    required TrainingSession session,
+    required dynamic courseId,
+    required String spaceId,
+    required double totalAmount,
+  }) async {
     isLoading.value = true;
     try {
-      final auth = Get.find<AuthController>();
-      String? token = auth.token ?? await SecureStorage.getToken();
+      final auth =
+          Get.find<
+            AuthController
+          >(); // Récupérer le token du AuthController ou du stockage sécurisé
+      String? token =
+          auth.token ??
+          await SecureStorage.getToken(); // Récupérer les infos de l'utilisateur connecté
       final user = auth.currentUser.value;
       if (token == null || user == null) return;
 
-      final bodyData = session.toStrapiJson(user['id'], courseId);
-      final sessionResponse = await http.post(Uri.parse(_baseUrl), headers: _headers(token), body: jsonEncode(bodyData));
+      final bodyData = session.toStrapiJson(
+        user['id'],
+        courseId,
+      ); // Créer la session sur le serveur
+      final sessionResponse = await http.post(
+        Uri.parse(_baseUrl),
+        headers: _headers(token),
+        body: jsonEncode(bodyData),
+      );
 
-      if (sessionResponse.statusCode == 200 || sessionResponse.statusCode == 201) {
+      if (sessionResponse.statusCode == 200 ||
+          sessionResponse.statusCode == 201) {
         const reservationUrl = 'http://193.111.250.244:3046/api/reservations';
         final resBody = {
           "data": {
@@ -103,9 +136,13 @@ class SessionsController extends GetxController {
             "turnstile_verified": true,
             "organizer_name": user['username'] ?? "Enseignant",
             "space": spaceId,
-          }
+          },
         };
-        await http.post(Uri.parse(reservationUrl), headers: _headers(token), body: jsonEncode(resBody));
+        await http.post(
+          Uri.parse(reservationUrl),
+          headers: _headers(token),
+          body: jsonEncode(resBody),
+        );
         await loadSessions();
         Get.back();
         _showSnackbar('Succès', 'Session et réservation créées', Colors.green);
@@ -115,7 +152,11 @@ class SessionsController extends GetxController {
     }
   }
 
-  Future<void> updateSession(TrainingSession session, dynamic courseId, {String? oldSessionTitle}) async {
+  Future<void> updateSession(
+    TrainingSession session,
+    dynamic courseId, {
+    String? oldSessionTitle,
+  }) async {
     if (session.documentId == null) return;
     isLoading.value = true;
     try {
@@ -124,13 +165,22 @@ class SessionsController extends GetxController {
       final user = auth.currentUser.value;
       if (token != null) {
         if (oldSessionTitle != null && user != null) {
-          await _deleteLinkedReservation(token: token, username: user['username'] ?? '', sessionTitle: oldSessionTitle);
+          await _deleteLinkedReservation(
+            token: token,
+            username: user['username'] ?? '',
+            sessionTitle: oldSessionTitle,
+          );
         }
         final bodyData = session.toStrapiJson(user?['id'], courseId);
-        final response = await http.put(Uri.parse('$_baseUrl/${session.documentId}'), headers: _headers(token), body: jsonEncode(bodyData));
+        final response = await http.put(
+          Uri.parse('$_baseUrl/${session.documentId}'),
+          headers: _headers(token),
+          body: jsonEncode(bodyData),
+        );
         if (response.statusCode == 200) {
           await loadSessions();
-          if (Get.isRegistered<BookingController>()) Get.find<BookingController>().fetchMyReservations();
+          if (Get.isRegistered<BookingController>())
+            Get.find<BookingController>().fetchMyReservations();
           Get.back();
           _showSnackbar('Succès', 'Session mise à jour', Colors.blue);
         }
@@ -140,7 +190,13 @@ class SessionsController extends GetxController {
     }
   }
 
-  Future<void> updateSessionWithReservation({required TrainingSession session, required dynamic courseId, required String oldSessionTitle, required String spaceId, required double totalAmount}) async {
+  Future<void> updateSessionWithReservation({
+    required TrainingSession session,
+    required dynamic courseId,
+    required String oldSessionTitle,
+    required String spaceId,
+    required double totalAmount,
+  }) async {
     if (session.documentId == null) return;
     isLoading.value = true;
     try {
@@ -150,10 +206,18 @@ class SessionsController extends GetxController {
       if (token == null || user == null) return;
 
       final bodyData = session.toStrapiJson(user['id'], courseId);
-      final sessionResponse = await http.put(Uri.parse('$_baseUrl/${session.documentId}'), headers: _headers(token), body: jsonEncode(bodyData));
+      final sessionResponse = await http.put(
+        Uri.parse('$_baseUrl/${session.documentId}'),
+        headers: _headers(token),
+        body: jsonEncode(bodyData),
+      );
 
       if (sessionResponse.statusCode == 200) {
-        await _deleteLinkedReservation(token: token, username: user['username'] ?? '', sessionTitle: oldSessionTitle);
+        await _deleteLinkedReservation(
+          token: token,
+          username: user['username'] ?? '',
+          sessionTitle: oldSessionTitle,
+        );
         const reservationUrl = 'http://193.111.250.244:3046/api/reservations';
         final resBody = {
           'data': {
@@ -165,19 +229,29 @@ class SessionsController extends GetxController {
             'total_amount': totalAmount,
             'organizer_name': user['username'] ?? 'Enseignant',
             'space': spaceId,
-          }
+          },
         };
-        await http.post(Uri.parse(reservationUrl), headers: _headers(token), body: jsonEncode(resBody));
+        await http.post(
+          Uri.parse(reservationUrl),
+          headers: _headers(token),
+          body: jsonEncode(resBody),
+        );
         await loadSessions();
-        if (Get.isRegistered<BookingController>()) Get.find<BookingController>().fetchMyReservations();
+        if (Get.isRegistered<BookingController>())
+          Get.find<BookingController>().fetchMyReservations();
         Get.back();
-        _showSnackbar('Succès', 'Session mise à jour avec réservation', Colors.blue);
+        _showSnackbar(
+          'Succès',
+          'Session mise à jour avec réservation',
+          Colors.blue,
+        );
       }
     } finally {
       isLoading.value = false;
     }
   }
 
+  // Suppression d'une session (et de la réservation liée si présentiel)
   Future<void> deleteSession(String docId, {bool force = false}) async {
     isLoading.value = true;
     try {
@@ -186,7 +260,9 @@ class SessionsController extends GetxController {
       final user = auth.currentUser.value;
 
       if (token != null) {
-        final session = sessions.firstWhereOrNull((s) => s.documentId == docId);
+        final session = sessions.firstWhereOrNull(
+          (s) => s.documentId == docId,
+        ); // Récupérer la session à supprimer
         if (session == null) return;
 
         bool isConfirmed = false;
@@ -194,18 +270,18 @@ class SessionsController extends GetxController {
         // 1. Chercher le statut de la réservation liée (si présentiel)
         if (session.type != SessionType.enLigne) {
           isConfirmed = await _checkIfConfirmed(
-            token: token, 
-            username: user?['username'] ?? '', 
-            session: session
+            token: token,
+            username: user?['username'] ?? '',
+            session: session,
           );
         }
 
         // --- BLOCAGE SI CONFIRMÉE ---
         if (isConfirmed && !force) {
           _showSnackbar(
-            'Action impossible', 
-            'Cette formation est déjà confirmée par l\'Admin. Contactez l\'administration pour toute annulation.', 
-            Colors.red
+            'Action impossible',
+            'Cette formation est déjà confirmée par l\'Admin. Contactez l\'administration pour toute annulation.',
+            Colors.red,
           );
           return;
         }
@@ -213,15 +289,15 @@ class SessionsController extends GetxController {
         // --- SUPPRESSION DIRECTE ---
         if (session.type != SessionType.enLigne) {
           await _deleteLinkedReservation(
-            token: token, 
-            username: user?['username'] ?? '', 
-            sessionTitle: session.title
+            token: token,
+            username: user?['username'] ?? '',
+            sessionTitle: session.title,
           );
         }
 
         final response = await http.delete(
-          Uri.parse('$_baseUrl/$docId'), 
-          headers: _headers(token)
+          Uri.parse('$_baseUrl/$docId'),
+          headers: _headers(token),
         );
 
         if (response.statusCode == 200 || response.statusCode == 204) {
@@ -239,43 +315,62 @@ class SessionsController extends GetxController {
     }
   }
 
-  Future<bool> _checkIfConfirmed({required String token, required String username, required TrainingSession session}) async {
+  // Vérification approfondie du statut de la réservation liée à une session
+  Future<bool> _checkIfConfirmed({
+    required String token,
+    required String username,
+    required TrainingSession session,
+  }) async {
     try {
       if (session.startDate == null) return false;
       const baseUrl = 'http://193.111.250.244:3046/api/reservations';
-      
+
       final String sTitle = session.title.trim().toLowerCase();
       final DateTime sDate = session.startDate!.toLocal();
       final String sDateStr = sDate.toIso8601String().split('T')[0];
 
-      debugPrint('🚀 [ANALYS] Vérif profonde pour: "$sTitle" le $sDateStr à ${sDate.hour}:${sDate.minute}');
+      debugPrint(
+        '🚀 [ANALYS] Vérif profonde pour: "$sTitle" le $sDateStr à ${sDate.hour}:${sDate.minute}',
+      );
 
       // Étape 1: Recherche par UTILISATEUR + DATE (Le plus sûr pour Siwar)
       final encodedUser = Uri.encodeComponent(username.trim());
-      final urlUser = '$baseUrl?filters[organizer_name][\$eqi]=$encodedUser&pagination[pageSize]=100';
-      
-      final responseUser = await http.get(Uri.parse(urlUser), headers: _headers(token));
+      final urlUser =
+          '$baseUrl?filters[organizer_name][\$eqi]=$encodedUser&pagination[pageSize]=100';
+
+      final responseUser = await http.get(
+        Uri.parse(urlUser),
+        headers: _headers(token),
+      );
       if (responseUser.statusCode == 200) {
         final List items = jsonDecode(responseUser.body)['data'] ?? [];
         for (var item in items) {
-          final Map<String, dynamic> attr = (item['attributes'] != null) ? item['attributes'] : item;
-          
-          final String resDateStr = (attr['start_datetime'] ?? attr['start_date'] ?? '').toString();
+          final Map<String, dynamic> attr = (item['attributes'] != null)
+              ? item['attributes']
+              : item;
+
+          final String resDateStr =
+              (attr['start_datetime'] ?? attr['start_date'] ?? '').toString();
           if (resDateStr.isEmpty) continue;
 
           try {
             final DateTime rDate = DateTime.parse(resDateStr).toLocal();
-            
+
             // 1. Est-ce le même jour et la même HEURE ?
-            final bool sameTime = rDate.year == sDate.year && 
-                                 rDate.month == sDate.month && 
-                                 rDate.day == sDate.day &&
-                                 rDate.hour == sDate.hour;
+            final bool sameTime =
+                rDate.year == sDate.year &&
+                rDate.month == sDate.month &&
+                rDate.day == sDate.day &&
+                rDate.hour == sDate.hour;
 
             if (sameTime) {
-              final String status = (attr['mystatus']?.toString() ?? '').toLowerCase();
-              debugPrint('🎯 [ANALYS] Match trouvé par Heure/Utilisateur! Statut: $status');
-              if (status.contains('confirm') || status.contains('accept')) return true;
+              final String status = (attr['mystatus']?.toString() ?? '')
+                  .toLowerCase();
+              debugPrint(
+                '🎯 [ANALYS] Match trouvé par Heure/Utilisateur! Statut: $status',
+              );
+              if (status.contains('confirm') || status.contains('accept'))
+                return true;
             }
           } catch (_) {}
         }
@@ -283,95 +378,140 @@ class SessionsController extends GetxController {
 
       // Étape 2: Recherche par TITRE (Si l'étape 1 n'a pas suffi)
       final encodedTitle = Uri.encodeComponent(session.title);
-      final urlTitle = '$baseUrl?filters[purpose][\$contains]=$encodedTitle&pagination[pageSize]=100';
-      final respTitle = await http.get(Uri.parse(urlTitle), headers: _headers(token));
-      
+      final urlTitle =
+          '$baseUrl?filters[purpose][\$contains]=$encodedTitle&pagination[pageSize]=100';
+      final respTitle = await http.get(
+        Uri.parse(urlTitle),
+        headers: _headers(token),
+      );
+
       if (respTitle.statusCode == 200) {
         final List items = jsonDecode(respTitle.body)['data'] ?? [];
         for (var item in items) {
-          final Map<String, dynamic> attr = (item['attributes'] != null) ? item['attributes'] : item;
-          final String status = (attr['mystatus']?.toString() ?? '').toLowerCase();
-          
+          final Map<String, dynamic> attr = (item['attributes'] != null)
+              ? item['attributes']
+              : item;
+          final String status = (attr['mystatus']?.toString() ?? '')
+              .toLowerCase();
+
           if (status.contains('confirm') || status.contains('accept')) {
-             final String resDateStr = (attr['start_datetime'] ?? attr['start_date'] ?? '').toString();
-             try {
-               final rDate = DateTime.parse(resDateStr).toLocal();
-               if (rDate.year == sDate.year && rDate.month == sDate.month && rDate.day == sDate.day) {
-                 return true;
-               }
-             } catch (_) {}
+            final String resDateStr =
+                (attr['start_datetime'] ?? attr['start_date'] ?? '').toString();
+            try {
+              final rDate = DateTime.parse(resDateStr).toLocal();
+              if (rDate.year == sDate.year &&
+                  rDate.month == sDate.month &&
+                  rDate.day == sDate.day) {
+                return true;
+              }
+            } catch (_) {}
           }
         }
       }
-
-    } catch (e) { 
-      debugPrint('❌ [ANALYS] Erreur critique: $e'); 
+    } catch (e) {
+      debugPrint('❌ [ANALYS] Erreur critique: $e');
     }
     return false;
   }
 
-  Future<void> deleteLinkedReservationOnly({required String token, required String username, required String sessionTitle}) async {
-    return _deleteLinkedReservation(token: token, username: username, sessionTitle: sessionTitle);
+  // Suppression de la réservation liée à une session (si présentiel)
+  Future<void> deleteLinkedReservationOnly({
+    required String token,
+    required String username,
+    required String sessionTitle,
+  }) async {
+    return _deleteLinkedReservation(
+      token: token,
+      username: username,
+      sessionTitle: sessionTitle,
+    );
   }
 
-  Future<void> _deleteLinkedReservation({required String token, required String username, required String sessionTitle}) async {
+  Future<void> _deleteLinkedReservation({
+    required String token,
+    required String username,
+    required String sessionTitle,
+  }) async {
     try {
       const reservationBaseUrl = 'http://193.111.250.244:3046/api/reservations';
       final encodedName = Uri.encodeComponent(username);
-      final purposes = ['Session de cours : $sessionTitle', 'Réservation via App'];
+      final purposes = [
+        'Session de cours : $sessionTitle',
+        'Réservation via App',
+      ];
       for (final p in purposes) {
         final encodedPurpose = Uri.encodeComponent(p);
-        final searchUrl = '$reservationBaseUrl?filters[organizer_name][\$eq]=$encodedName&filters[purpose][\$eq]=$encodedPurpose&pagination[pageSize]=100';
-        final searchRes = await http.get(Uri.parse(searchUrl), headers: _headers(token));
+        final searchUrl =
+            '$reservationBaseUrl?filters[organizer_name][\$eq]=$encodedName&filters[purpose][\$eq]=$encodedPurpose&pagination[pageSize]=100';
+        final searchRes = await http.get(
+          Uri.parse(searchUrl),
+          headers: _headers(token),
+        );
         if (searchRes.statusCode != 200) continue;
         final List items = jsonDecode(searchRes.body)['data'] ?? [];
         if (items.isNotEmpty) {
-          await Future.wait(items.map((item) async {
-            final resDocId = item['documentId']?.toString();
-            if (resDocId != null) await http.delete(Uri.parse('$reservationBaseUrl/$resDocId'), headers: _headers(token));
-          }));
+          await Future.wait(
+            items.map((item) async {
+              final resDocId = item['documentId']?.toString();
+              if (resDocId != null)
+                await http.delete(
+                  Uri.parse('$reservationBaseUrl/$resDocId'),
+                  headers: _headers(token),
+                );
+            }),
+          );
         }
       }
-    } catch (e) { debugPrint('Erreur suppression: $e'); }
+    } catch (e) {
+      debugPrint('Erreur suppression: $e');
+    }
   }
 
+  // Fonction d'inscription à une session avec vérification de capacité et de conflits d'horaires
   Future<void> enrollInSession(String sessionDocId) async {
     isLoading.value = true;
     try {
       final auth = Get.find<AuthController>();
       String? token = auth.token ?? await SecureStorage.getToken();
-      int? userId = auth.currentUser.value?['id'];
+      int? userId = auth
+          .currentUser
+          .value?['id']; // Récupérer le token et l'ID de l'utilisateur connecté
       if (token != null && userId != null) {
-        
         // 1. Vérification de la capacité maximale
-        final session = sessions.firstWhereOrNull((s) => s.documentId == sessionDocId);
+        final session = sessions.firstWhereOrNull(
+          (s) => s.documentId == sessionDocId,
+        );
         if (session != null) {
           if (session.currentParticipants >= session.maxParticipants) {
-            _showSnackbar('Complet', 'Cette formation est déjà complète (${session.maxParticipants}/${session.maxParticipants}).', Colors.orange);
+            _showSnackbar(
+              'Complet',
+              'Cette formation est déjà complète (${session.maxParticipants}/${session.maxParticipants}).',
+              Colors.orange,
+            );
             return;
           }
-          
+
           // 2. Vérification des conflits d'horaires (Chevauchement)
           if (session.startDate != null && session.endDate != null) {
             final DateTime start = session.startDate!;
             final DateTime end = session.endDate!;
-            
+
             final conflict = sessions.firstWhereOrNull((s) {
               // Vérifier si l'utilisateur est déjà inscrit à cette autre session
               bool isEnrolled = s.attendeeIds.contains(userId);
               if (!isEnrolled) return false;
-              
+
               if (s.startDate == null || s.endDate == null) return false;
-              
+
               // Algorithme de chevauchement : (Début1 < Fin2) ET (Fin1 > Début2)
               return start.isBefore(s.endDate!) && end.isAfter(s.startDate!);
             });
 
             if (conflict != null) {
               _showSnackbar(
-                'Conflit d\'horaire', 
-                'Vous êtes déjà inscrit à la session "${conflict.title}" sur ce créneau.', 
-                Colors.red
+                'Conflit d\'horaire',
+                'Vous êtes déjà inscrit à la session "${conflict.title}" sur ce créneau.',
+                Colors.red,
               );
               return;
             }
@@ -379,27 +519,38 @@ class SessionsController extends GetxController {
         }
 
         final response = await http.put(
-          Uri.parse('$_baseUrl/$sessionDocId'), 
-          headers: _headers(token), 
+          Uri.parse('$_baseUrl/$sessionDocId'),
+          headers: _headers(token),
           body: jsonEncode({
             'data': {
               'attendees': {
-                'connect': [userId]
-              }
-            }
-          })
+                'connect': [userId],
+              },
+            },
+          }),
         );
-        
+
         if (response.statusCode == 200) {
           await loadSessions();
-          _showSnackbar('Succès', 'Votre inscription a été validée', Colors.green);
+          _showSnackbar(
+            'Succès',
+            'Votre inscription a été validée',
+            Colors.green,
+          );
         } else {
-          _showSnackbar('Erreur', 'Impossible de s\'inscrire pour le moment', Colors.red);
+          _showSnackbar(
+            'Erreur',
+            'Impossible de s\'inscrire pour le moment',
+            Colors.red,
+          );
         }
       }
-    } finally { isLoading.value = false; }
+    } finally {
+      isLoading.value = false;
+    }
   }
 
+  // Fonction de désinscription d'une session
   Future<void> unenrollFromSession(String sessionDocId) async {
     isLoading.value = true;
     try {
@@ -407,23 +558,43 @@ class SessionsController extends GetxController {
       String? token = auth.token ?? await SecureStorage.getToken();
       int? userId = auth.currentUser.value?['id'];
       if (token != null && userId != null) {
-        final response = await http.put(Uri.parse('$_baseUrl/$sessionDocId'), headers: _headers(token), body: jsonEncode({'data': {'attendees': {'disconnect': [userId]}}}));
+        final response = await http.put(
+          Uri.parse('$_baseUrl/$sessionDocId'),
+          headers: _headers(token),
+          body: jsonEncode({
+            'data': {
+              'attendees': {
+                'disconnect': [userId],
+              },
+            },
+          }),
+        );
         if (response.statusCode == 200) {
           await loadSessions();
           _showSnackbar('Succès', 'Désinscription validée', Colors.orange);
         }
       }
-    } finally { isLoading.value = false; }
+    } finally {
+      isLoading.value = false;
+    }
   }
 
+  // Mise à jour de la requête de recherche pour filtrer les sessions en fonction du titre
   void updateSearch(String query) => searchQuery.value = query;
 
-  bool isSessionOverlapping({required int instructorId, required DateTime start, required DateTime end, bool? isAssociation, String? excludeDocumentId}) {
+  bool isSessionOverlapping({
+    required int instructorId,
+    required DateTime start,
+    required DateTime end,
+    bool? isAssociation,
+    String? excludeDocumentId,
+  }) {
     for (final s in sessions) {
       if (s.instructorId.toString() != instructorId.toString()) continue;
-      if (excludeDocumentId != null && s.documentId == excludeDocumentId) continue;
+      if (excludeDocumentId != null && s.documentId == excludeDocumentId)
+        continue;
       if (s.startDate == null || s.endDate == null) continue;
-      
+
       // Vérifier le chevauchement pour TOUTES les sessions de cet enseignant,
       // peu importe le type (enseignant ou association)
       if (start.isBefore(s.endDate!) && end.isAfter(s.startDate!)) return true;
@@ -431,28 +602,48 @@ class SessionsController extends GetxController {
     return false;
   }
 
+  // Liste des sessions filtrées en fonction de la recherche et des inscriptions de l'utilisateur
   List<TrainingSession> get filteredSessions {
     final userId = Get.find<AuthController>().currentUser.value?['id'];
     List<TrainingSession> available = sessions.where((s) {
       if (userId == null) return true;
-      return !s.attendeeIds.contains(userId);
+      return !s.attendeeIds.contains(
+        userId,
+      ); //Afficher toutes les sessions auxquelles l'utilisateur n'est pas encore inscrit
     }).toList();
     if (searchQuery.isEmpty) return available;
-    return available.where((s) => s.title.toLowerCase().contains(searchQuery.value.toLowerCase())).toList();
+    return available
+        .where(
+          (s) =>
+              s.title.toLowerCase().contains(searchQuery.value.toLowerCase()),
+        )
+        .toList();
   }
 
   void _showSnackbar(String title, String msg, Color color) {
-    Get.snackbar(title, msg, backgroundColor: color, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar(
+      title,
+      msg,
+      backgroundColor: color,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
   Future<void> _saveToLocal() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, jsonEncode(sessions.map((s) => s.toJson()).toList()));
+    await prefs.setString(
+      _storageKey,
+      jsonEncode(sessions.map((s) => s.toJson()).toList()),
+    );
   }
 
   Future<void> _loadFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_storageKey);
-    if (cached != null) sessions.value = (jsonDecode(cached) as List).map((item) => TrainingSession.fromJson(item)).toList();
+    if (cached != null)
+      sessions.value = (jsonDecode(cached) as List)
+          .map((item) => TrainingSession.fromJson(item))
+          .toList();
   }
 }

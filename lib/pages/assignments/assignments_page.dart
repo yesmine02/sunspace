@@ -10,6 +10,7 @@ import '../../data/models/assignment.dart';
 import '../../controllers/courses_controller.dart';
 import '../../routing/app_routes.dart';
 import '../../widgets/notification_bell.dart';
+import '../../widgets/settings_icon_button.dart';
 import './widgets/add_edit_assignment_dialog.dart';
 import './widgets/view_assignment_dialog.dart';
 import '../../controllers/auth_controller.dart';
@@ -158,7 +159,8 @@ class AssignmentsPage extends StatelessWidget {
               ),
             ),
           const Spacer(),
-          // Notifications
+          // Settings & Notifications
+          const SettingsIconButton(),
           const NotificationBell(),
           const SizedBox(width: 16),
           // User Profile

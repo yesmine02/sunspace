@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/auth_controller.dart';
 import '../../widgets/notification_bell.dart';
+import '../../widgets/settings_icon_button.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -181,7 +182,8 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           const SizedBox(width: 20),
-          // Notifications
+          // Settings & Notifications
+          const SettingsIconButton(iconColor: Color(0xFF1E293B)),
           const NotificationBell(iconColor: Color(0xFF1E293B)),
           const SizedBox(width: 20),
           // User Avatar

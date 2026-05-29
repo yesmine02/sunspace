@@ -35,14 +35,14 @@ class CoursesController extends GetxController {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
-//✅ Récupère les formations depuis Strapi.
+  //✅ Récupère les formations depuis Strapi.
   // 🔹 GET
   Future<void> loadCourses() async {
     isLoading.value = true;
     try {
       final auth = Get.find<AuthController>();
       String? token = auth.token ?? await SecureStorage.getToken();
-//✅ Vérifie que l'utilisateur est connecté.
+      //✅ Vérifie que l'utilisateur est connecté.
       if (token != null) {
         final response = await http.get(
           Uri.parse('$_baseUrl?populate=*&pagination[pageSize]=100'),
@@ -76,7 +76,8 @@ class CoursesController extends GetxController {
       isLoading.value = false;
     }
   }
-//✅ Ajoute une nouvelle formation.
+
+  //✅ Ajoute une nouvelle formation.
   // 🔹 POST (ADD)
   Future<void> addCourse(Course course) async {
     isLoading.value = true;
@@ -100,21 +101,26 @@ class CoursesController extends GetxController {
           dynamic newCourseId;
           try {
             final respData = jsonDecode(response.body);
-            newCourseId = respData['data']?['id'] ?? respData['data']?['documentId'];
+            newCourseId =
+                respData['data']?['id'] ?? respData['data']?['documentId'];
           } catch (e) {
             debugPrint('Erreur parsing ID cours: $e');
           }
 
           await loadCourses();
-          
+
           // 📢 Notifier tous les étudiants de la nouvelle formation
           try {
-            debugPrint('📣 Tentative d\'envoi de notification aux étudiants...');
-            final instructorName = auth.currentUser.value?['username'] ?? 'Un enseignant';
+            debugPrint(
+              '📣 Tentative d\'envoi de notification aux étudiants...',
+            );
+            final instructorName =
+                auth.currentUser.value?['username'] ?? 'Un enseignant';
             final notifCtrl = Get.find<NotificationController>();
             notifCtrl.notifyMembers(
               title: 'Nouveau cours disponible !',
-              message: '$instructorName a publié un nouveau cours : "${course.title}"',
+              message:
+                  '$instructorName a publié un nouveau cours : "${course.title}"',
               type: 'Info', // Indispensable pour éviter l'erreur 400
               relatedType: 'course',
               relatedId: newCourseId,
@@ -128,7 +134,11 @@ class CoursesController extends GetxController {
           _showSnackbar('Succès', 'Formation créée', Colors.green);
         } else {
           print('DEBUG - Erreur Ajout: ${response.body}');
-          _showSnackbar('Erreur 400', 'Champ obligatoire manquant ou invalide', Colors.red);
+          _showSnackbar(
+            'Erreur 400',
+            'Champ obligatoire manquant ou invalide',
+            Colors.red,
+          );
         }
       }
     } catch (e) {
@@ -177,12 +187,17 @@ class CoursesController extends GetxController {
   Future<void> deleteCourse(String docId) async {
     isLoading.value = true;
     try {
-      final auth = Get.find<AuthController>();
-      String? token = auth.token ?? await SecureStorage.getToken();
+      final auth =
+          Get.find<AuthController>(); // Récupère le token d'authentification
+      String? token =
+          auth.token ??
+          await SecureStorage.getToken(); // Vérifie que l'utilisateur est connecté et que le token est disponible
 
       if (token != null) {
         final response = await http.delete(
-          Uri.parse('$_baseUrl/$docId'),
+          Uri.parse(
+            '$_baseUrl/$docId',
+          ), // Utilise le documentId pour la suppression, compatible avec Strapi v5
           headers: _headers(token),
         );
 
@@ -208,19 +223,21 @@ class CoursesController extends GetxController {
       if (token == null || userId == null) return false;
 
       final url = 'http://193.111.250.244:3046/api/enrollments';
-      
+
       // Strapi v5 Format Robuste
       final body = jsonEncode({
         'data': {
           'student': userId,
-          'course': { 'connect': [int.tryParse(course.id) ?? course.id] },
+          'course': {
+            'connect': [int.tryParse(course.id) ?? course.id],
+          },
           'enrolled_at': DateTime.now().toUtc().toIso8601String(),
           'publishedAt': DateTime.now().toUtc().toIso8601String(),
           'mystatus': 'Active', // Correction : 'Active' avec un 'e'
           'progress_percentage': 0,
           'certificate_issued': false,
           'final_grade': 0,
-        }
+        },
       });
 
       final response = await http.post(
@@ -232,8 +249,8 @@ class CoursesController extends GetxController {
       if (response.statusCode == 200 || response.statusCode == 201) {
         print("DEBUG: Inscription réussie pour le cours ${course.title}");
         await fetchEnrollments(); // Recharger les IDs d'inscription
-        await loadCourses();      // Recharger le catalogue pour l'état des boutons
-        
+        await loadCourses(); // Recharger le catalogue pour l'état des boutons
+
         // Optionnel : Rafraîchir les devoirs si le contrôleur existe
         if (Get.isRegistered<AssignmentsController>()) {
           Get.find<AssignmentsController>().fetchAssignments();
@@ -242,23 +259,27 @@ class CoursesController extends GetxController {
         // 🔔 Envoyer une notification à l'enseignant du cours
         if (course.instructorId != null) {
           try {
-            final studentName = auth.currentUser.value?['username'] ?? 'Un étudiant';
+            final studentName =
+                auth.currentUser.value?['username'] ?? 'Un étudiant';
             final notifCtrl = Get.find<NotificationController>();
-            
+
             await notifCtrl.sendNotification(
               targetUserId: course.instructorId!,
               title: 'Nouvelle inscription !',
-              message: '$studentName s\'est inscrit à votre cours "${course.title}".',
+              message:
+                  '$studentName s\'est inscrit à votre cours "${course.title}".',
               type: 'Info',
               relatedType: 'course',
               relatedId: course.id,
               actionUrl: '/dashboard/instructor/courses',
             );
           } catch (e) {
-            print('Erreur lors de l\'envoi de la notification à l\'enseignant: $e');
+            print(
+              'Erreur lors de l\'envoi de la notification à l\'enseignant: $e',
+            );
           }
         }
-        
+
         return true;
       } else {
         print("DEBUG: Erreur inscription: ${response.body}");
@@ -281,40 +302,54 @@ class CoursesController extends GetxController {
       if (token == null || userId == null) return false;
 
       // 1. Chercher l'ID de l'enrollment pour ce cours et cet utilisateur
-      final searchUrl = 'http://193.111.250.244:3046/api/enrollments'
+      final searchUrl =
+          'http://193.111.250.244:3046/api/enrollments'
           '?filters[student][id][\$eq]=$userId'
           '&filters[course][id][\$eq]=${course.id}'
           '&pagination[pageSize]=1';
 
       final searchResponse = await http.get(
         Uri.parse(searchUrl),
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
 
       if (searchResponse.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(searchResponse.body)['data'] ?? [];
+        final List<dynamic> data =
+            jsonDecode(searchResponse.body)['data'] ?? [];
         if (data.isEmpty) {
-          print("DEBUG: Aucune inscription trouvée pour le cours ${course.title}");
+          print(
+            "DEBUG: Aucune inscription trouvée pour le cours ${course.title}",
+          );
           return false;
         }
 
         // Récupérer le documentId ou l'id de l'enrollment
         final enrollment = data[0];
-        final enrollmentDocId = enrollment['documentId'] ?? enrollment['id'].toString();
+        final enrollmentDocId =
+            enrollment['documentId'] ?? enrollment['id'].toString();
 
         // 2. Supprimer l'enrollment
-        final deleteUrl = 'http://193.111.250.244:3046/api/enrollments/$enrollmentDocId';
+        final deleteUrl =
+            'http://193.111.250.244:3046/api/enrollments/$enrollmentDocId';
         final deleteResponse = await http.delete(
           Uri.parse(deleteUrl),
           headers: _headers(token),
         );
 
-        if (deleteResponse.statusCode == 200 || deleteResponse.statusCode == 204) {
+        if (deleteResponse.statusCode == 200 ||
+            deleteResponse.statusCode == 204) {
           print("DEBUG: Désinscription réussie pour le cours ${course.title}");
           await fetchEnrollments(); // Mettre à jour la liste locale des inscrits
-          await loadCourses();      // Recharger pour mettre à jour l'affichage
-          
-          _showSnackbar('Succès', 'Vous avez quitté le cours : ${course.title}', Colors.orange);
+          await loadCourses(); // Recharger pour mettre à jour l'affichage
+
+          _showSnackbar(
+            'Succès',
+            'Vous avez quitté le cours : ${course.title}',
+            Colors.orange,
+          );
           return true;
         } else {
           print("DEBUG: Erreur suppression enrollment: ${deleteResponse.body}");
@@ -342,14 +377,18 @@ class CoursesController extends GetxController {
       if (token == null || userId == null) return;
 
       // URL simple - confirmée fonctionnelle
-      final url = 'http://193.111.250.244:3046/api/enrollments'
+      final url =
+          'http://193.111.250.244:3046/api/enrollments'
           '?filters[student][id][\$eq]=$userId'
           '&populate=course'
           '&pagination[pageSize]=100';
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -365,7 +404,11 @@ class CoursesController extends GetxController {
 
           final courseData = courseInfo['data'] ?? courseInfo;
           final id = int.tryParse((courseData['id'] ?? '').toString());
-          final docId = (courseData['documentId'] ?? courseData['attributes']?['documentId'] ?? '').toString();
+          final docId =
+              (courseData['documentId'] ??
+                      courseData['attributes']?['documentId'] ??
+                      '')
+                  .toString();
 
           if (id != null) ids.add(id);
           if (docId.isNotEmpty) docIds.add(docId);
@@ -375,7 +418,9 @@ class CoursesController extends GetxController {
         enrolledCourseDocumentIds.value = docIds;
         debugPrint('🎓 Enrollments chargés : IDs=$ids | DocIDs=$docIds');
       } else {
-        debugPrint('⚠️ fetchEnrollments HTTP ${response.statusCode}: ${response.body}');
+        debugPrint(
+          '⚠️ fetchEnrollments HTTP ${response.statusCode}: ${response.body}',
+        );
       }
     } catch (e) {
       debugPrint('❌ Erreur fetchEnrollments: $e');
@@ -385,24 +430,41 @@ class CoursesController extends GetxController {
   bool isEnrolled(Course course) {
     final numId = int.tryParse(course.id.toString());
     if (numId != null && enrolledCourseIds.contains(numId)) return true;
-    if (course.documentId != null && enrolledCourseDocumentIds.contains(course.documentId)) return true;
+    if (course.documentId != null &&
+        enrolledCourseDocumentIds.contains(course.documentId))
+      return true;
     return false;
   }
-// recherche de cours
+
+  // recherche de cours
   void updateSearch(String query) => searchQuery.value = query;
 
   List<Course> get filteredCourses {
     if (searchQuery.isEmpty) return courses;
-    return courses.where((c) => c.title.toLowerCase().contains(searchQuery.value.toLowerCase())).toList();
+    return courses
+        .where(
+          (c) =>
+              c.title.toLowerCase().contains(searchQuery.value.toLowerCase()),
+        )
+        .toList();
   }
 
   void _showSnackbar(String title, String msg, Color color) {
-    Get.snackbar(title, msg, backgroundColor: color, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar(
+      title,
+      msg,
+      backgroundColor: color,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
   Future<void> _saveToLocal() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, jsonEncode(courses.map((c) => c.toJson()).toList()));
+    await prefs.setString(
+      _storageKey,
+      jsonEncode(courses.map((c) => c.toJson()).toList()),
+    );
   }
 
   Future<void> _loadFromLocal() async {

@@ -123,6 +123,11 @@ class _RegisterPageState extends State<RegisterPage> {
                       return;
                     }
 
+                    if (passwordController.text.length < 6) {
+                      Get.snackbar('Erreur', 'Le mot de passe doit contenir au moins 6 caractères');
+                      return;
+                    }
+
                     if (passwordController.text != confirmPasswordController.text) {
                       Get.snackbar('Erreur', 'Les mots de passe ne correspondent pas');
                       return;

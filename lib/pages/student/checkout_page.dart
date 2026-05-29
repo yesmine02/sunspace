@@ -10,6 +10,7 @@ import '../../controllers/booking_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../data/models/space.dart';
 import '../../widgets/notification_bell.dart';
+import '../../widgets/settings_icon_button.dart';
 
 class CheckoutPage extends StatelessWidget {
   const CheckoutPage({super.key});
@@ -143,6 +144,7 @@ class CheckoutPage extends StatelessWidget {
               ),
             ),
           const Spacer(),
+          const SettingsIconButton(iconColor: Color(0xFF475569)),
           const NotificationBell(iconColor: Color(0xFF475569)),
           const SizedBox(width: 16),
           Obx(() {

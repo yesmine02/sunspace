@@ -61,10 +61,7 @@ class Sidebar extends StatelessWidget {
                     ),
                     Text(
                       'Dashboard',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -101,8 +98,9 @@ class Sidebar extends StatelessWidget {
               final bool isPro = authController.isProfessional;
               final bool isAssoc = authController.isAssociation;
               final bool isSpaceManager = authController.isSpaceManager;
-              final bool isAuthenticatedOnly = authController.isAuthenticatedOnly;
-              
+              final bool isAuthenticatedOnly =
+                  authController.isAuthenticatedOnly;
+
               final assocCtrl = Get.find<AssociationsController>();
               final bool isAssocAdmin = assocCtrl.isCurrentUserAssocAdmin;
               final bool isAssocMember = assocCtrl.isCurrentUserAssocMember;
@@ -111,13 +109,19 @@ class Sidebar extends StatelessWidget {
               final String roleName = authController.currentRoleName;
 
               return ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
                 children: [
                   // Indicateur de rôle courant
                   if (roleName.isNotEmpty) ...[
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(8),
@@ -125,7 +129,11 @@ class Sidebar extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.verified_user_outlined, size: 14, color: Color(0xFF3B82F6)),
+                          const Icon(
+                            Icons.verified_user_outlined,
+                            size: 14,
+                            color: Color(0xFF3B82F6),
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             roleName,
@@ -147,21 +155,26 @@ class Sidebar extends StatelessWidget {
                     isActive: currentRoute == AppRoutes.DASHBOARD,
                     onTap: () => Get.offAllNamed(AppRoutes.DASHBOARD),
                   ),
-                  
                   // --- ITEMS ACCESSIBLES POUR ADMIN, ENSEIGNANT, AUTHENTIFIÉ, GESTIONNAIRE, PROFESSIONNEL ET ASSOCIATION ---
-                  if (isAdmin || isInstructor || isAuthenticatedOnly || isSpaceManager || isPro || isAssoc) ...[
+                  if (isAdmin ||
+                      isInstructor ||
+                      isAuthenticatedOnly ||
+                      isSpaceManager ||
+                      isPro ||
+                      isAssoc) ...[
                     _buildMenuItem(
                       title: 'Réserver un espace',
                       icon: Icons.location_on_outlined,
                       isActive: currentRoute == AppRoutes.BOOK_SPACE,
                       onTap: () => Get.offAllNamed(AppRoutes.BOOK_SPACE),
                     ),
-                    _buildMenuItem(
-                      title: 'Mes Réservations',
-                      icon: Icons.event_available_outlined,
-                      isActive: currentRoute == AppRoutes.MY_RESERVATIONS,
-                      onTap: () => Get.offAllNamed(AppRoutes.MY_RESERVATIONS),
-                    ),
+                    if (!isAdmin && !isSpaceManager)
+                      _buildMenuItem(
+                        title: 'Mes Réservations',
+                        icon: Icons.event_available_outlined,
+                        isActive: currentRoute == AppRoutes.MY_RESERVATIONS,
+                        onTap: () => Get.offAllNamed(AppRoutes.MY_RESERVATIONS),
+                      ),
                   ],
 
                   // --- ITEMS SPÉCIFIQUES GESTIONNAIRE D'ESPACE ET ADMIN ---
@@ -227,8 +240,15 @@ class Sidebar extends StatelessWidget {
                     _buildMenuItem(
                       title: 'Devoirs',
                       icon: Icons.assignment_outlined,
-                      isActive: currentRoute == AppRoutes.TASKS && (Get.arguments is Map ? Get.arguments['isManagement'] == true : false),
-                      onTap: () => Get.offAllNamed(AppRoutes.TASKS, arguments: {'isManagement': true}),
+                      isActive:
+                          currentRoute == AppRoutes.TASKS &&
+                          (Get.arguments is Map
+                              ? Get.arguments['isManagement'] == true
+                              : false),
+                      onTap: () => Get.offAllNamed(
+                        AppRoutes.TASKS,
+                        arguments: {'isManagement': true},
+                      ),
                     ),
                   ],
 
@@ -242,11 +262,19 @@ class Sidebar extends StatelessWidget {
                       isActive: currentRoute == AppRoutes.MY_COURSES,
                       onTap: () => Get.offAllNamed(AppRoutes.MY_COURSES),
                     ),
+
                     _buildMenuItem(
                       title: 'Mes devoirs',
                       icon: Icons.assignment_outlined,
-                      isActive: currentRoute == AppRoutes.TASKS && (Get.arguments is Map ? Get.arguments['isManagement'] == false : true),
-                      onTap: () => Get.offAllNamed(AppRoutes.TASKS, arguments: {'isManagement': false}),
+                      isActive:
+                          currentRoute == AppRoutes.TASKS &&
+                          (Get.arguments is Map
+                              ? Get.arguments['isManagement'] == false
+                              : true),
+                      onTap: () => Get.offAllNamed(
+                        AppRoutes.TASKS,
+                        arguments: {'isManagement': false},
+                      ),
                     ),
                     _buildMenuItem(
                       title: 'Catalogue Cours',
@@ -279,7 +307,7 @@ class Sidebar extends StatelessWidget {
                   if (isAssoc || isAdmin || isAssocAdmin || isAssocMember) ...[
                     const SizedBox(height: 32),
                     _buildSectionHeader('ASSOCIATION'),
-                    
+
                     // 1. Formations
                     _buildMenuItem(
                       title: 'Formations',
@@ -287,7 +315,7 @@ class Sidebar extends StatelessWidget {
                       isActive: currentRoute == AppRoutes.ASSOC_TRAININGS,
                       onTap: () => Get.offAllNamed(AppRoutes.ASSOC_TRAININGS),
                     ),
-                    
+
                     // 2. Membres (Visible pour TOUS les membres de l'association)
                     _buildMenuItem(
                       title: 'Membres',
@@ -295,7 +323,7 @@ class Sidebar extends StatelessWidget {
                       isActive: currentRoute == AppRoutes.ASSOC_MEMBERS,
                       onTap: () => Get.offAllNamed(AppRoutes.ASSOC_MEMBERS),
                     ),
-                    
+
                     // 3. Budget & Utilisation (Visible uniquement pour l'ADMIN de l'association ou Admin global)
                     if (isAdmin || isAssocAdmin)
                       _buildMenuItem(
@@ -341,7 +369,9 @@ class Sidebar extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF007AFF) : Colors.transparent, // Vibrant blue from image
+        color: isActive
+            ? const Color(0xFF007AFF)
+            : Colors.transparent, // Vibrant blue from image
         borderRadius: BorderRadius.circular(10), // More modern radius
       ),
       child: ListTile(
@@ -350,7 +380,9 @@ class Sidebar extends StatelessWidget {
         visualDensity: VisualDensity.compact,
         leading: Icon(
           icon,
-          color: isActive ? Colors.white : const Color(0xFF1E293B), // Dark slate
+          color: isActive
+              ? Colors.white
+              : const Color(0xFF1E293B), // Dark slate
           size: 22,
         ),
         title: Text(
@@ -393,11 +425,17 @@ class Sidebar extends StatelessWidget {
                       children: [
                         const Text(
                           'Utilisateur',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                         ),
                         Text(
                           email,
-                          style: const TextStyle(color: Colors.grey, fontSize: 11),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 11,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -424,14 +462,19 @@ class Sidebar extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 44),
                 side: BorderSide(color: Colors.grey.shade200),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
                   Icon(Icons.logout, size: 18, color: Colors.black87),
                   SizedBox(width: 8),
-                  Text('Déconnexion', style: TextStyle(color: Colors.black87, fontSize: 14)),
+                  Text(
+                    'Déconnexion',
+                    style: TextStyle(color: Colors.black87, fontSize: 14),
+                  ),
                 ],
               ),
             ),
@@ -440,7 +483,8 @@ class Sidebar extends StatelessWidget {
       );
     });
   }
-//fonction privée (✅ “Cette fonctionnalité n’est pas encore prête”.)
+
+  //fonction privée (✅ “Cette fonctionnalité n’est pas encore prête”.)
   void _showNotImplemented(String feature) {
     Get.snackbar(
       'Information',

@@ -4,6 +4,7 @@ import '../../controllers/courses_controller.dart';
 import '../../data/models/course.dart';
 import '../../routing/app_routes.dart';
 import '../../widgets/notification_bell.dart';
+import '../../widgets/settings_icon_button.dart';
 
 class MyCoursesPage extends StatelessWidget {
   const MyCoursesPage({super.key});
@@ -110,6 +111,7 @@ class MyCoursesPage extends StatelessWidget {
               ),
             ),
           const Spacer(),
+          const SettingsIconButton(),
           const NotificationBell(),
           const SizedBox(width: 16),
           Row(

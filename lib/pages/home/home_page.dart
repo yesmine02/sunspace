@@ -6,6 +6,7 @@ import '../../controllers/spaces_controller.dart';
 import '../../controllers/notification_controller.dart';
 import '../spaces/create_space_page.dart';
 import '../../widgets/notification_bell.dart';
+import '../../widgets/settings_icon_button.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -607,6 +608,7 @@ Widget _buildTopBar(NotificationController notifController) {
   return Row(
     mainAxisAlignment: MainAxisAlignment.end,
     children: [
+      const SettingsIconButton(size: 28, iconColor: Colors.black87),
       const NotificationBell(size: 28, iconColor: Colors.black87),
       const SizedBox(width: 16),
       InkWell(

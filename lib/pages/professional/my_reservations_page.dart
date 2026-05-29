@@ -258,6 +258,9 @@ class MyReservationsPage extends StatelessWidget {
       final enAttente = controller.reservations
           .where((r) => r.status == ReservationStatus.enAttente)
           .length;
+      final refusees = controller.reservations
+          .where((r) => r.status == ReservationStatus.annulee)
+          .length;
 
       return isMobile
           ? Column(
@@ -283,6 +286,14 @@ class MyReservationsPage extends StatelessWidget {
                   enAttente.toString(),
                   Icons.access_time_rounded,
                   const Color(0xFFFFFBEB),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _buildStatCard(
+                  'REFUSÉES',
+                  refusees.toString(),
+                  Icons.cancel_outlined,
+                  const Color(0xFFFEE2E2),
                   isMobile,
                 ),
               ],
@@ -315,6 +326,16 @@ class MyReservationsPage extends StatelessWidget {
                     enAttente.toString(),
                     Icons.access_time_rounded,
                     const Color(0xFFFFFBEB),
+                    isMobile,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: _buildStatCard(
+                    'REFUSÉES',
+                    refusees.toString(),
+                    Icons.cancel_outlined,
+                    const Color(0xFFFEE2E2),
                     isMobile,
                   ),
                 ),
@@ -377,24 +398,81 @@ class MyReservationsPage extends StatelessWidget {
   }
 
   Widget _buildSectionHeader(BookingController controller, bool isMobile) {
-    if (isMobile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (isMobile) ...[
           _buildSectionTitle(),
           const SizedBox(height: 16),
           _buildSearchBar(controller, isMobile),
-        ],
-      );
-    }
-
-    return Row(
-      children: [
-        _buildSectionTitle(),
-        const SizedBox(width: 48),
-        Expanded(child: _buildSearchBar(controller, isMobile)),
+        ] else
+          Row(
+            children: [
+              _buildSectionTitle(),
+              const SizedBox(width: 48),
+              Expanded(child: _buildSearchBar(controller, isMobile)),
+            ],
+          ),
+        _buildFilterChips(controller),
       ],
     );
+  }
+
+  Widget _buildFilterChips(BookingController controller) {
+    final filters = ['Toutes', 'En attente', 'Confirmées', 'Refusées'];
+
+    return Obx(() {
+      final activeFilter = controller.selectedResFilter.value;
+      return Container(
+        height: 40,
+        margin: const EdgeInsets.only(top: 16),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: filters.map((filter) {
+            final bool isSelected = activeFilter == filter;
+
+            Color selectedColor = const Color(0xFF007AFF);
+            Color selectedTextColor = Colors.white;
+
+            if (filter == 'En attente') {
+              selectedColor = const Color(0xFFF97316);
+            } else if (filter == 'Confirmées') {
+              selectedColor = const Color(0xFF166534);
+            } else if (filter == 'Refusées') {
+              selectedColor = const Color(0xFFEF4444);
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ChoiceChip(
+                label: Text(
+                  filter,
+                  style: TextStyle(
+                    color: isSelected ? selectedTextColor : const Color(0xFF64748B),
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  ),
+                ),
+                selected: isSelected,
+                selectedColor: selectedColor,
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                showCheckmark: false,
+                onSelected: (bool selected) {
+                  if (selected) {
+                    controller.updateResFilter(filter);
+                  }
+                },
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    });
   }
 
   Widget _buildSectionTitle() {
@@ -905,9 +983,9 @@ class MyReservationsPage extends StatelessWidget {
       case ReservationStatus.terminee:
         return const Color(0xFF1E293B);
       case ReservationStatus.annulee:
-        return const Color(0xFF991B1B);
+        return const Color(0xFFEF4444); // Rouge vif pour Refusée
       case ReservationStatus.enAttente:
-        return const Color(0xFF9A3412);
+        return const Color(0xFFF97316); // Orangé pour En attente
     }
   }
 }

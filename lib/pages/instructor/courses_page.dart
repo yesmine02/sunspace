@@ -19,7 +19,7 @@ class CoursesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialisation du contrôleur
     final controller = Get.put(CoursesController());
-    
+
     // Adaptabilité du design
     final bool isMobile = MediaQuery.of(context).size.width < 1100;
     final double horizontalPadding = isMobile ? 16.0 : 40.0;
@@ -27,7 +27,10 @@ class CoursesPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 32.0),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: 32.0,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -50,20 +53,26 @@ class CoursesPage extends StatelessWidget {
 
               // Filtrage intelligent selon le rôle
               final auth = Get.find<AuthController>();
-              final currentUserId = int.tryParse(auth.currentUser.value?['id']?.toString() ?? '');
-              
+              final currentUserId = int.tryParse(
+                auth.currentUser.value?['id']?.toString() ?? '',
+              );
+
               final List<Course> displayableCourses;
               if (auth.isAdmin) {
                 // Le SUPER ADMIN voit TOUT
                 displayableCourses = controller.courses;
               } else {
                 // Les autres (Enseignants) ne voient que les leurs
-                displayableCourses = controller.courses.where((c) => c.instructorId == currentUserId).toList();
+                displayableCourses = controller.courses
+                    .where((c) => c.instructorId == currentUserId)
+                    .toList();
               }
-              
+
               // Appliquer la recherche locale
               final query = controller.searchQuery.value.toLowerCase();
-              final filtered = displayableCourses.where((c) => c.title.toLowerCase().contains(query)).toList();
+              final filtered = displayableCourses
+                  .where((c) => c.title.toLowerCase().contains(query))
+                  .toList();
 
               if (filtered.isEmpty) {
                 return const Padding(
@@ -78,7 +87,8 @@ class CoursesPage extends StatelessWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) => _buildCourseCard(context, controller, filtered[index]),
+                  itemBuilder: (context, index) =>
+                      _buildCourseCard(context, controller, filtered[index]),
                 );
               }
 
@@ -92,22 +102,19 @@ class CoursesPage extends StatelessWidget {
 
   // Widget : En-tête stylisé
   Widget _buildHeader(BuildContext context, bool isMobile) {
-    return isMobile 
-      ? Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeaderTitle(),
-            const SizedBox(height: 20),
-            _buildAddButton(),
-          ],
-        )
-      : Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildHeaderTitle(),
-            _buildAddButton(),
-          ],
-        );
+    return isMobile
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeaderTitle(),
+              const SizedBox(height: 20),
+              _buildAddButton(),
+            ],
+          )
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [_buildHeaderTitle(), _buildAddButton()],
+          );
   }
 
   Widget _buildHeaderTitle() {
@@ -120,7 +127,11 @@ class CoursesPage extends StatelessWidget {
             const SizedBox(width: 12),
             const Text(
               'Mes Cours',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           ],
         ),
@@ -174,8 +185,14 @@ class CoursesPage extends StatelessWidget {
   }
 
   // Widget : Carte de cours pour mobile
-  Widget _buildCourseCard(BuildContext context, CoursesController controller, Course course) {
-    final fmtDate = course.createdAt != null ? DateFormat('dd/MM/yyyy').format(course.createdAt!) : '-';
+  Widget _buildCourseCard(
+    BuildContext context,
+    CoursesController controller,
+    Course course,
+  ) {
+    final fmtDate = course.createdAt != null
+        ? DateFormat('dd/MM/yyyy').format(course.createdAt!)
+        : '-';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -184,7 +201,11 @@ class CoursesPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -196,7 +217,11 @@ class CoursesPage extends StatelessWidget {
               Expanded(
                 child: Text(
                   course.title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.black,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -207,9 +232,14 @@ class CoursesPage extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             course.levelLabel,
-            style: TextStyle(color: Colors.blue[600], fontWeight: FontWeight.w500, fontSize: 14),
+            style: TextStyle(
+              color: Colors.blue[600],
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
           ),
-          if (course.instructorName != null && course.instructorName!.isNotEmpty) ...[
+          if (course.instructorName != null &&
+              course.instructorName!.isNotEmpty) ...[
             const SizedBox(height: 4),
             Row(
               children: [
@@ -217,7 +247,11 @@ class CoursesPage extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   "Par : ${course.instructorName}",
-                  style: TextStyle(color: Colors.grey[600], fontSize: 13, fontStyle: FontStyle.italic),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ],
             ),
@@ -229,17 +263,42 @@ class CoursesPage extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('PRIX', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  const Text(
+                    'PRIX',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text('${course.price.toInt()} TND', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(
+                    '${course.price.toInt()} TND',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('CRÉÉ LE', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  const Text(
+                    'CRÉÉ LE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(fmtDate, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                  Text(
+                    fmtDate,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
                 ],
               ),
             ],
@@ -249,14 +308,20 @@ class CoursesPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton.icon(
-                onPressed: () => Get.dialog(AddEditCourseDialog(course: course)), // BOUTON : Modifier ce cours
+                onPressed: () => Get.dialog(
+                  AddEditCourseDialog(course: course),
+                ), // BOUTON : Modifier ce cours
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Modifier'),
                 style: TextButton.styleFrom(foregroundColor: Colors.grey[700]),
               ),
               const SizedBox(width: 8),
               TextButton.icon(
-                onPressed: () => _showDeleteConfirmation(context, controller, course), // BOUTON : Supprimer définitivement ce cours
+                onPressed: () => _showDeleteConfirmation(
+                  context,
+                  controller,
+                  course,
+                ), // BOUTON : Supprimer définitivement ce cours
                 icon: const Icon(Icons.delete_outline, size: 18),
                 label: const Text('Supprimer'),
                 style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
@@ -275,7 +340,9 @@ class CoursesPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: isPublished ? Colors.green[50] : Colors.orange[50],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isPublished ? Colors.green[100]! : Colors.orange[100]!),
+        border: Border.all(
+          color: isPublished ? Colors.green[100]! : Colors.orange[100]!,
+        ),
       ),
       child: Text(
         isPublished ? 'Publié' : 'Brouillon',
@@ -289,7 +356,11 @@ class CoursesPage extends StatelessWidget {
   }
 
   // Widget : Tableau des cours dans un conteneur blanc (Desktop)
-  Widget _buildCoursesTableContainer(BuildContext context, CoursesController controller, List<Course> displayCourses) {
+  Widget _buildCoursesTableContainer(
+    BuildContext context,
+    CoursesController controller,
+    List<Course> displayCourses,
+  ) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -307,42 +378,114 @@ class CoursesPage extends StatelessWidget {
             horizontalMargin: 24,
             columnSpacing: 24,
             columns: const [
-              DataColumn(label: Text('Titre', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Enseignant', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Niveau', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Prix', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Créé le', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                label: Text(
+                  'Titre',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Enseignant',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Niveau',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Prix',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Statut',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Créé le',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Actions',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
             rows: displayCourses.map((course) {
-              return DataRow(cells: [
-                DataCell(Text(course.title, style: const TextStyle(fontWeight: FontWeight.w500))),
-                DataCell(Text(course.instructorName ?? '-', style: TextStyle(color: Colors.grey[700], fontSize: 13))),
-                DataCell(Text(course.levelLabel, style: TextStyle(color: Colors.grey[700]))),
-                DataCell(Text('${course.price.toInt()} TND', style: const TextStyle(fontWeight: FontWeight.w500))),
-                DataCell(_buildStatusDot(course.isPublished)),
-                DataCell(Text(
-                  course.createdAt != null 
-                      ? DateFormat('dd/MM/yyyy').format(course.createdAt!) 
-                      : '-',
-                  style: TextStyle(color: Colors.grey[600]),
-                )),
-                DataCell(Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.grey),
-                      onPressed: () => Get.dialog(
-                        AddEditCourseDialog(course: course),
-                      ),
+              return DataRow(
+                cells: [
+                  DataCell(
+                    Text(
+                      course.title,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                      onPressed: () => _showDeleteConfirmation(context, controller, course),
+                  ),
+                  DataCell(
+                    Text(
+                      course.instructorName ?? '-',
+                      style: TextStyle(color: Colors.grey[700], fontSize: 13),
                     ),
-                  ],
-                )),
-              ]);
+                  ),
+                  DataCell(
+                    Text(
+                      course.levelLabel,
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      '${course.price.toInt()} TND',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  DataCell(_buildStatusDot(course.isPublished)),
+                  DataCell(
+                    Text(
+                      course.createdAt != null
+                          ? DateFormat('dd/MM/yyyy').format(course.createdAt!)
+                          : '-',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                  DataCell(
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.edit_outlined,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () =>
+                              Get.dialog(AddEditCourseDialog(course: course)),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            size: 18,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: () => _showDeleteConfirmation(
+                            context,
+                            controller,
+                            course,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
             }).toList(),
           ),
         ),
@@ -356,15 +499,22 @@ class CoursesPage extends StatelessWidget {
       width: 24,
       height: 4,
       decoration: BoxDecoration(
-        color: isPublished ? Colors.green.withOpacity(0.5) : Colors.yellow.withOpacity(0.5),
+        color: isPublished
+            ? Colors.green.withOpacity(0.5)
+            : Colors.yellow.withOpacity(0.5),
         borderRadius: BorderRadius.circular(2),
       ),
     );
   }
 
   // Dialogue de confirmation de suppression
-  void _showDeleteConfirmation(BuildContext context, CoursesController controller, Course course) {
+  void _showDeleteConfirmation(
+    BuildContext context,
+    CoursesController controller,
+    Course course,
+  ) {
     Get.defaultDialog(
+      //getx dialogue pour confirmer la suppression d'un cours
       title: "Supprimer le cours",
       middleText: "Voulez-vous vraiment supprimer '${course.title}' ?",
       textConfirm: "Supprimer",

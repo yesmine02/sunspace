@@ -136,20 +136,26 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(width: 20),
           const NotificationBell(size: 18, iconColor: Color(0xFF64748B)),
           const SizedBox(width: 12),
-          _buildTopIcon(Icons.help_outline_rounded),
+          _buildTopIcon(
+            Icons.person_outline_rounded,
+            onTap: () => Get.toNamed(AppRoutes.PROFILE),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTopIcon(IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(10),
+  Widget _buildTopIcon(IconData icon, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: const Color(0xFF64748B), size: 18),
       ),
-      child: Icon(icon, color: const Color(0xFF64748B), size: 18),
     );
   }
 
@@ -267,6 +273,16 @@ class _SettingsPageState extends State<SettingsPage> {
                           Get.snackbar(
                             'Erreur',
                             'Veuillez remplir tous les champs',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                          return;
+                        }
+
+                        if (_newPasswordController.text.length < 6) {
+                          Get.snackbar(
+                            'Erreur',
+                            'Le nouveau mot de passe doit contenir au moins 6 caractères',
                             backgroundColor: Colors.red,
                             colorText: Colors.white,
                           );

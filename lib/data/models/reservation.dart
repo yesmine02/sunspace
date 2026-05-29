@@ -24,6 +24,7 @@ class Reservation {
   final int numberOfPeople;
   final String? organizerName;
   final User? user; // Objet User complet si peuplé
+  final int? userId; // ID utilisateur extrait de manière robuste
 
   Reservation({
     required this.id,
@@ -40,6 +41,7 @@ class Reservation {
     this.numberOfPeople = 1,
     this.organizerName,
     this.user,
+    this.userId,
   });
 //convertit le JSON de Strapi en objet Reservation
   factory Reservation.fromJson(Map<String, dynamic> json) {
@@ -57,10 +59,38 @@ class Reservation {
         }
       }
 
-      // Parse User
-      User? uObj; //Variable pour stocker l’utilisateur
-      if (attrs['user'] != null && attrs['user'] is Map) { //si l'utilisateur existe et est un objet 
-        uObj = User.fromJson(attrs['user']);//convertit le JSON en objet User
+      // Parse User de manière robuste
+      User? uObj;
+      int? uId;
+      if (attrs['user'] != null) {
+        if (attrs['user'] is Map) {
+          final userMap = attrs['user'] as Map<String, dynamic>;
+          // Support du format Strapi v4 imbriqué { data: { id: ..., attributes: ... } }
+          if (userMap.containsKey('data') && userMap['data'] != null) {
+            final dataMap = userMap['data'];
+            if (dataMap is Map) {
+              final idValue = dataMap['id'];
+              uId = int.tryParse(idValue.toString());
+              final attrsMap = dataMap['attributes'];
+              if (attrsMap is Map) {
+                final fullMap = <String, dynamic>{
+                  'id': uId,
+                  ...Map<String, dynamic>.from(attrsMap)
+                };
+                uObj = User.fromJson(fullMap);
+              } else {
+                uObj = User.fromJson(Map<String, dynamic>.from(dataMap));
+              }
+            }
+          } else {
+            // Format Strapi v5 à plat
+            uObj = User.fromJson(userMap);
+            uId = uObj.id;
+          }
+        } else {
+          // Format non-peuplé (juste l'ID numérique de l'utilisateur)
+          uId = int.tryParse(attrs['user'].toString());
+        }
       }
 
       return Reservation(
@@ -78,6 +108,7 @@ class Reservation {
         organizerName: attrs['organizer_name'],
         numberOfPeople: int.tryParse(attrs['attendees']?.toString() ?? '1') ?? 1,
         user: uObj,
+        userId: uId ?? uObj?.id,
       );
     } catch (e) {
       debugPrint('❌ Reservation.fromJson error: $e | JSON: $json');
@@ -108,7 +139,7 @@ class Reservation {
     switch (status) {
       case ReservationStatus.confirmee: return 'Confirmée';
       case ReservationStatus.terminee: return 'Terminée';
-      case ReservationStatus.annulee: return 'Annulée';
+      case ReservationStatus.annulee: return 'Refusée';
       case ReservationStatus.enAttente: return 'En attente';
     }
   }

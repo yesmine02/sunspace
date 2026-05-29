@@ -162,6 +162,12 @@ class LoginPage extends StatelessWidget {
                       return;
                     }
 
+                    if (password.length < 6) {
+                      Get.snackbar('Erreur', 'Le mot de passe doit contenir au moins 6 caractères',
+                          snackPosition: SnackPosition.BOTTOM);
+                      return;
+                    }
+
                     // Appel de la fonction login dans AuthController
                     final success = await authController.login(email, password);
 

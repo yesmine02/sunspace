@@ -11,6 +11,7 @@ import '../../controllers/assignments_controller.dart';
 import '../../pages/assignments/widgets/submit_work_dialog.dart';
 import '../../controllers/courses_controller.dart';
 import '../../widgets/notification_bell.dart';
+import '../../widgets/settings_icon_button.dart';
 
 class CourseDetailsPage extends StatefulWidget {
   const CourseDetailsPage({super.key});
@@ -265,7 +266,8 @@ class _CourseDetailsPageState extends State<CourseDetailsPage> with SingleTicker
               ),
             ),
           const Spacer(),
-          // Notifications
+          // Settings & Notifications
+          const SettingsIconButton(),
           const NotificationBell(),
           const SizedBox(width: 16),
           // User Profile

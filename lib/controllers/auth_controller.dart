@@ -61,6 +61,7 @@ class AuthController extends GetxController {
         .toString(); //Si rôle n’est pas Map on le transforme directement en texte.
   }
 
+  // ✅ Vérifie si l'utilisateur a un rôle spécifique (ex: "admin", "enseignant", "student")
   //✅ Admin
   bool get isAdmin =>
       currentRoleType == 'admin' || currentRoleType == 'administrator';
@@ -372,7 +373,8 @@ class AuthController extends GetxController {
         if (userData['avatar'] != null) {
           debugPrint('🖼️ Avatar chargé avec succès');
         }
-
+        // Fusionne les données récupérées avec celles déjà en mémoire pour éviter de perdre des infos
+        //el kdim+ el jdid
         final merged = <String, dynamic>{...?currentUser.value, ...userData};
         currentUser.value = merged;
         await SecureStorage.saveUser(merged);

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../controllers/booking_controller.dart';
 import '../../data/models/reservation.dart';
 import '../../widgets/notification_bell.dart';
+import '../../widgets/settings_icon_button.dart';
 
 class ReservationsPage extends StatefulWidget {
   const ReservationsPage({super.key});
@@ -141,6 +142,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
             ),
           ),
           const Spacer(),
+          const SettingsIconButton(iconColor: Color(0xFF6B7280)),
           const NotificationBell(iconColor: Color(0xFF6B7280)),
           const SizedBox(width: 16),
           CircleAvatar(
@@ -336,24 +338,18 @@ class _ReservationsPageState extends State<ReservationsPage> {
                   size: 20,
                 ),
               const SizedBox(width: 8),
-              // Bouton Éditer (Changer le statut ou autres)
+              // Bouton Refuser
               _ActionIcon(
-                icon: Icons.edit_outlined, 
-                color: const Color(0xFF6B7280), 
-                onTap: () => _showStatusDialog(res)
-              ),
-              const SizedBox(width: 8),
-              // Bouton Supprimer
-              _ActionIcon(
-                icon: Icons.delete_outline, 
+                icon: Icons.block, 
                 color: const Color(0xFFEF4444), 
                 onTap: () {
                   Get.defaultDialog(
-                    title: "Supprimer",
-                    middleText: "Voulez-vous vraiment supprimer cette réservation ?",
+                    title: "Refuser",
+                    middleText: "Voulez-vous vraiment refuser cette réservation ?",
                     textConfirm: "Oui",
                     textCancel: "Non",
                     confirmTextColor: Colors.white,
+                    buttonColor: const Color(0xFFEF4444),
                     onConfirm: () {
                       Get.back();
                       controller.deleteReservation(res);
@@ -721,18 +717,15 @@ class _ReservationsPageState extends State<ReservationsPage> {
                       onPressed: () => _showConfirmDialog(res), // BOUTON : Valider/Accepter la réservation
                     ),
                   IconButton(
-                    icon: const Icon(Icons.edit_outlined, color: Color(0xFF6B7280), size: 22),
-                    onPressed: () => _showStatusDialog(res), // BOUTON : Modifier le statut (Refuser, Annuler, etc.)
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 22),
-                    onPressed: () { // BOUTON : Supprimer définitivement la réservation
+                    icon: const Icon(Icons.block, color: Color(0xFFEF4444), size: 22),
+                    onPressed: () { // BOUTON : Refuser la réservation
                       Get.defaultDialog(
-                        title: "Supprimer",
-                        middleText: "Voulez-vous vraiment supprimer cette réservation ?",
+                        title: "Refuser",
+                        middleText: "Voulez-vous vraiment refuser cette réservation ?",
                         textConfirm: "Oui",
                         textCancel: "Non",
                         confirmTextColor: Colors.white,
+                        buttonColor: const Color(0xFFEF4444),
                         onConfirm: () {
                           Get.back();
                           controller.deleteReservation(res);

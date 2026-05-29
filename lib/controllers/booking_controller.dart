@@ -195,6 +195,12 @@ class BookingController extends GetxController {
             .where((r) => r.status == ReservationStatus.confirmee)
             .toList();
         break;
+      case 'Refusées':
+      case 'Refusée':
+        list = list
+            .where((r) => r.status == ReservationStatus.annulee)
+            .toList();
+        break;
     }
 
     if (searchQuery.value.isNotEmpty) {
@@ -854,6 +860,7 @@ class BookingController extends GetxController {
             numberOfPeople:
                 old.numberOfPeople, // FIX: On garde le nombre de personnes !
             user: old.user,
+            userId: old.userId,
           );
           reservations.refresh();
         }
@@ -864,9 +871,12 @@ class BookingController extends GetxController {
           final spaceName = res.spaceName ?? 'Espace';
           final isAdminUser = _auth.isAdmin;
           final currentUser = _auth.currentUser.value;
+          final targetUserId = res.userId ?? res.user?.id;
+          final currentUserId = currentUser?['id'];
+          final isStaff = isAdminUser || _auth.isSpaceManager;
 
           // 1. Notifier l'admin si un UTILISATEUR annule sa propre réservation
-          if (statusToSend == 'Annulée' && !isAdminUser) {
+          if (statusToSend == 'Annulée' && !isStaff && currentUserId == targetUserId) {
             final username = currentUser?['username'] ?? 'Un utilisateur';
             final date = res.formattedDate;
             final time = res.formattedTime;
@@ -878,13 +888,13 @@ class BookingController extends GetxController {
             );
           }
 
-          // 2. Notifier l'utilisateur (seulement si l'ADMIN fait le changement)
-          if (res.user?.id != null && isAdminUser) {
+          // 2. Notifier l'utilisateur (si un admin/staff fait le changement, ou si c'est fait par un tiers)
+          if (targetUserId != null && (isStaff || (currentUserId != null && currentUserId != targetUserId))) {
             final isConfirmed = statusToSend == 'Confirmée';
             final isRefused = statusToSend == 'Annulée';
 
             debugPrint(
-              '🔔 Tentative notification user ${res.user!.id} | Status: $statusToSend',
+              '🔔 Tentative notification user $targetUserId | Status: $statusToSend',
             );
 
             if (isConfirmed || isRefused) {
@@ -897,7 +907,7 @@ class BookingController extends GetxController {
                   : 'Alerte';
 
               await notifCtrl.sendNotification(
-                targetUserId: res.user!.id!,
+                targetUserId: targetUserId,
                 title: titleText,
                 message:
                     'Votre réservation pour "$spaceName" a été $statusText par l\'administration.',
@@ -907,7 +917,7 @@ class BookingController extends GetxController {
             }
           } else {
             debugPrint(
-              '⚠️ Notif impossible : user.id=${res.user?.id} | isAdmin=$isAdminUser',
+              '⚠️ Notif impossible : targetUserId=$targetUserId | currentUser=$currentUserId | isStaff=$isStaff',
             );
           }
         } catch (e) {

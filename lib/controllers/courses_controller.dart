@@ -216,8 +216,13 @@ class CoursesController extends GetxController {
   // 🔹 ENROLL IN COURSE (Inscription)
   Future<bool> enrollInCourse(Course course) async {
     try {
-      final auth = Get.find<AuthController>();
-      final userId = auth.currentUser.value?['id'];
+      final auth =
+          Get.find<
+            AuthController
+          >(); // Récupère les informations d'authentification de l'utilisateur
+      final userId = auth
+          .currentUser
+          .value?['id']; // Récupère l'ID de l'utilisateur actuel
       String? token = auth.token ?? await SecureStorage.getToken();
 
       if (token == null || userId == null) return false;
@@ -225,6 +230,7 @@ class CoursesController extends GetxController {
       final url = 'http://193.111.250.244:3046/api/enrollments';
 
       // Strapi v5 Format Robuste
+      // "connect" pour lier l'utilisateur et le cours existants, en utilisant soit l'id numérique, soit le documentId
       final body = jsonEncode({
         'data': {
           'student': userId,
@@ -239,7 +245,7 @@ class CoursesController extends GetxController {
           'final_grade': 0,
         },
       });
-
+      // Effectue la requête POST pour créer l'enrollment
       final response = await http.post(
         Uri.parse(url),
         headers: _headers(token),
@@ -253,14 +259,17 @@ class CoursesController extends GetxController {
 
         // Optionnel : Rafraîchir les devoirs si le contrôleur existe
         if (Get.isRegistered<AssignmentsController>()) {
+          // Vérifie que le contrôleur des devoirs est enregistré avant de l'utiliser
           Get.find<AssignmentsController>().fetchAssignments();
         }
 
         // 🔔 Envoyer une notification à l'enseignant du cours
         if (course.instructorId != null) {
+          // Vérifie que le cours a un instructorId défini avant d'essayer d'envoyer une notification
           try {
             final studentName =
-                auth.currentUser.value?['username'] ?? 'Un étudiant';
+                auth.currentUser.value?['username'] ??
+                'Un étudiant'; // Récupère le nom de l'étudiant pour personnaliser la notification
             final notifCtrl = Get.find<NotificationController>();
 
             await notifCtrl.sendNotification(
@@ -304,14 +313,15 @@ class CoursesController extends GetxController {
       // 1. Chercher l'ID de l'enrollment pour ce cours et cet utilisateur
       final searchUrl =
           'http://193.111.250.244:3046/api/enrollments'
-          '?filters[student][id][\$eq]=$userId'
-          '&filters[course][id][\$eq]=${course.id}'
+          '?filters[student][id][\$eq]=$userId' // Filtre par étudiant
+          '&filters[course][id][\$eq]=${course.id}' // Filtre par cours
           '&pagination[pageSize]=1';
 
       final searchResponse = await http.get(
+        // Requête pour trouver l'enrollment correspondant à cet étudiant et ce cours
         Uri.parse(searchUrl),
         headers: {
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $token', // Authentification avec le token
           'Accept': 'application/json',
         },
       );
@@ -369,6 +379,7 @@ class CoursesController extends GetxController {
   }
 
   // 🔹 GET ENROLLMENTS
+  // Récupère les IDs des cours auxquels l'utilisateur est inscrit pour gérer l'état des boutons d'inscription
   Future<void> fetchEnrollments() async {
     try {
       final auth = Get.find<AuthController>();
@@ -392,17 +403,21 @@ class CoursesController extends GetxController {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body)['data'] ?? [];
+        final List<dynamic> data =
+            jsonDecode(response.body)['data'] ??
+            []; // Strapi v5 : course directement dans item['course'] ou item['attributes']['course']
         final List<int> ids = [];
         final List<String> docIds = [];
-
+        // Parcourir les enrollments pour extraire les IDs des cours inscrits
         for (var item in data) {
           // Strapi v5 flat: course directement dans item
           // Strapi v4: dans item['attributes']['course']['data']
           dynamic courseInfo = item['course'] ?? item['attributes']?['course'];
           if (courseInfo == null) continue;
 
-          final courseData = courseInfo['data'] ?? courseInfo;
+          final courseData =
+              courseInfo['data'] ??
+              courseInfo; // Gérer les deux formats possibles
           final id = int.tryParse((courseData['id'] ?? '').toString());
           final docId =
               (courseData['documentId'] ??

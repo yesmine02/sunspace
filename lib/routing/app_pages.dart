@@ -37,17 +37,11 @@ import '../dashboard_layout.dart';
 import 'app_routes.dart';
 
 class AppPages {
-  static const INITIAL = AppRoutes.DASHBOARD; 
-
+  static const INITIAL = AppRoutes.DASHBOARD;
+  // Liste de toutes les routes de l'application avec leurs pages associées et les middlewares
   static final routes = [
-    GetPage(
-      name: AppRoutes.LOGIN,
-      page: () => LoginPage(),
-    ),
-    GetPage(
-      name: AppRoutes.REGISTER,
-      page: () => RegisterPage(),
-    ),
+    GetPage(name: AppRoutes.LOGIN, page: () => LoginPage()),
+    GetPage(name: AppRoutes.REGISTER, page: () => RegisterPage()),
     GetPage(
       name: AppRoutes.DASHBOARD,
       page: () => DashboardLayout(child: HomePage()),
@@ -188,7 +182,11 @@ class AppPages {
     // Placeholders pour les autres routes Association
     GetPage(
       name: AppRoutes.ASSOC_RESERVATIONS,
-      page: () => DashboardLayout(child: const Scaffold(body: Center(child: Text('Gestion des Espaces (En développement)')))),
+      page: () => DashboardLayout(
+        child: const Scaffold(
+          body: Center(child: Text('Gestion des Espaces (En développement)')),
+        ),
+      ),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(

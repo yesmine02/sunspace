@@ -1,3 +1,7 @@
+// ===============================================
+// Routes de l'application
+// ===============================================
+// Définit les routes utilisées dans l'application pour la navigation avec GetX
 abstract class AppRoutes {
   static const LOGIN = '/login';
   static const REGISTER = '/register';

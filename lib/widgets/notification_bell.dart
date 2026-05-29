@@ -18,7 +18,7 @@ class NotificationBell extends StatelessWidget {
     final notifCtrl = Get.isRegistered<NotificationController>()
         ? Get.find<NotificationController>()
         : Get.put(NotificationController());
-
+    // Utilise Obx pour réagir aux changements du nombre de notifications non lues
     return GestureDetector(
       onTap: () => Get.toNamed(AppRoutes.NOTIFICATIONS),
       child: Padding(
@@ -27,7 +27,11 @@ class NotificationBell extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             // 🔔 Icône clochette
-            Icon(Icons.notifications_none_rounded, color: iconColor, size: size),
+            Icon(
+              Icons.notifications_none_rounded,
+              color: iconColor,
+              size: size,
+            ),
 
             // 🔴 Badge rouge avec le nombre (comme l'image)
             Obx(() {
@@ -41,7 +45,10 @@ class NotificationBell extends StatelessWidget {
                 right: -10,
                 top: -10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     // Rose-rouge comme dans l'image de référence
                     color: const Color(0xFFE91E6B),
@@ -55,7 +62,10 @@ class NotificationBell extends StatelessWidget {
                       ),
                     ],
                   ),
-                  constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+                  constraints: const BoxConstraints(
+                    minWidth: 22,
+                    minHeight: 22,
+                  ),
                   child: Center(
                     child: Text(
                       label,

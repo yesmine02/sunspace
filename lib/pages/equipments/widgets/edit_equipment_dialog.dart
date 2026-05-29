@@ -10,14 +10,16 @@ import 'package:intl/intl.dart';
 import '../../../data/models/equipment.dart';
 import '../../../controllers/equipments_controller.dart';
 
+// Ce widget est utilisé dans la page de gestion des équipements pour éditer les informations d'un équipement sélectionné.
 class EditEquipmentDialog extends StatefulWidget {
   final Equipment equipment; // L'équipement à modifier, passé en paramètre
   const EditEquipmentDialog({super.key, required this.equipment});
 
   @override
-  State<EditEquipmentDialog> createState() => _EditEquipmentDialogState();
+  State<EditEquipmentDialog> createState() => _EditEquipmentDialogState(); // Crée l'état du widget, qui contiendra les champs de saisie et la logique de modification
 }
 
+// L'état du dialogue de modification d'équipement
 class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
   // Clé pour identifier le formulaire et valider les champs
   final _formKey = GlobalKey<FormState>();
@@ -26,7 +28,7 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
   final EquipmentsController controller = Get.find<EquipmentsController>();
 
   // Contrôleurs de texte pour les champs de saisie
-  late TextEditingController _nameController;
+  late TextEditingController _nameController; // Contrôleur pour le champ "Nom"
   late TextEditingController _typeController;
   late TextEditingController _serialController;
   late TextEditingController _priceController;
@@ -35,8 +37,9 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
 
   // Variables d'état pour les champs non textuels
   late EquipmentStatus _selectedStatus;
-  DateTime? _purchaseDate;
-  DateTime? _warrantyExpiry;
+  DateTime? _purchaseDate; // Variable pour stocker la date d'achat sélectionnée
+  DateTime?
+  _warrantyExpiry; // Variable pour stocker la date d'expiration de la garantie sélectionnée
 
   // Initialisation du formulaire avec les données actuelles de l'équipement
   @override
@@ -44,9 +47,15 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.equipment.name);
     _typeController = TextEditingController(text: widget.equipment.type);
-    _serialController = TextEditingController(text: widget.equipment.serialNumber);
-    _priceController = TextEditingController(text: widget.equipment.price?.toString() ?? '0');
-    _descriptionController = TextEditingController(text: widget.equipment.description);
+    _serialController = TextEditingController(
+      text: widget.equipment.serialNumber,
+    );
+    _priceController = TextEditingController(
+      text: widget.equipment.price?.toString() ?? '0',
+    );
+    _descriptionController = TextEditingController(
+      text: widget.equipment.description,
+    );
     _notesController = TextEditingController(text: widget.equipment.notes);
 
     _selectedStatus = widget.equipment.status;
@@ -70,7 +79,8 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
   Future<void> _selectDate(BuildContext context, bool isPurchaseDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: (isPurchaseDate ? _purchaseDate : _warrantyExpiry) ?? DateTime.now(),
+      initialDate:
+          (isPurchaseDate ? _purchaseDate : _warrantyExpiry) ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
@@ -94,10 +104,14 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 0,
       backgroundColor: Colors.transparent,
-      insetPadding: isMobile ? const EdgeInsets.all(16) : const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
+      insetPadding: isMobile
+          ? const EdgeInsets.all(16)
+          : const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
       child: Container(
         width: isMobile ? double.infinity : 600,
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
         padding: EdgeInsets.all(isMobile ? 16 : 32),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -117,7 +131,10 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
                     Expanded(
                       child: Text(
                         'Modifier l\'équipement',
-                        style: TextStyle(fontSize: isMobile ? 20 : 24, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: isMobile ? 20 : 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -128,18 +145,35 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
                 ),
                 Text(
                   'Modifiez les détails de l\'équipement existant.',
-                  style: TextStyle(color: Colors.grey[600], fontSize: isMobile ? 12 : 14),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: isMobile ? 12 : 14,
+                  ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Champs Nom et Type
                 _buildResponsiveRow(
                   isMobile: isMobile,
                   children: [
-                    Expanded(flex: isMobile ? 0 : 1, child: _buildTextField('Nom', _nameController, 'Nom de l\'équipement')),
+                    Expanded(
+                      flex: isMobile ? 0 : 1,
+                      child: _buildTextField(
+                        'Nom',
+                        _nameController,
+                        'Nom de l\'équipement',
+                      ),
+                    ),
                     if (!isMobile) const SizedBox(width: 16),
                     if (isMobile) const SizedBox(height: 16),
-                    Expanded(flex: isMobile ? 0 : 1, child: _buildTextField('Type', _typeController, 'Type d\'équipement')),
+                    Expanded(
+                      flex: isMobile ? 0 : 1,
+                      child: _buildTextField(
+                        'Type',
+                        _typeController,
+                        'Type d\'équipement',
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -148,23 +182,44 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
                 _buildResponsiveRow(
                   isMobile: isMobile,
                   children: [
-                    Expanded(flex: isMobile ? 0 : 1, child: _buildTextField('Numéro de série', _serialController, 'Numéro de série')),
+                    Expanded(
+                      flex: isMobile ? 0 : 1,
+                      child: _buildTextField(
+                        'Numéro de série',
+                        _serialController,
+                        'Numéro de série',
+                      ),
+                    ),
                     if (!isMobile) const SizedBox(width: 16),
                     if (isMobile) const SizedBox(height: 16),
-                    Expanded(flex: isMobile ? 0 : 1, child: _buildDropdownField<EquipmentStatus>(
-                      'Statut',
-                      _selectedStatus,
-                      EquipmentStatus.values.map((s) {
-                        String label = '';
-                        switch (s) {
-                          case EquipmentStatus.disponible: label = 'Disponible'; break;
-                          case EquipmentStatus.enMaintenance: label = 'En maintenance'; break;
-                          case EquipmentStatus.enPanne: label = 'En panne'; break;
-                        }
-                        return DropdownMenuItem(value: s, child: Text(label));
-                      }).toList(),
-                      (val) => setState(() => _selectedStatus = val!),
-                    )),
+                    Expanded(
+                      flex: isMobile ? 0 : 1,
+                      child: _buildDropdownField<EquipmentStatus>(
+                        'Statut',
+                        _selectedStatus,
+                        EquipmentStatus.values.map((s) {
+                          String label = '';
+                          switch (s) {
+                            case EquipmentStatus.disponible:
+                              label = 'Disponible';
+                              break;
+                            case EquipmentStatus.enMaintenance:
+                              label = 'En maintenance';
+                              break;
+                            case EquipmentStatus.enPanne:
+                              label = 'En panne';
+                              break;
+                          }
+                          return DropdownMenuItem(
+                            value: s,
+                            child: Text(label),
+                          ); // Convertit l'enum en une chaîne lisible pour l'utilisateur
+                        }).toList(),
+                        (val) => setState(
+                          () => _selectedStatus = val!,
+                        ), // Met à jour le statut sélectionné dans l'état du widget
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -173,26 +228,53 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
                 _buildResponsiveRow(
                   isMobile: isMobile,
                   children: [
-                    Expanded(flex: isMobile ? 0 : 1, child: _buildDatePickerField('Date d\'achat', _purchaseDate, () => _selectDate(context, true))),
+                    Expanded(
+                      flex: isMobile ? 0 : 1,
+                      child: _buildDatePickerField(
+                        'Date d\'achat',
+                        _purchaseDate,
+                        () => _selectDate(context, true),
+                      ),
+                    ),
                     if (!isMobile) const SizedBox(width: 16),
                     if (isMobile) const SizedBox(height: 16),
-                    Expanded(flex: isMobile ? 0 : 1, child: _buildTextField('Prix de location / Jour', _priceController, '0', isNumeric: true)),
+                    Expanded(
+                      flex: isMobile ? 0 : 1,
+                      child: _buildTextField(
+                        'Prix de location / Jour',
+                        _priceController,
+                        '0',
+                        isNumeric: true,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
 
                 // Expiration de la garantie
-                _buildDatePickerField('Expiration de la garantie', _warrantyExpiry, () => _selectDate(context, false)),
+                _buildDatePickerField(
+                  'Expiration de la garantie',
+                  _warrantyExpiry,
+                  () => _selectDate(context, false),
+                ),
                 const SizedBox(height: 16),
 
-
-
                 // Description
-                _buildTextField('Description', _descriptionController, 'Description détaillée...', maxLines: 3),
+                _buildTextField(
+                  'Description',
+                  _descriptionController,
+                  'Description détaillée...',
+                  maxLines: 3,
+                ),
                 const SizedBox(height: 16),
 
                 // Notes
-                _buildTextField('Notes', _notesController, 'Notes additionnelles...', maxLines: 3),
+                _buildTextField(
+                  'Notes',
+                  _notesController,
+                  'Notes additionnelles...',
+                  maxLines: 3,
+                ),
                 const SizedBox(height: 32),
 
                 // Boutons d'action (Annuler / Enregistrer)
@@ -204,11 +286,19 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
                       child: OutlinedButton(
                         onPressed: () => Get.back(),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           side: BorderSide(color: Colors.grey[200]!),
                         ),
-                        child: const Text('Annuler', style: TextStyle(color: Colors.black)),
+                        child: const Text(
+                          'Annuler',
+                          style: TextStyle(color: Colors.black),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -219,11 +309,19 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           elevation: 0,
                         ),
-                        child: Text(isMobile ? 'Modifier' : 'Enregistrer les modifications', 
+                        child: Text(
+                          isMobile
+                              ? 'Modifier'
+                              : 'Enregistrer les modifications',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
                         ),
@@ -240,7 +338,10 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
   }
 
   // Widget utilitaire pour organiser les éléments en ligne (desktop) ou colonne (mobile)
-  Widget _buildResponsiveRow({required bool isMobile, required List<Widget> children}) {
+  Widget _buildResponsiveRow({
+    required bool isMobile,
+    required List<Widget> children,
+  }) {
     if (isMobile) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -254,11 +355,20 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
   }
 
   // Widget personnalisé pour les champs de texte
-  Widget _buildTextField(String label, TextEditingController controller, String hint, {int maxLines = 1, bool isNumeric = false}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    String hint, {
+    int maxLines = 1,
+    bool isNumeric = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -269,24 +379,49 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
             hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[200]!)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[200]!)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.blue)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[200]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[200]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.blue),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
           ),
           // Validation : certains champs sont obligatoires
-          validator: (val) => (val == null || val.isEmpty) && label != 'Description' && label != 'Notes' ? 'Champ requis' : null,
+          validator: (val) =>
+              (val == null || val.isEmpty) &&
+                  label != 'Description' &&
+                  label != 'Notes'
+              ? 'Champ requis'
+              : null,
         ),
       ],
     );
   }
 
   // Widget personnalisé pour les menus déroulants
-  Widget _buildDropdownField<T>(String label, T value, List<DropdownMenuItem<T>> items, ValueChanged<T?> onChanged) {
+  Widget _buildDropdownField<T>(
+    String label,
+    T value,
+    List<DropdownMenuItem<T>> items,
+    ValueChanged<T?> onChanged,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -309,11 +444,18 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
   }
 
   // Widget personnalisé pour le choix de date
-  Widget _buildDatePickerField(String label, DateTime? date, VoidCallback onTap) {
+  Widget _buildDatePickerField(
+    String label,
+    DateTime? date,
+    VoidCallback onTap,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
         const SizedBox(height: 8),
         InkWell(
           onTap: onTap,
@@ -328,8 +470,13 @@ class _EditEquipmentDialogState extends State<EditEquipmentDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  date != null ? DateFormat('dd/MM/yyyy').format(date) : 'jj/mm/aaaa',
-                  style: TextStyle(color: date != null ? Colors.black : Colors.grey[400], fontSize: 14),
+                  date != null
+                      ? DateFormat('dd/MM/yyyy').format(date)
+                      : 'jj/mm/aaaa',
+                  style: TextStyle(
+                    color: date != null ? Colors.black : Colors.grey[400],
+                    fontSize: 14,
+                  ),
                 ),
                 Icon(Icons.calendar_today, size: 18, color: Colors.grey[600]),
               ],

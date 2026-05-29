@@ -165,9 +165,9 @@ class NotificationController extends GetxController {
         'publishedAt': DateTime.now().toUtc().toIso8601String(),
       };
 
-      if (relatedType != null) data['related_type'] = relatedType;
-      if (relatedId != null) data['related_id'] = relatedId.toString();
-      if (actionUrl != null) data['action_url'] = actionUrl;
+      if (relatedType != null) data['related_type'] = relatedType;// Type de l'entité liée (ex: "course", "equipment")
+      if (relatedId != null) data['related_id'] = relatedId.toString();// ID de l'entité liée (ex: l'id du cours ou de l'équipement concerné)
+      if (actionUrl != null) data['action_url'] = actionUrl;// URL à ouvrir quand l'utilisateur clique sur la notification
 
       final response = await http.post(
         url,
@@ -216,7 +216,7 @@ class NotificationController extends GetxController {
 
       final List users = jsonDecode(response.body);
       int adminCount = 0;
-
+// Parcourir les utilisateurs et envoyer une notification à ceux qui ont un rôle d'administrateur ou de gestionnaire d'espace
       for (var user in users) {
         final role = user['role'];
         final roleName = (role is Map) ? (role['name'] ?? '') : (role?.toString() ?? '');
@@ -224,7 +224,7 @@ class NotificationController extends GetxController {
         final isAdmin = roleName.trim().toLowerCase() == 'admin' || 
                        roleName.trim().toLowerCase() == "gestionnaire d'espace" || 
                        roleName.trim().toLowerCase() == "administrator";
-        
+        // Seule la notification des administrateurs et gestionnaires d'espace est critique pour les alertes majeures, on ignore les autres rôles
         if (!isAdmin) continue;
         
         adminCount++;

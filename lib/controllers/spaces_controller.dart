@@ -29,7 +29,7 @@ class SpacesController extends GetxController {
 
   // Indicateur de chargement (true = en cours de chargement)
   final RxBool isLoading = false.obs;
-  
+
   // URL de base de l'API Strapi pour les espaces
   static const String _baseUrl = 'http://193.111.250.244:3046/api/spaces';
 
@@ -84,20 +84,24 @@ class SpacesController extends GetxController {
 
             // Convertit chaque élément JSON en objet Space et met à jour la liste
             try {
-              final newSpaces = list.map((item) => Space.fromJson(item)).toList();
+              final newSpaces = list
+                  .map((item) => Space.fromJson(item))
+                  .toList();
               spaces.assignAll(newSpaces);
             } catch (jsonError) {
               print('ERREUR de parsing Space.fromJson: $jsonError');
               rethrow;
             }
-            
+
             // Sauvegarde en cache local (au cas où le serveur est indisponible plus tard)
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString(_storageKey, response.body);
             return;
           }
         } else {
-           print('Erreur serveur spaces: ${response.statusCode} - ${response.body}');
+          print(
+            'Erreur serveur spaces: ${response.statusCode} - ${response.body}',
+          );
         }
       }
     } catch (e) {
@@ -126,7 +130,9 @@ class SpacesController extends GetxController {
       final response = await http.post(
         Uri.parse(_baseUrl),
         headers: _headers(token),
-        body: jsonEncode(space.toStrapiJson()), // Convertit l'espace en JSON format Strapi
+        body: jsonEncode(
+          space.toStrapiJson(),
+        ), // Convertit l'espace en JSON format Strapi
       );
 
       // 200 ou 201 = création réussie
@@ -145,13 +151,14 @@ class SpacesController extends GetxController {
         String errorDetail = 'Erreur ${response.statusCode}';
         try {
           final Map<String, dynamic> errorData = jsonDecode(response.body);
-          if (errorData.containsKey('error') && errorData['error']['message'] != null) {
+          if (errorData.containsKey('error') &&
+              errorData['error']['message'] != null) {
             errorDetail = errorData['error']['message'];
           }
         } catch (e) {
-          errorDetail = response.body; 
+          errorDetail = response.body;
         }
-        
+
         print('Erreur création espace détaillée: $errorDetail');
         _showError('Erreur de création : $errorDetail');
       }
@@ -172,7 +179,7 @@ class SpacesController extends GetxController {
         return;
       }
 
-      // Strapi v5 utilise le documentId (pas l'id numérique) pour modifier
+      // Strapi v5 utilise le documentId (pas l'id numérique) pour modifier un espace
       final String? docId = space.documentId;
       if (docId == null || docId.isEmpty) {
         _showError('Impossible de modifier : documentId manquant.');
@@ -198,7 +205,9 @@ class SpacesController extends GetxController {
           colorText: Color(0xFF166534),
         );
       } else {
-        print('Erreur modification espace: ${response.statusCode} - ${response.body}');
+        print(
+          'Erreur modification espace: ${response.statusCode} - ${response.body}',
+        );
         _showError('Erreur lors de la modification (${response.statusCode})');
       }
     } catch (e) {
@@ -247,7 +256,9 @@ class SpacesController extends GetxController {
           colorText: Color(0xFF166534),
         );
       } else {
-        print('Erreur suppression espace: ${response.statusCode} - ${response.body}');
+        print(
+          'Erreur suppression espace: ${response.statusCode} - ${response.body}',
+        );
         _showError('Erreur lors de la suppression (${response.statusCode})');
       }
     } catch (e) {
@@ -281,10 +292,12 @@ class SpacesController extends GetxController {
         final dynamic decoded = jsonDecode(cached);
         // Le cache peut avoir le format Strapi { "data": [...] } ou juste une liste [...]
         if (decoded is Map && decoded.containsKey('data')) {
-           final List<dynamic> list = decoded['data'];
-           spaces.assignAll(list.map((item) => Space.fromJson(item)).toList());
+          final List<dynamic> list = decoded['data'];
+          spaces.assignAll(list.map((item) => Space.fromJson(item)).toList());
         } else if (decoded is List) {
-           spaces.assignAll(decoded.map((item) => Space.fromJson(item)).toList());
+          spaces.assignAll(
+            decoded.map((item) => Space.fromJson(item)).toList(),
+          );
         }
       } catch (e) {
         print('Erreur lecture cache: $e');
@@ -296,14 +309,18 @@ class SpacesController extends GetxController {
   List<Space> get filteredSpaces {
     return spaces.where((space) {
       // Vérifie si le nom commence par le texte de recherche
-      final nameMatches = space.name.toLowerCase().startsWith(searchQuery.value.toLowerCase());
-      
+      final nameMatches = space.name.toLowerCase().startsWith(
+        searchQuery.value.toLowerCase(),
+      );
+
       // Vérifie si le statut correspond au filtre sélectionné
-      final statusMatches = selectedStatus.value == 'Tous les statuts' || 
+      final statusMatches =
+          selectedStatus.value == 'Tous les statuts' ||
           space.statusString == selectedStatus.value;
-          
+
       // Vérifie si le type correspond au filtre sélectionné (Normalise le type pour Strapi)
-      final typeMatches = selectedType.value == 'Tous les types' || 
+      final typeMatches =
+          selectedType.value == 'Tous les types' ||
           space.typeString == _mapUItoStrapiType(selectedType.value);
 
       return nameMatches && statusMatches && typeMatches;
@@ -318,8 +335,10 @@ class SpacesController extends GetxController {
 
   // Statistiques — comptent les espaces par statut
   int get totalSpaces => spaces.length;
-  int get availableSpaces => spaces.where((s) => s.status == SpaceStatus.disponible).length;
-  int get maintenanceSpaces => spaces.where((s) => s.status == SpaceStatus.maintenance).length;
+  int get availableSpaces =>
+      spaces.where((s) => s.status == SpaceStatus.disponible).length;
+  int get maintenanceSpaces =>
+      spaces.where((s) => s.status == SpaceStatus.maintenance).length;
 
   // Met à jour le texte de recherche
   void updateSearch(String query) {

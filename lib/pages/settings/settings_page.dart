@@ -6,8 +6,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
-import '../../routing/app_routes.dart';
-import '../../widgets/notification_bell.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -24,11 +22,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // États pour le changement de mot de passe
   bool isChangingPassword = false;
-  bool _obscureCurrent = true;
-  bool _obscureNew = true;
-  bool _obscureConfirm = true;
+  bool _obscureCurrent = true; // Permet de masquer le mot de passe actuel
+  bool _obscureNew = true; // Permet de masquer le nouveau mot de passe
+  bool _obscureConfirm =
+      true; // Permet de masquer la confirmation du mot de passe
 
-  final _currentPasswordController = TextEditingController();
+  final _currentPasswordController =
+      TextEditingController(); // Contrôleur pour le champ du mot de passe actuel
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -50,9 +50,6 @@ class _SettingsPageState extends State<SettingsPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 🔷 TOP BAR DE RECHERCHE
-            _buildTopBar(),
-
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: isMobile ? 16 : 40,
@@ -81,10 +78,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 48),
 
-                  // 🔷 SECTION : ORGANISATION / ASSOCIATION (Nouvelle Page Ajoutée ici)
-                  _buildAssociationSection(isMobile),
-                  const SizedBox(height: 24),
-
                   // 🔷 SECTION : SÉCURITÉ
                   _buildSecuritySection(isMobile),
                   const SizedBox(height: 24),
@@ -105,60 +98,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildTopBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      color: Colors.white,
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 45,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  hintText: "Rechercher...",
-                  hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 15),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: Color(0xFF94A3B8),
-                    size: 20,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 20),
-          const NotificationBell(size: 18, iconColor: Color(0xFF64748B)),
-          const SizedBox(width: 12),
-          _buildTopIcon(
-            Icons.person_outline_rounded,
-            onTap: () => Get.toNamed(AppRoutes.PROFILE),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopIcon(IconData icon, {VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: const Color(0xFF64748B), size: 18),
-      ),
-    );
-  }
-
   Widget _buildSectionCard({required Widget child, Color? bgColor}) {
     return Container(
       width: double.infinity,
@@ -168,10 +107,10 @@ class _SettingsPageState extends State<SettingsPage> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+          const BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.02),
             blurRadius: 15,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -209,8 +148,9 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ],
           ),
+          // Espace entre le titre et le contenu
           const SizedBox(height: 32),
-          if (!isChangingPassword)
+          if (!isChangingPassword) // Affiche le bouton "Changer le mot de passe" si on n'est pas en train de changer le mot de passe
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -395,6 +335,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required VoidCallback onToggle,
   }) {
     return TextField(
+      // TextField pour les mots de passe avec option de masquage
       controller: controller,
       obscureText: obscure,
       decoration: InputDecoration(
@@ -408,7 +349,7 @@ class _SettingsPageState extends State<SettingsPage> {
             color: const Color(0xFF94A3B8),
             size: 20,
           ),
-          onPressed: onToggle,
+          onPressed: onToggle, // Permet de basculer entre masqué et visible
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -512,119 +453,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildAssociationSection(bool isMobile) {
-    return _buildSectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _buildIconBox(
-                Icons.account_balance_wallet_outlined,
-                const Color(0xFF10B981),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Compte Association',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                    Text(
-                      'Gérez votre budget et vos services organisationnels',
-                      style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSmallDetailCard(
-                  "Solde Restant",
-                  "3 259,50 €",
-                  const Color(0xFF10B981),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildSmallDetailCard(
-                  "Dépenses Mois",
-                  "1 240,50 €",
-                  Colors.orange,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => Get.toNamed(AppRoutes.ASSOC_BUDGET),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                side: const BorderSide(color: Color(0xFF007AFF), width: 1.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Voir le rapport détaillé',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF007AFF),
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSmallDetailCard(String title, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildLogoutSection(bool isMobile) {
     final authController = Get.find<AuthController>();
 
@@ -677,7 +505,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withAlpha(26),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(icon, color: color, size: 28),

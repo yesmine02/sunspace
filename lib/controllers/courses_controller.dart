@@ -1,5 +1,5 @@
 // ============================================
-// Contrôleur des Formations (CoursesController)
+// Contrôleur des cours (CoursesController)
 // ============================================
 
 import 'package:get/get.dart';

@@ -101,6 +101,10 @@ class BookingController extends GetxController {
       .obs;
   final RxDouble totalAmount = 0.0.obs;
 
+  // Suivi de la sélection explicite pour éviter les soumissions par défaut ("Choisir")
+  final RxBool hasChosenStartTime = false.obs;
+  final RxBool hasChosenEndTime = false.obs;
+
   // Contrôleurs de paiement
   final TextEditingController cardNameController = TextEditingController();
   final TextEditingController cardNumberController = TextEditingController();
@@ -539,6 +543,15 @@ class BookingController extends GetxController {
   // ── CRÉATION DE LA RÉSERVATION (workflow complet) ─────────────
 
   Future<bool> createReservation(Space space) async {
+    // Étape -1 : Vérifier si l'utilisateur a explicitement choisi l'heure de début et de fin
+    if (!hasChosenStartTime.value || !hasChosenEndTime.value) {
+      _showError(
+        "Champs requis",
+        "Veuillez choisir explicitement l'heure de début et l'heure de fin.",
+      );
+      return false;
+    }
+
     // Étape 0 : Valider l'horaire (Business hours & Past hours)
     if (!validateBookingTimes()) return false;
 
@@ -1106,18 +1119,18 @@ class BookingController extends GetxController {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.amber.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: Colors.green,
+                  Icons.access_time_filled_rounded,
+                  color: Colors.amber,
                   size: 80,
                 ),
               ),
               const SizedBox(height: 24),
               const Text(
-                "Réservation Confirmée !",
+                "Demande Envoyée !",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -1126,7 +1139,7 @@ class BookingController extends GetxController {
               ),
               const SizedBox(height: 12),
               const Text(
-                "Votre réservation a été enregistrée avec succès.\nVous pouvez la retrouver dans votre planning.",
+                "Votre demande de réservation a été enregistrée avec succès.\nElle est actuellement en attente de confirmation par l'administration.",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 15, color: Colors.grey, height: 1.5),
               ),
@@ -1136,14 +1149,14 @@ class BookingController extends GetxController {
                 child: ElevatedButton(
                   onPressed: () => Get.back(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Colors.amber.shade700,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: const Text(
-                    "Super !",
+                    "D'accord",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

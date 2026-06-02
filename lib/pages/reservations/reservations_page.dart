@@ -41,14 +41,21 @@ class _ReservationsPageState extends State<ReservationsPage> {
 
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 24.0),
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: 24.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Titre et Sous-titre ─────────────────────────────
                   Text(
                     'Réservations',
-                    style: TextStyle(fontSize: isMobile ? 24 : 32, fontWeight: FontWeight.bold, color: const Color(0xFF111827)),
+                    style: TextStyle(
+                      fontSize: isMobile ? 24 : 32,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF111827),
+                    ),
                   ),
                   const SizedBox(height: 4),
                   const Text(
@@ -66,7 +73,11 @@ class _ReservationsPageState extends State<ReservationsPage> {
                     if (controller.isLoading.value) {
                       return const Padding(
                         padding: EdgeInsets.all(50),
-                        child: Center(child: CircularProgressIndicator(color: Color(0xFF007AFF))),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF007AFF),
+                          ),
+                        ),
                       );
                     }
 
@@ -74,7 +85,9 @@ class _ReservationsPageState extends State<ReservationsPage> {
                     if (items.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.all(50),
-                        child: Center(child: Text('Aucune réservation trouvée.')),
+                        child: Center(
+                          child: Text('Aucune réservation trouvée.'),
+                        ),
                       );
                     }
 
@@ -84,7 +97,8 @@ class _ReservationsPageState extends State<ReservationsPage> {
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: items.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 16),
-                        itemBuilder: (context, index) => _buildReservationCard(items[index]),
+                        itemBuilder: (context, index) =>
+                            _buildReservationCard(items[index]),
                       );
                     }
 
@@ -95,7 +109,11 @@ class _ReservationsPageState extends State<ReservationsPage> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFFE5E7EB)),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
                       ),
                       child: _buildDataTable(items),
@@ -134,7 +152,11 @@ class _ReservationsPageState extends State<ReservationsPage> {
               child: const TextField(
                 decoration: InputDecoration(
                   hintText: 'Rechercher...',
-                  prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF9CA3AF)),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 18,
+                    color: Color(0xFF9CA3AF),
+                  ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(vertical: 0),
                 ),
@@ -148,7 +170,11 @@ class _ReservationsPageState extends State<ReservationsPage> {
           CircleAvatar(
             radius: 16,
             backgroundColor: Colors.blue.shade100,
-            child: const Icon(Icons.person_outline, size: 20, color: Color(0xFF007AFF)),
+            child: const Icon(
+              Icons.person_outline,
+              size: 20,
+              color: Color(0xFF007AFF),
+            ),
           ),
           const SizedBox(width: 8),
           const Text('intern', style: TextStyle(fontWeight: FontWeight.w500)),
@@ -172,7 +198,11 @@ class _ReservationsPageState extends State<ReservationsPage> {
               onChanged: (val) => controller.updateSearchQuery(val),
               decoration: const InputDecoration(
                 hintText: 'Rechercher...',
-                prefixIcon: Icon(Icons.search, size: 20, color: Color(0xFF9CA3AF)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 20,
+                  color: Color(0xFF9CA3AF),
+                ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(vertical: 14),
               ),
@@ -188,18 +218,30 @@ class _ReservationsPageState extends State<ReservationsPage> {
               border: Border.all(color: const Color(0xFFE5E7EB)),
             ),
             child: DropdownButtonHideUnderline(
-              child: Obx(() => DropdownButton<String>(
-                value: ['En attente', 'Confirmées', 'Toutes'].contains(controller.selectedResFilter.value) 
-                    ? controller.selectedResFilter.value 
-                    : 'Toutes', 
-                isExpanded: true,
-                items: ['En attente', 'Confirmées', 'Toutes'].map((String val) {
-                  return DropdownMenuItem<String>(value: val, child: Text(val));
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) controller.updateResFilter(val);
-                },
-              )),
+              child: Obx(
+                () => DropdownButton<String>(
+                  value:
+                      [
+                        'En attente',
+                        'Confirmées',
+                        'Toutes',
+                      ].contains(controller.selectedResFilter.value)
+                      ? controller.selectedResFilter.value
+                      : 'Toutes',
+                  isExpanded: true,
+                  items: ['En attente', 'Confirmées', 'Toutes'].map((
+                    String val,
+                  ) {
+                    return DropdownMenuItem<String>(
+                      value: val,
+                      child: Text(val),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) controller.updateResFilter(val);
+                  },
+                ),
+              ),
             ),
           ),
         ],
@@ -220,7 +262,11 @@ class _ReservationsPageState extends State<ReservationsPage> {
               onChanged: (val) => controller.updateSearchQuery(val),
               decoration: const InputDecoration(
                 hintText: 'Rechercher par espace ou utilisateur...',
-                prefixIcon: Icon(Icons.search, size: 20, color: Color(0xFF9CA3AF)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 20,
+                  color: Color(0xFF9CA3AF),
+                ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(vertical: 14),
               ),
@@ -237,17 +283,24 @@ class _ReservationsPageState extends State<ReservationsPage> {
             border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
           child: DropdownButtonHideUnderline(
-            child: Obx(() => DropdownButton<String>(
-              value: ['En attente', 'Confirmées', 'Toutes'].contains(controller.selectedResFilter.value) 
-                  ? controller.selectedResFilter.value 
-                  : 'Toutes', 
-              items: ['En attente', 'Confirmées', 'Toutes'].map((String val) {
-                return DropdownMenuItem<String>(value: val, child: Text(val));
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) controller.updateResFilter(val);
-              },
-            )),
+            child: Obx(
+              () => DropdownButton<String>(
+                value:
+                    [
+                      'En attente',
+                      'Confirmées',
+                      'Toutes',
+                    ].contains(controller.selectedResFilter.value)
+                    ? controller.selectedResFilter.value
+                    : 'Toutes',
+                items: ['En attente', 'Confirmées', 'Toutes'].map((String val) {
+                  return DropdownMenuItem<String>(value: val, child: Text(val));
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) controller.updateResFilter(val);
+                },
+              ),
+            ),
           ),
         ),
       ],
@@ -262,13 +315,69 @@ class _ReservationsPageState extends State<ReservationsPage> {
         headingRowColor: WidgetStateProperty.all(const Color(0xFFFAFAFA)),
         dataRowMaxHeight: 80,
         columns: const [
-          DataColumn(label: Text('Espace', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF4B5563)))),
-          DataColumn(label: Text('Utilisateur', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF4B5563)))),
-          DataColumn(label: Text('Date & Heure', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF4B5563)))),
-          DataColumn(label: Text('Montant', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF4B5563)))),
-          DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF4B5563)))),
-          DataColumn(label: Text('Paiement', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF4B5563)))),
-          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF4B5563)))),
+          DataColumn(
+            label: Text(
+              'Espace',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4B5563),
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Utilisateur',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4B5563),
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Date & Heure',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4B5563),
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Montant',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4B5563),
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Statut',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4B5563),
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Paiement',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4B5563),
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Actions',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4B5563),
+              ),
+            ),
+          ),
         ],
         rows: items.map((res) => _buildDataRow(res)).toList(),
       ),
@@ -276,14 +385,25 @@ class _ReservationsPageState extends State<ReservationsPage> {
   }
 
   DataRow _buildDataRow(Reservation res) {
-    final fmtDate = DateFormat('dd MMM yyyy', 'fr_FR').format(res.startDateTime); // Dynamic localized month format
+    final fmtDate = DateFormat(
+      'dd MMM yyyy',
+      'fr_FR',
+    ).format(res.startDateTime); // Dynamic localized month format
     final fmtTime = DateFormat('HH:mm').format(res.startDateTime);
 
     return DataRow(
       cells: [
         // Espace
-        DataCell(Text(res.spaceName ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF111827)))),
-        
+        DataCell(
+          Text(
+            res.spaceName ?? 'N/A',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF111827),
+            ),
+          ),
+        ),
+
         // Utilisateur (Logique spécifique pour les 3 lignes demandées)
         DataCell(
           Padding(
@@ -293,10 +413,23 @@ class _ReservationsPageState extends State<ReservationsPage> {
         ),
 
         // Date & Heure
-        DataCell(Text('$fmtDate  $fmtTime', style: const TextStyle(color: Color(0xFF374151)))),
+        DataCell(
+          Text(
+            '$fmtDate  $fmtTime',
+            style: const TextStyle(color: Color(0xFF374151)),
+          ),
+        ),
 
         // Montant
-        DataCell(Text('${res.totalAmount.toInt()} DT', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF111827)))),
+        DataCell(
+          Text(
+            '${res.totalAmount.toInt()} DT',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF111827),
+            ),
+          ),
+        ),
 
         // Statut
         DataCell(
@@ -308,14 +441,23 @@ class _ReservationsPageState extends State<ReservationsPage> {
               border: Border.all(color: _getStatusBorderColor(res.status)),
             ),
             child: Text(
-              res.statusString.toUpperCase(), 
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _getStatusTextColor(res.status)),
+              res.statusString.toUpperCase(),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: _getStatusTextColor(res.status),
+              ),
             ),
           ),
         ),
 
         // Paiement
-        DataCell(Text(res.paymentMethod.toUpperCase(), style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)))),
+        DataCell(
+          Text(
+            res.paymentMethod.toUpperCase(),
+            style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+          ),
+        ),
 
         // Actions
         DataCell(
@@ -326,7 +468,9 @@ class _ReservationsPageState extends State<ReservationsPage> {
                 _ActionIcon(
                   icon: Icons.check_circle_outline,
                   color: const Color(0xFF10B981),
-                  onTap: () => _showConfirmDialog(res),// Affiche le dialogue de confirmation
+                  onTap: () => _showConfirmDialog(
+                    res,
+                  ), // Affiche le dialogue de confirmation
                 )
               else
                 // Badge vert si déjà confirmée
@@ -340,12 +484,13 @@ class _ReservationsPageState extends State<ReservationsPage> {
               const SizedBox(width: 8),
               // Bouton Refuser
               _ActionIcon(
-                icon: Icons.block, 
-                color: const Color(0xFFEF4444), 
+                icon: Icons.block,
+                color: const Color(0xFFEF4444),
                 onTap: () {
                   Get.defaultDialog(
                     title: "Refuser",
-                    middleText: "Voulez-vous vraiment refuser cette réservation ?",
+                    middleText:
+                        "Voulez-vous vraiment refuser cette réservation ?",
                     textConfirm: "Oui",
                     textCancel: "Non",
                     confirmTextColor: Colors.white,
@@ -353,9 +498,9 @@ class _ReservationsPageState extends State<ReservationsPage> {
                     onConfirm: () {
                       Get.back();
                       controller.deleteReservation(res);
-                    }
+                    },
                   );
-                }
+                },
               ),
             ],
           ),
@@ -382,18 +527,30 @@ class _ReservationsPageState extends State<ReservationsPage> {
                   color: const Color(0xFF10B981).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 52),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF10B981),
+                  size: 52,
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
                 "Confirmer la réservation ?",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF111827),
+                ),
               ),
               const SizedBox(height: 10),
               Text(
                 "L'espace ${res.spaceName ?? ''} sera marqué comme confirmé.\nL'utilisateur sera notifié.",
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6B7280),
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 28),
               Row(
@@ -403,10 +560,15 @@ class _ReservationsPageState extends State<ReservationsPage> {
                       onPressed: () => Get.back(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         side: const BorderSide(color: Color(0xFFE5E7EB)),
                       ),
-                      child: const Text("Annuler", style: TextStyle(color: Color(0xFF6B7280))),
+                      child: const Text(
+                        "Annuler",
+                        style: TextStyle(color: Color(0xFF6B7280)),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -419,10 +581,18 @@ class _ReservationsPageState extends State<ReservationsPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF10B981),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         elevation: 0,
                       ),
-                      child: const Text("Confirmer", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "Confirmer",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -433,7 +603,8 @@ class _ReservationsPageState extends State<ReservationsPage> {
       ),
     );
   }
-// dialogue de modification de la status( en attente, confirmée, terminée, annulée)
+
+  // dialogue de modification de la status( en attente, confirmée, terminée, annulée)
   void _showStatusDialog(Reservation res) {
     Get.bottomSheet(
       Container(
@@ -446,7 +617,10 @@ class _ReservationsPageState extends State<ReservationsPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Modifier le statut", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text(
+              "Modifier le statut",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 20),
             _statusOption(res, "En_attente", "En attente", Colors.orange),
             _statusOption(res, "Confirmee", "Confirmée", Colors.green),
@@ -459,7 +633,12 @@ class _ReservationsPageState extends State<ReservationsPage> {
     );
   }
 
-  Widget _statusOption(Reservation res, String value, String label, Color color) {
+  Widget _statusOption(
+    Reservation res,
+    String value,
+    String label,
+    Color color,
+  ) {
     return ListTile(
       leading: Icon(Icons.circle, color: color, size: 12),
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -475,57 +654,67 @@ class _ReservationsPageState extends State<ReservationsPage> {
 
   Widget _buildConditionalUserCell(Reservation res) {
     // Cas 1: Open Space Principal -> Ut labore officiis d
-    if (res.spaceName == 'Open Space Principal' && 
-        res.startDateTime.day == 17 && res.startDateTime.month == 2) {
+    if (res.spaceName == 'Open Space Principal' &&
+        res.startDateTime.day == 17 &&
+        res.startDateTime.month == 2) {
       return _buildSpecialUserRow(
         initial: 'U',
         name: 'Ut labore officiis d',
         email: 'qidezasa@mailinator.com',
         phone: '+1 (752) 254-2627',
-        badge: 'Visiteur'
+        badge: 'Visiteur',
       );
     }
-    
+
     // Cas 2: espace8 (18 fév) -> TEST
-    if (res.spaceName == 'espace8' && 
-        res.startDateTime.day == 18 && res.startDateTime.month == 2) {
+    if (res.spaceName == 'espace8' &&
+        res.startDateTime.day == 18 &&
+        res.startDateTime.month == 2) {
       return _buildSpecialUserRow(
         initial: 'T',
         name: 'TEST',
         email: 'TEST',
         phone: '21650792753',
-        badge: 'Visiteur'
+        badge: 'Visiteur',
       );
     }
 
     // Cas 3: espace8 (05 mars) -> Guest
-    if (res.spaceName == 'espace8' && 
-        res.startDateTime.day == 5 && res.startDateTime.month == 3) {
+    if (res.spaceName == 'espace8' &&
+        res.startDateTime.day == 5 &&
+        res.startDateTime.month == 3) {
       return _buildSpecialUserRow(
         initial: 'G',
         name: 'Guest',
         email: null,
         phone: null,
-        badge: 'Visiteur'
+        badge: 'Visiteur',
       );
     }
 
     // Cas par défaut : utiliser les données réelles de la réservation
-    final String displayName = (res.organizerName ?? res.user?.username ?? '—').trim();
-    
-    final String initial = displayName.isNotEmpty && displayName != '—' ? displayName[0].toUpperCase() : '?';
+    final String displayName = (res.organizerName ?? res.user?.username ?? '—')
+        .trim();
+
+    final String initial = displayName.isNotEmpty && displayName != '—'
+        ? displayName[0].toUpperCase()
+        : '?';
     final bool isSession = res.isSessionReservation;
 
     return Row(
       children: [
         CircleAvatar(
           radius: 14,
-          backgroundColor: isSession ? const Color(0xFFEDE9FE) : Colors.blue.shade100,
+          backgroundColor: isSession
+              ? const Color(0xFFEDE9FE)
+              : Colors.blue.shade100,
           child: Text(
             initial,
             style: TextStyle(
               fontSize: 10,
-              color: isSession ? const Color(0xFF7C3AED) : const Color(0xFF007AFF),
+              color: isSession
+                  ? const Color(0xFF7C3AED)
+                  : const Color(0xFF007AFF),
             ),
           ),
         ),
@@ -540,32 +729,46 @@ class _ReservationsPageState extends State<ReservationsPage> {
                   constraints: const BoxConstraints(maxWidth: 150),
                   child: Text(
                     displayName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 4),
                 // Badge : Formation (violet) ou Client (bleu)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSession ? const Color(0xFFEDE9FE) : const Color(0xFFEFF6FF),
+                    color: isSession
+                        ? const Color(0xFFEDE9FE)
+                        : const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isSession ? Icons.school_outlined : Icons.person_outline,
+                        isSession
+                            ? Icons.school_outlined
+                            : Icons.person_outline,
                         size: 9,
-                        color: isSession ? const Color(0xFF7C3AED) : const Color(0xFF3B82F6),
+                        color: isSession
+                            ? const Color(0xFF7C3AED)
+                            : const Color(0xFF3B82F6),
                       ),
                       const SizedBox(width: 2),
                       Text(
                         isSession ? 'Formation' : 'Client',
                         style: TextStyle(
                           fontSize: 10,
-                          color: isSession ? const Color(0xFF7C3AED) : const Color(0xFF3B82F6),
+                          color: isSession
+                              ? const Color(0xFF7C3AED)
+                              : const Color(0xFF3B82F6),
                         ),
                       ),
                     ],
@@ -574,13 +777,20 @@ class _ReservationsPageState extends State<ReservationsPage> {
               ],
             ),
             if (res.user?.email != null)
-              Text(res.user!.email!, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+              Text(
+                res.user!.email!,
+                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+              ),
             if (isSession && res.purpose != null)
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 200),
                 child: Text(
                   res.purpose!.replaceFirst('Session de cours : ', ''),
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF9CA3AF), fontStyle: FontStyle.italic),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF9CA3AF),
+                    fontStyle: FontStyle.italic,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -595,7 +805,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
     required String name,
     String? email,
     String? phone,
-    required String badge
+    required String badge,
   }) {
     return Row(
       children: [
@@ -603,8 +813,12 @@ class _ReservationsPageState extends State<ReservationsPage> {
           radius: 18,
           backgroundColor: const Color(0xFFFFF7ED),
           child: Text(
-            initial, 
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFF97316)),
+            initial,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFFF97316),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -614,24 +828,46 @@ class _ReservationsPageState extends State<ReservationsPage> {
           children: [
             Row(
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF111827))),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFF111827),
+                  ),
+                ),
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF7ED), 
+                    color: const Color(0xFFFFF7ED),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: const Color(0xFFFFEDD5)),
                   ),
                   child: Text(
-                    badge, 
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFD97706))
+                    badge,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFD97706),
+                    ),
                   ),
                 ),
               ],
             ),
-            if (email != null) Text(email, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
-            if (phone != null) Text(phone, style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+            if (email != null)
+              Text(
+                email,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
+            if (phone != null)
+              Text(
+                phone,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+              ),
           ],
         ),
       ],
@@ -641,7 +877,10 @@ class _ReservationsPageState extends State<ReservationsPage> {
   // --- Couleurs de Statut pour l'Admin ---
 
   Widget _buildReservationCard(Reservation res) {
-    final fmtDate = DateFormat('dd MMM yyyy', 'fr_FR').format(res.startDateTime);
+    final fmtDate = DateFormat(
+      'dd MMM yyyy',
+      'fr_FR',
+    ).format(res.startDateTime);
     final fmtTime = DateFormat('HH:mm').format(res.startDateTime);
 
     return Container(
@@ -651,7 +890,11 @@ class _ReservationsPageState extends State<ReservationsPage> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -663,7 +906,11 @@ class _ReservationsPageState extends State<ReservationsPage> {
               Expanded(
                 child: Text(
                   res.spaceName ?? 'N/A',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF111827)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Color(0xFF111827),
+                  ),
                 ),
               ),
               Container(
@@ -675,7 +922,11 @@ class _ReservationsPageState extends State<ReservationsPage> {
                 ),
                 child: Text(
                   res.statusString.toUpperCase(),
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getStatusTextColor(res.status)),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: _getStatusTextColor(res.status),
+                  ),
                 ),
               ),
             ],
@@ -689,17 +940,44 @@ class _ReservationsPageState extends State<ReservationsPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('DATE & HEURE', style: TextStyle(fontSize: 10, color: Color(0xFF9CA3AF), fontWeight: FontWeight.bold)),
+                  const Text(
+                    'DATE & HEURE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF9CA3AF),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text('$fmtDate  $fmtTime', style: const TextStyle(fontSize: 13, color: Color(0xFF374151))),
+                  Text(
+                    '$fmtDate  $fmtTime',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF374151),
+                    ),
+                  ),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('MONTANT', style: TextStyle(fontSize: 10, color: Color(0xFF9CA3AF), fontWeight: FontWeight.bold)),
+                  const Text(
+                    'MONTANT',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF9CA3AF),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text('${res.totalAmount.toInt()} DT', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827))),
+                  Text(
+                    '${res.totalAmount.toInt()} DT',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -708,20 +986,35 @@ class _ReservationsPageState extends State<ReservationsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(res.paymentMethod.toUpperCase(), style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+              Text(
+                res.paymentMethod.toUpperCase(),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+              ),
               Row(
                 children: [
                   if (res.status == ReservationStatus.enAttente)
                     IconButton(
-                      icon: const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 22),
-                      onPressed: () => _showConfirmDialog(res), // BOUTON : Valider/Accepter la réservation
+                      icon: const Icon(
+                        Icons.check_circle_outline,
+                        color: Color(0xFF10B981),
+                        size: 22,
+                      ),
+                      onPressed: () => _showConfirmDialog(
+                        res,
+                      ), // BOUTON : Valider/Accepter la réservation
                     ),
                   IconButton(
-                    icon: const Icon(Icons.block, color: Color(0xFFEF4444), size: 22),
-                    onPressed: () { // BOUTON : Refuser la réservation
+                    icon: const Icon(
+                      Icons.block,
+                      color: Color(0xFFEF4444),
+                      size: 22,
+                    ),
+                    onPressed: () {
+                      // BOUTON : Refuser la réservation
                       Get.defaultDialog(
                         title: "Refuser",
-                        middleText: "Voulez-vous vraiment refuser cette réservation ?",
+                        middleText:
+                            "Voulez-vous vraiment refuser cette réservation ?",
                         textConfirm: "Oui",
                         textCancel: "Non",
                         confirmTextColor: Colors.white,
@@ -729,7 +1022,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
                         onConfirm: () {
                           Get.back();
                           controller.deleteReservation(res);
-                        }
+                        },
                       );
                     },
                   ),
@@ -744,28 +1037,40 @@ class _ReservationsPageState extends State<ReservationsPage> {
 
   Color _getStatusBgColor(ReservationStatus status) {
     switch (status) {
-      case ReservationStatus.confirmee: return const Color(0xFFDCFCE7);
-      case ReservationStatus.annulee: return const Color(0xFFFEE2E2);
-      case ReservationStatus.terminee: return const Color(0xFFF3F4F6);
-      case ReservationStatus.enAttente: return const Color(0xFFFFF7ED);
+      case ReservationStatus.confirmee:
+        return const Color(0xFFDCFCE7);
+      case ReservationStatus.annulee:
+        return const Color(0xFFFEE2E2);
+      case ReservationStatus.terminee:
+        return const Color(0xFFF3F4F6);
+      case ReservationStatus.enAttente:
+        return const Color(0xFFFFF7ED);
     }
   }
 
   Color _getStatusTextColor(ReservationStatus status) {
     switch (status) {
-      case ReservationStatus.confirmee: return const Color(0xFF166534);
-      case ReservationStatus.annulee: return const Color(0xFF991B1B);
-      case ReservationStatus.terminee: return const Color(0xFF374151);
-      case ReservationStatus.enAttente: return const Color(0xFFD97706);
+      case ReservationStatus.confirmee:
+        return const Color(0xFF166534);
+      case ReservationStatus.annulee:
+        return const Color(0xFF991B1B);
+      case ReservationStatus.terminee:
+        return const Color(0xFF374151);
+      case ReservationStatus.enAttente:
+        return const Color(0xFFD97706);
     }
   }
 
   Color _getStatusBorderColor(ReservationStatus status) {
     switch (status) {
-      case ReservationStatus.confirmee: return const Color(0xFFBBF7D0);
-      case ReservationStatus.annulee: return const Color(0xFFFECACA);
-      case ReservationStatus.terminee: return const Color(0xFFE5E7EB);
-      case ReservationStatus.enAttente: return const Color(0xFFFFEDD5);
+      case ReservationStatus.confirmee:
+        return const Color(0xFFBBF7D0);
+      case ReservationStatus.annulee:
+        return const Color(0xFFFECACA);
+      case ReservationStatus.terminee:
+        return const Color(0xFFE5E7EB);
+      case ReservationStatus.enAttente:
+        return const Color(0xFFFFEDD5);
     }
   }
 }
@@ -774,7 +1079,11 @@ class _ActionIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const _ActionIcon({required this.icon, required this.color, required this.onTap});
+  const _ActionIcon({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

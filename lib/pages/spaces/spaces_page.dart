@@ -18,7 +18,7 @@ class SpacesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialisation/Récupération du contrôleur
     final controller = Get.put(SpacesController());
-    
+
     // Détection du mode mobile pour le design adaptatif
     final bool isMobile = MediaQuery.of(context).size.width < 1100;
     final double horizontalPadding = isMobile ? 16.0 : 24.0;
@@ -26,27 +26,27 @@ class SpacesPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 24.0),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: 24.0,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Section En-tête : Titre et Bouton "Nouvel Espace"
-            isMobile 
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildHeaderTitle(context),
-                    const SizedBox(height: 16),
-                    _buildAddButton(),
-                  ],
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildHeaderTitle(context),
-                    _buildAddButton(),
-                  ],
-                ),
+            isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildHeaderTitle(context),
+                      const SizedBox(height: 16),
+                      _buildAddButton(),
+                    ],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [_buildHeaderTitle(context), _buildAddButton()],
+                  ),
             const SizedBox(height: 32),
 
             // Section Recherche et Filtrage par statut
@@ -57,32 +57,42 @@ class SpacesPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey[200]!),
               ),
-              child: isMobile 
-                ? Column(
-                    children: [
-                      _buildSearchField(controller),
-                      const SizedBox(height: 12),
-                      _buildStatusFilter(controller),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(flex: 3, child: _buildSearchField(controller)),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildStatusFilter(controller)),
-                    ],
-                  ),
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildSearchField(controller),
+                        const SizedBox(height: 12),
+                        _buildStatusFilter(controller),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(flex: 3, child: _buildSearchField(controller)),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildStatusFilter(controller)),
+                      ],
+                    ),
             ),
             const SizedBox(height: 24),
 
             // Section Liste des Espaces (DataTable sur Desktop, Cards sur Mobile)
             Obx(() {
               if (controller.isLoading.value) {
-                return const Center(child: Padding(padding: EdgeInsets.all(50), child: CircularProgressIndicator()));
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(50),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
               }
 
               if (controller.filteredSpaces.isEmpty) {
-                return const Center(child: Padding(padding: EdgeInsets.all(50), child: Text('Aucun espace trouvé')));
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(50),
+                    child: Text('Aucun espace trouvé'),
+                  ),
+                );
               }
 
               if (isMobile) {
@@ -91,7 +101,10 @@ class SpacesPage extends StatelessWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: controller.filteredSpaces.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) => _buildSpaceCard(context, controller.filteredSpaces[index]),
+                  itemBuilder: (context, index) => _buildSpaceCard(
+                    context,
+                    controller.filteredSpaces[index],
+                  ),
                 );
               }
 
@@ -107,95 +120,218 @@ class SpacesPage extends StatelessWidget {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Theme(
-                      data: Theme.of(context).copyWith(
-                        dividerColor: Colors.grey[100],
-                      ),
+                      data: Theme.of(
+                        context,
+                      ).copyWith(dividerColor: Colors.grey[100]),
                       child: DataTable(
-                        headingRowColor: WidgetStateProperty.all(const Color(0xFFFDFDFD)),
+                        headingRowColor: WidgetStateProperty.all(
+                          const Color(0xFFFDFDFD),
+                        ),
                         dataRowHeight: 64,
                         horizontalMargin: 16,
                         columnSpacing: 16,
                         columns: const [
-                          DataColumn(label: Text('Espace', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Localisation', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Capacité', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Tarif/h', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Réservations', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(
+                            label: Text(
+                              'Espace',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Type',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Localisation',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Capacité',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Tarif/h',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Réservations',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Statut',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Actions',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
                         ],
                         rows: controller.filteredSpaces.map((space) {
-                          return DataRow(cells: [
-                            DataCell(Text(space.name, style: const TextStyle(fontWeight: FontWeight.w500))),
-                            DataCell(Text(space.typeString, style: TextStyle(color: Colors.grey[600]))),
-                            DataCell(Row(
-                              children: [
-                                const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                                const SizedBox(width: 4),
-                                Text(space.location, style: TextStyle(color: Colors.grey[600])),
-                              ],
-                            )),
-                            DataCell(Row(
-                              children: [
-                                const Icon(Icons.people_outline, size: 16, color: Colors.grey),
-                                const SizedBox(width: 4),
-                                Text('${space.capacity}', style: TextStyle(color: Colors.grey[600])),
-                              ],
-                            )),
-                            DataCell(Row(
-                              children: [
-                                const Text('TND ', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                                Text(space.hourlyPrice > 0 ? '${space.hourlyPrice.toInt()}' : '', style: const TextStyle(fontWeight: FontWeight.w500)),
-                              ],
-                            )),
-                            DataCell(Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[50],
-                                shape: BoxShape.circle,
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                Text(
+                                  space.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
-                              child: Text('${space.reservations}', style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold)),
-                            )),
-                            DataCell(_buildStatusBadge(space.status)),
-                            DataCell(Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey),
-                                  onPressed: () => Get.toNamed(AppRoutes.VIEW_SPACE, arguments: space),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
+                              DataCell(
+                                Text(
+                                  space.typeString,
+                                  style: TextStyle(color: Colors.grey[600]),
                                 ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.grey),
-                                  onPressed: () => Get.toNamed(AppRoutes.EDIT_SPACE, arguments: space),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
+                              ),
+                              DataCell(
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_outlined,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      space.location,
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
-                                  onPressed: () {
-                                    Get.defaultDialog(
-                                      title: "Supprimer l'espace",
-                                      middleText: "Êtes-vous sûr de vouloir supprimer l'espace '${space.name}' ?",
-                                      textConfirm: "Supprimer",
-                                      textCancel: "Annuler",
-                                      confirmTextColor: Colors.white,
-                                      buttonColor: Colors.red,
-                                      onConfirm: () {
-                                        controller.deleteSpace(space.id);
-                                        Get.back();
+                              ),
+                              DataCell(
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.people_outline,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${space.capacity}',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              DataCell(
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'TND ',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      space.hourlyPrice > 0
+                                          ? '${space.hourlyPrice.toInt()}'
+                                          : '',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Affichage du nombre de réservations avec un badge bleu
+                              DataCell(
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[50],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '${space.reservations}',
+                                    style: const TextStyle(
+                                      color: Colors.blue,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              DataCell(_buildStatusBadge(space.status)),
+                              DataCell(
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.visibility_outlined,
+                                        size: 18,
+                                        color: Colors.grey,
+                                      ),
+                                      onPressed: () => Get.toNamed(
+                                        AppRoutes.VIEW_SPACE,
+                                        arguments: space,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.edit_outlined,
+                                        size: 18,
+                                        color: Colors.grey,
+                                      ),
+                                      onPressed: () => Get.toNamed(
+                                        AppRoutes.EDIT_SPACE,
+                                        arguments: space,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        size: 18,
+                                        color: Colors.grey,
+                                      ),
+                                      onPressed: () {
+                                        Get.defaultDialog(
+                                          title: "Supprimer l'espace",
+                                          middleText:
+                                              "Êtes-vous sûr de vouloir supprimer l'espace '${space.name}' ?",
+                                          textConfirm: "Supprimer",
+                                          textCancel: "Annuler",
+                                          confirmTextColor: Colors.white,
+                                          buttonColor: Colors.red,
+                                          onConfirm: () {
+                                            controller.deleteSpace(space.id);
+                                            Get.back();
+                                          },
+                                        );
                                       },
-                                    );
-                                  },
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            )),
-                          ]);
+                              ),
+                            ],
+                          );
                         }).toList(),
                       ),
                     ),
@@ -222,7 +358,11 @@ class SpacesPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -237,7 +377,10 @@ class SpacesPage extends StatelessWidget {
                   children: [
                     Text(
                       space.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     Text(
                       space.typeString,
@@ -255,16 +398,30 @@ class SpacesPage extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                  const Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 4),
-                  Text(space.location, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                  Text(
+                    space.location,
+                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                  ),
                 ],
               ),
               Row(
                 children: [
-                  const Icon(Icons.people_outline, size: 16, color: Colors.grey),
+                  const Icon(
+                    Icons.people_outline,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 4),
-                  Text('${space.capacity}', style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                  Text(
+                    '${space.capacity}',
+                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                  ),
                 ],
               ),
             ],
@@ -275,14 +432,21 @@ class SpacesPage extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Text('TND ', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13)),
-                  Text('${space.hourlyPrice.toInt()}/h', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                ],
-              ),
-              Row(
-                children: [
-                  const Text('Réservations: ', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  Text('${space.reservations}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                  const Text(
+                    'TND ',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  Text(
+                    '${space.hourlyPrice.toInt()}/h',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -292,15 +456,29 @@ class SpacesPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               IconButton(
-                icon: const Icon(Icons.visibility_outlined, size: 20, color: Colors.grey),
-                onPressed: () => Get.toNamed(AppRoutes.VIEW_SPACE, arguments: space),
+                icon: const Icon(
+                  Icons.visibility_outlined,
+                  size: 20,
+                  color: Colors.grey,
+                ),
+                onPressed: () =>
+                    Get.toNamed(AppRoutes.VIEW_SPACE, arguments: space),
               ),
               IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 20, color: Colors.grey),
-                onPressed: () => Get.toNamed(AppRoutes.EDIT_SPACE, arguments: space),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 20,
+                  color: Colors.grey,
+                ),
+                onPressed: () =>
+                    Get.toNamed(AppRoutes.EDIT_SPACE, arguments: space),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  size: 20,
+                  color: Colors.redAccent,
+                ),
                 onPressed: () {
                   Get.defaultDialog(
                     title: "Supprimer",
@@ -335,9 +513,9 @@ class SpacesPage extends StatelessWidget {
             Text(
               'Gestion des espaces',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           ],
         ),
@@ -385,33 +563,41 @@ class SpacesPage extends StatelessWidget {
 
   // Widget : Filtre de statut (DropDown)
   Widget _buildStatusFilter(SpacesController controller) {
-    return Obx(() => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        border: Border.all(color: Colors.transparent),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: controller.selectedStatus.value,
-          isExpanded: true,
-          items: ['Tous les statuts', 'Disponible', 'Occupé', 'En_maintenance']
-              .map((status) => DropdownMenuItem(
-                    value: status,
-                    child: Text(status.replaceAll('_', ' ')),
-                  ))
-              .toList(),
-          onChanged: controller.updateStatus,
+    return Obx(
+      () => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          border: Border.all(color: Colors.transparent),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: controller.selectedStatus.value,
+            isExpanded: true,
+            items:
+                ['Tous les statuts', 'Disponible', 'Occupé', 'En_maintenance']
+                    .map(
+                      (status) => DropdownMenuItem(
+                        value: status,
+                        child: Text(status.replaceAll('_', ' ')),
+                      ),
+                    )
+                    .toList(),
+            onChanged: controller.updateStatus,
+          ),
         ),
       ),
-    ));
+    );
   }
 
   // Widget : Grille de statistiques (Total, Dispo, Maintenance, etc.)
-  Widget _buildResponsiveStatistics(BuildContext context, SpacesController controller) {
+  Widget _buildResponsiveStatistics(
+    BuildContext context,
+    SpacesController controller,
+  ) {
     final bool isMobile = MediaQuery.of(context).size.width < 700;
-    
+
     return Obx(() {
       final total = controller.spaces.length;
       final available = controller.availableSpaces;
@@ -422,15 +608,30 @@ class SpacesPage extends StatelessWidget {
         runSpacing: 20,
         children: [
           _buildStatCard('Total', '$total', Colors.black, isMobile),
-          _buildStatCard('Disponible', '$available', const Color(0xFF166534), isMobile),
-          _buildStatCard('En maintenance', '$maintenance', const Color(0xFF854D0E), isMobile),
+          _buildStatCard(
+            'Disponible',
+            '$available',
+            const Color(0xFF166534),
+            isMobile,
+          ),
+          _buildStatCard(
+            'En maintenance',
+            '$maintenance',
+            const Color(0xFF854D0E),
+            isMobile,
+          ),
         ],
       );
     });
   }
 
   // Widget : Carte individuelle pour un chiffre statistique
-  Widget _buildStatCard(String label, String value, Color valueColor, bool isMobile) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    Color valueColor,
+    bool isMobile,
+  ) {
     return Container(
       width: isMobile ? double.infinity : 280,
       padding: const EdgeInsets.all(24),
@@ -449,10 +650,7 @@ class SpacesPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
-          ),
+          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
           const SizedBox(height: 16),
           Text(
             value,

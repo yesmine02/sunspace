@@ -36,7 +36,9 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
   void initState() {
     super.initState();
     final a = widget.association;
-    _nameCtrl = TextEditingController(text: a?.name ?? '');
+    _nameCtrl = TextEditingController(
+      text: a?.name ?? '',
+    ); // Pré-remplit les champs si on est en mode édition (a != null)
     _descCtrl = TextEditingController(text: a?.description ?? '');
     _emailCtrl = TextEditingController(text: a?.email ?? '');
     _phoneCtrl = TextEditingController(text: a?.phone ?? '');

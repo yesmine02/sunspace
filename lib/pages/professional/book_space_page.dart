@@ -818,6 +818,8 @@ class _BookSpacePageState extends State<BookSpacePage> {
     controller.selectedServices.clear();
     controller.isMonthly.value = false;
     controller.numberOfPeople.value = 1;
+    controller.hasChosenStartTime.value = false;
+    controller.hasChosenEndTime.value = false;
     // Les contrôleurs de carte ont été supprimés du BookingController.
 
     // Détermination des dates par défaut (J+1h à J+3h).
@@ -1062,7 +1064,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
                               ),
                             )
                           : const Text(
-                              "Confirmer la réservation",
+                              "Réserver",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -1167,6 +1169,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
                   isAllDay,
                   (String? newValue) {
                     if (newValue != null) {
+                      controller.hasChosenStartTime.value = true;
                       final parts = newValue.split(':');
                       final newStart = DateTime(
                         start.year,
@@ -1193,6 +1196,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
                   isAllDay,
                   (String? newValue) {
                     if (newValue != null) {
+                      controller.hasChosenEndTime.value = true;
                       final parts = newValue.split(':');
                       final newEnd = DateTime(
                         end.year,

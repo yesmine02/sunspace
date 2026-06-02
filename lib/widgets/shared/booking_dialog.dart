@@ -33,11 +33,8 @@ class BookingDialog extends StatelessWidget {
 
       controller.updateDates(start, end, space.hourlyPrice, space.monthlyPrice);
       controller.numberOfPeople.value = initialParticipants ?? 1;
-      // Force le recalcul immédiat après avoir défini le nombre de personnes
-      controller.calculateTotal(
-        hourlyPrice: space.hourlyPrice,
-        monthlyPrice: space.monthlyPrice,
-      );
+      controller.hasChosenStartTime.value = false;
+      controller.hasChosenEndTime.value = false;
     });
 
     return Dialog(
@@ -127,19 +124,18 @@ class BookingDialog extends StatelessWidget {
                           .inMinutes /
                       60.0;
                   final displayHours = hours < 1.0 ? 1.0 : hours;
-                  final int participants = controller.numberOfPeople.value;
 
                   return Column(
                     children: [
                       if (controller.isMonthly.value)
                         _buildPriceRow(
-                          "Espace (${space.monthlyPrice.toInt()} TND/mois x $participants pers)",
-                          "${(space.monthlyPrice * participants).toInt()} TND",
+                          "Prix de l'espace",
+                          "${space.monthlyPrice.toInt()} TND/mois",
                         )
                       else
                         _buildPriceRow(
-                          "Espace (${space.hourlyPrice.toInt()} TND/h x ${displayHours.toStringAsFixed(displayHours == displayHours.toInt() ? 0 : 1)}h x $participants pers)",
-                          "${(displayHours * space.hourlyPrice * participants).toInt()} TND",
+                          "Espace (${space.hourlyPrice.toInt()} TND/h x ${displayHours.toStringAsFixed(displayHours == displayHours.toInt() ? 0 : 1)}h)",
+                          "${(displayHours * space.hourlyPrice).toInt()} TND",
                         ),
 
                       if (controller.selectedServices.isNotEmpty)
@@ -232,6 +228,25 @@ class BookingDialog extends StatelessWidget {
                                 slotFull)
                             ? null
                             : () async {
+                                // Validation des champs de paiement si affichés
+                                if (showPayment && !isStudent) {
+                                  if (controller.cardNameController.text.trim().isEmpty ||
+                                      controller.cardNumberController.text.trim().isEmpty ||
+                                      controller.cardExpiryController.text.trim().isEmpty ||
+                                      controller.cardCvcController.text.trim().isEmpty) {
+                                    Get.snackbar(
+                                      "Champs obligatoires",
+                                      "Veuillez remplir toutes les informations de paiement par carte.",
+                                      backgroundColor: Colors.red.shade700,
+                                      colorText: Colors.white,
+                                      snackPosition: SnackPosition.TOP,
+                                      icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                                      margin: const EdgeInsets.all(12),
+                                    );
+                                    return;
+                                  }
+                                }
+
                                 bool success = await controller
                                     .createReservation(space);
                                 if (success) {
@@ -256,7 +271,7 @@ class BookingDialog extends StatelessWidget {
                                 ),
                               )
                             : const Text(
-                                "Confirmer la réservation",
+                                "Réserver",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -293,13 +308,8 @@ class BookingDialog extends StatelessWidget {
           const Spacer(),
           IconButton(
             onPressed: () {
-              if (controller.numberOfPeople.value > 1) {
+              if (controller.numberOfPeople.value > 1)
                 controller.numberOfPeople.value--;
-                controller.calculateTotal(
-                  hourlyPrice: space.hourlyPrice,
-                  monthlyPrice: space.monthlyPrice,
-                );
-              }
             },
             icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
           ),
@@ -311,13 +321,8 @@ class BookingDialog extends StatelessWidget {
           ),
           IconButton(
             onPressed: () {
-              if (controller.numberOfPeople.value < space.capacity) {
+              if (controller.numberOfPeople.value < space.capacity)
                 controller.numberOfPeople.value++;
-                controller.calculateTotal(
-                  hourlyPrice: space.hourlyPrice,
-                  monthlyPrice: space.monthlyPrice,
-                );
-              }
             },
             icon: const Icon(Icons.add_circle_outline, color: Colors.green),
           ),
@@ -520,6 +525,7 @@ class BookingDialog extends StatelessWidget {
                       if (val != null) {
                         final parts = val.split(':');
                         if (isStart) {
+                          controller.hasChosenStartTime.value = true;
                           final newStart = DateTime(
                             controller.startDateTime.value.year,
                             controller.startDateTime.value.month,
@@ -542,6 +548,7 @@ class BookingDialog extends StatelessWidget {
                             space.monthlyPrice,
                           );
                         } else {
+                          controller.hasChosenEndTime.value = true;
                           // Force l'heure de fin sur le même jour que l'heure de début
                           final newEnd = DateTime(
                             controller.startDateTime.value.year,
@@ -628,19 +635,16 @@ class BookingDialog extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: isTotal ? 16 : 14,
-                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-                color: isTotal
-                    ? const Color(0xFF1E3A8A)
-                    : const Color(0xFF1E40AF),
-              ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 16 : 14,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              color: isTotal
+                  ? const Color(0xFF1E3A8A)
+                  : const Color(0xFF1E40AF),
             ),
           ),
-          const SizedBox(width: 8),
           Text(
             value,
             style: TextStyle(

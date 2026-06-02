@@ -9,7 +9,8 @@ import 'notification_controller.dart'; // 🔔 Pour rafraîchir les notifs aprè
 //C’est le cerveau de l’authentification Il gère :✅ login✅ register✅ logout✅ rôle
 //✅ update profil✅ password✅ delete account
 class AuthController extends GetxController {
-  final String baseUrl = 'http://193.111.250.244:3046/api';
+  final String baseUrl =
+      'http://193.111.250.244:3046/api'; // URL de base du serveur Strapi
 
   var isLoggedIn = false.obs; // vrai si l'utilisateur est connecté
   var isLoading = false.obs;

@@ -155,12 +155,13 @@ class Sidebar extends StatelessWidget {
                     isActive: currentRoute == AppRoutes.DASHBOARD,
                     onTap: () => Get.offAllNamed(AppRoutes.DASHBOARD),
                   ),
-                  // --- ITEMS ACCESSIBLES POUR ADMIN, ENSEIGNANT, AUTHENTIFIÉ, GESTIONNAIRE, PROFESSIONNEL ET ASSOCIATION ---
+                  // --- ITEMS ACCESSIBLES POUR ENSEIGNANT, AUTHENTIFIÉ, PROFESSIONNEL ET ASSOCIATION ---
                   if (isAdmin ||
                       isInstructor ||
                       isAuthenticatedOnly ||
                       isSpaceManager ||
                       isPro ||
+                      isStudent ||
                       isAssoc) ...[
                     _buildMenuItem(
                       title: 'Réserver un espace',
@@ -226,7 +227,7 @@ class Sidebar extends StatelessWidget {
                       onTap: () => Get.offAllNamed(AppRoutes.COURSES),
                     ),
                     _buildMenuItem(
-                      title: 'Sessions',
+                      title: 'Sessions de formation',
                       icon: Icons.calendar_today_outlined,
                       isActive: currentRoute == AppRoutes.SESSIONS,
                       onTap: () => Get.offAllNamed(AppRoutes.SESSIONS),
@@ -283,7 +284,7 @@ class Sidebar extends StatelessWidget {
                       onTap: () => Get.offAllNamed(AppRoutes.COURSE_CATALOG),
                     ),
                     _buildMenuItem(
-                      title: 'Sessions',
+                      title: 'Sessions de formation',
                       icon: Icons.calendar_today_outlined,
                       isActive: currentRoute == AppRoutes.STUDENT_SESSIONS,
                       onTap: () => Get.offAllNamed(AppRoutes.STUDENT_SESSIONS),
@@ -295,7 +296,7 @@ class Sidebar extends StatelessWidget {
                     const SizedBox(height: 32),
                     _buildSectionHeader('PROFESSIONNEL'),
                     _buildMenuItem(
-                      title: 'Formations',
+                      title: 'Sessions de formation',
                       icon: Icons.school_outlined,
                       isActive: currentRoute == AppRoutes.TRAINING,
                       onTap: () => Get.offAllNamed(AppRoutes.TRAINING),
@@ -310,7 +311,7 @@ class Sidebar extends StatelessWidget {
 
                     // 1. Formations
                     _buildMenuItem(
-                      title: 'Formations',
+                      title: 'Sessions de formation',
                       icon: Icons.menu_book_rounded,
                       isActive: currentRoute == AppRoutes.ASSOC_TRAININGS,
                       onTap: () => Get.offAllNamed(AppRoutes.ASSOC_TRAININGS),

@@ -822,12 +822,10 @@ class _BookSpacePageState extends State<BookSpacePage> {
     controller.hasChosenEndTime.value = false;
     // Les contrôleurs de carte ont été supprimés du BookingController.
 
-    // Détermination des dates par défaut (J+1h à J+3h).
-    controller.updateDates(
-      DateTime.now().add(const Duration(hours: 1)),
-      DateTime.now().add(const Duration(hours: 3)),
-      space.hourlyPrice,
-      space.monthlyPrice,
+    // Détermination des dates par défaut.
+    controller.resetToDefaults(
+      hourlyPrice: space.hourlyPrice,
+      monthlyPrice: space.monthlyPrice,
     );
 
     // Charger l'emploi du temps initial
@@ -1165,7 +1163,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
               Expanded(
                 child: _buildTimeDropdown(
                   "Heure de début",
-                  startTimeStr,
+                  controller.hasChosenStartTime.value ? startTimeStr : "",
                   isAllDay,
                   (String? newValue) {
                     if (newValue != null) {
@@ -1192,7 +1190,7 @@ class _BookSpacePageState extends State<BookSpacePage> {
               Expanded(
                 child: _buildTimeDropdown(
                   "Heure de fin",
-                  endTimeStr,
+                  controller.hasChosenEndTime.value ? endTimeStr : "",
                   isAllDay,
                   (String? newValue) {
                     if (newValue != null) {

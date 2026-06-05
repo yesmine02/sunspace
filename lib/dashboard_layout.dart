@@ -19,14 +19,17 @@ class DashboardLayout extends StatelessWidget {
     // 🔹 Détermine si on est sur un grand écran (Desktop / Tablette)
     final bool isDesktop = MediaQuery.of(context).size.width >= 1024;
     final AuthController authController = Get.find<AuthController>();
+
     // Masque l'onglet "Mes" pour le rôle Admin et le rôle Space Manager
-    final bool shouldHideMes = authController.isAdmin || authController.isSpaceManager;
+    final bool shouldHideMes =
+        authController.isAdmin || authController.isSpaceManager;
 
     /// 🔹 Détermine quel onglet de la BottomNavigationBar doit être actif
     int currentIndex = 0;
     String currentRoute = Get.currentRoute;
 
     if (shouldHideMes) {
+      // Si l'onglet "Mes" doit être masqué, on n'a que 3 onglets (Dashboard, Réserver, Menu)
       if (currentRoute == AppRoutes.DASHBOARD) {
         currentIndex = 0;
       } else if (currentRoute == AppRoutes.BOOK_SPACE) {
@@ -35,6 +38,7 @@ class DashboardLayout extends StatelessWidget {
         currentIndex = 2; // Menu Drawer
       }
     } else {
+      // Si l'onglet "Mes" est visible, on a 4 onglets (Dashboard, Réserver, Mes, Menu)
       if (currentRoute == AppRoutes.DASHBOARD) {
         currentIndex = 0;
       } else if (currentRoute == AppRoutes.BOOK_SPACE) {
@@ -75,10 +79,13 @@ class DashboardLayout extends StatelessWidget {
                       Get.offAllNamed(AppRoutes.DASHBOARD);
                       break;
                     case 1:
-                      Get.offAllNamed(AppRoutes.BOOK_SPACE);
+                      Get.offAllNamed(
+                        AppRoutes.BOOK_SPACE,
+                      ); // Redirige vers la page de réservation d'espace
                       break;
                     case 2:
-                      _scaffoldKey.currentState?.openDrawer();
+                      _scaffoldKey.currentState
+                          ?.openDrawer(); // Ouvre le menu Drawer
                       break;
                   }
                 } else {
@@ -108,6 +115,7 @@ class DashboardLayout extends StatelessWidget {
               selectedLabelStyle: const TextStyle(fontSize: 12),
               unselectedLabelStyle: const TextStyle(fontSize: 12),
               items: [
+                // Affiche ou masque l'onglet "Mes" en fonction du rôle de l'utilisateur
                 const BottomNavigationBarItem(
                   icon: Icon(Icons.grid_view_rounded),
                   label: 'Tableau',
@@ -116,7 +124,7 @@ class DashboardLayout extends StatelessWidget {
                   icon: Icon(Icons.location_on_outlined),
                   label: 'Réserver',
                 ),
-                if (!shouldHideMes)
+                if (!shouldHideMes) // Masque l'onglet "Mes" pour les rôles Admin et Space Manager
                   const BottomNavigationBarItem(
                     icon: Icon(Icons.event_available_outlined),
                     label: 'Mes',

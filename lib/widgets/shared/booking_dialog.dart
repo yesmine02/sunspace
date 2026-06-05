@@ -27,11 +27,10 @@ class BookingDialog extends StatelessWidget {
 
     // Initialisation des données par défaut
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final now = DateTime.now();
-      final start = DateTime(now.year, now.month, now.day, now.hour + 1, 0);
-      final end = DateTime(now.year, now.month, now.day, now.hour + 3, 0);
-
-      controller.updateDates(start, end, space.hourlyPrice, space.monthlyPrice);
+      controller.resetToDefaults(
+        hourlyPrice: space.hourlyPrice,
+        monthlyPrice: space.monthlyPrice,
+      );
       controller.numberOfPeople.value = initialParticipants ?? 1;
       controller.hasChosenStartTime.value = false;
       controller.hasChosenEndTime.value = false;
@@ -447,7 +446,7 @@ class BookingDialog extends StatelessWidget {
                 child: _buildTimeDropdown(
                   controller,
                   "Début",
-                  startTimeStr,
+                  controller.hasChosenStartTime.value ? startTimeStr : "",
                   isAllDay,
                   true,
                 ),
@@ -457,7 +456,7 @@ class BookingDialog extends StatelessWidget {
                 child: _buildTimeDropdown(
                   controller,
                   "Fin",
-                  endTimeStr,
+                  controller.hasChosenEndTime.value ? endTimeStr : "",
                   isAllDay,
                   false,
                 ),

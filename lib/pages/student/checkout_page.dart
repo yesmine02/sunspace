@@ -363,10 +363,11 @@ class CheckoutPage extends StatelessWidget {
                         context,
                         controller,
                         "Heure de début",
-                        startTimeStr,
+                        controller.hasChosenStartTime.value ? startTimeStr : "",
                         controller.isAllDay.value || controller.isMonthly.value,
                         (String? newValue) {
                           if (newValue != null) {
+                            controller.hasChosenStartTime.value = true;
                             final parts = newValue.split(':');
                             final newStart = DateTime(start.year, start.month, start.day, int.parse(parts[0]), int.parse(parts[1]));
                             controller.updateDates(newStart, end, space.hourlyPrice, space.monthlyPrice);
@@ -380,10 +381,11 @@ class CheckoutPage extends StatelessWidget {
                         context,
                         controller,
                         "Heure de fin",
-                        endTimeStr,
+                        controller.hasChosenEndTime.value ? endTimeStr : "",
                         controller.isAllDay.value || controller.isMonthly.value,
                         (String? newValue) {
                           if (newValue != null) {
+                            controller.hasChosenEndTime.value = true;
                             final parts = newValue.split(':');
                             final newEnd = DateTime(end.year, end.month, end.day, int.parse(parts[0]), int.parse(parts[1]));
                             controller.updateDates(start, newEnd, space.hourlyPrice, space.monthlyPrice);
@@ -661,7 +663,16 @@ class CheckoutPage extends StatelessWidget {
           const Text("DÉTAILS FACTURATION", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1.0)),
           const SizedBox(height: 32),
           Obx(() => _buildBillingItem("Offre :", controller.isMonthly.value ? "Abonnement Mensuel" : "Accès Ponctuel")),
-          Obx(() => _buildBillingItem("Durée :", controller.isMonthly.value ? "30 Jours" : "${controller.endDateTime.value.difference(controller.startDateTime.value).inHours} Heures")),
+          Obx(() {
+            if (controller.isMonthly.value) {
+              return _buildBillingItem("Durée :", "30 Jours");
+            } else {
+              final diff = controller.endDateTime.value.difference(controller.startDateTime.value);
+              final hours = diff.inMinutes / 60.0;
+              final hoursStr = hours == hours.toInt() ? '${hours.toInt()}h' : '${hours.toStringAsFixed(1)}h';
+              return _buildBillingItem("Durée :", hoursStr);
+            }
+          }),
           Obx(() => _buildBillingItem("Début :", DateFormat('dd MMMM yyyy', 'fr').format(controller.startDateTime.value))),
           const SizedBox(height: 24),
           const Divider(color: Color(0xFFE2E8F0)),
@@ -782,10 +793,11 @@ class CheckoutPage extends StatelessWidget {
                         context,
                         controller,
                         "Heure de début",
-                        startTimeStr,
+                        controller.hasChosenStartTime.value ? startTimeStr : "",
                         false,
                         (String? newValue) {
                           if (newValue != null) {
+                            controller.hasChosenStartTime.value = true;
                             final parts = newValue.split(':');
                             final newStart = DateTime(start.year, start.month, start.day, int.parse(parts[0]), int.parse(parts[1]));
                             controller.updateDates(newStart, end, space.hourlyPrice, space.monthlyPrice);
@@ -799,10 +811,11 @@ class CheckoutPage extends StatelessWidget {
                         context,
                         controller,
                         "Heure de fin",
-                        endTimeStr,
+                        controller.hasChosenEndTime.value ? endTimeStr : "",
                         false,
                         (String? newValue) {
                           if (newValue != null) {
+                            controller.hasChosenEndTime.value = true;
                             final parts = newValue.split(':');
                             final newEnd = DateTime(end.year, end.month, end.day, int.parse(parts[0]), int.parse(parts[1]));
                             controller.updateDates(start, newEnd, space.hourlyPrice, space.monthlyPrice);

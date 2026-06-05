@@ -531,12 +531,10 @@ class _BookSpacePageState extends State<BookSpacePage> {
     controller.cardCvcController.clear();
     controller.numberOfPeople.value = 1; // Reset à 1
     
-    // Détermination des dates par défaut (J+1h à J+3h).
-    controller.updateDates(
-      DateTime.now().add(const Duration(hours: 1)), 
-      DateTime.now().add(const Duration(hours: 3)), 
-      space.hourlyPrice,
-      space.monthlyPrice
+    // Détermination des dates par défaut.
+    controller.resetToDefaults(
+      hourlyPrice: space.hourlyPrice,
+      monthlyPrice: space.monthlyPrice,
     );
 
     final AuthController authController = Get.find<AuthController>();

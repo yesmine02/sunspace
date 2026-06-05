@@ -93,12 +93,41 @@ class BookingController extends GetxController {
     DateTime.now().add(const Duration(hours: 2)),
   ).obs;
 
-  final Rx<DateTime> startDateTime = DateTime.now()
-      .add(const Duration(hours: 1))
-      .obs;
-  final Rx<DateTime> endDateTime = DateTime.now()
-      .add(const Duration(hours: 2))
-      .obs;
+  static DateTime _cleanDateTime(DateTime dt, {int addHours = 0}) {
+    final newDt = dt.add(Duration(hours: addHours));
+    int minutes = newDt.minute;
+    int hour = newDt.hour;
+    if (minutes < 15) {
+      minutes = 0;
+    } else if (minutes < 45) {
+      minutes = 30;
+    } else {
+      minutes = 0;
+      hour += 1;
+    }
+    return DateTime(newDt.year, newDt.month, newDt.day, hour, minutes, 0, 0, 0);
+  }
+
+  static DateTime _defaultStart() {
+    final now = DateTime.now();
+    if (now.hour >= 17 || now.hour < 9) {
+      return DateTime(now.year, now.month, now.day, 9, 0);
+    } else {
+      return _cleanDateTime(now, addHours: 1);
+    }
+  }
+
+  static DateTime _defaultEnd() {
+    final now = DateTime.now();
+    if (now.hour >= 17 || now.hour < 9) {
+      return DateTime(now.year, now.month, now.day, 11, 0);
+    } else {
+      return _cleanDateTime(now, addHours: 3);
+    }
+  }
+
+  final Rx<DateTime> startDateTime = _defaultStart().obs;
+  final Rx<DateTime> endDateTime = _defaultEnd().obs;
   final RxDouble totalAmount = 0.0.obs;
 
   // Suivi de la sélection explicite pour éviter les soumissions par défaut ("Choisir")
@@ -267,9 +296,24 @@ class BookingController extends GetxController {
     double hourlyPrice,
     double monthlyPrice,
   ) {
-    startDateTime.value = start;
-    endDateTime.value = end;
+    final cleanStart = _cleanDateTime(start);
+    final cleanEndRaw = DateTime(
+      cleanStart.year,
+      cleanStart.month,
+      cleanStart.day,
+      end.hour,
+      end.minute,
+    );
+    startDateTime.value = cleanStart;
+    endDateTime.value = _cleanDateTime(cleanEndRaw);
     _calculateTotal(hourlyPrice: hourlyPrice, monthlyPrice: monthlyPrice);
+  }
+
+  void resetToDefaults({
+    required double hourlyPrice,
+    required double monthlyPrice,
+  }) {
+    updateDates(_defaultStart(), _defaultEnd(), hourlyPrice, monthlyPrice);
   }
 
   /// Alias public pour rester compatible avec checkout_page.dart
@@ -628,7 +672,7 @@ class BookingController extends GetxController {
             },
             body: jsonEncode(body),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
 
       debugPrint(
         '[BookingController] Response ${response.statusCode}: ${response.body}',
@@ -712,7 +756,7 @@ class BookingController extends GetxController {
               'Accept': 'application/json',
             },
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
 
       debugPrint('[BookingController] Response Status: ${response.statusCode}');
 
@@ -772,7 +816,7 @@ class BookingController extends GetxController {
               'Accept': 'application/json',
             },
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
 
       debugPrint(
         '[BookingController] fetchMine Status: ${response.statusCode}',

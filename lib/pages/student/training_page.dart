@@ -19,7 +19,8 @@ class StudentTrainingPage extends StatefulWidget {
   State<StudentTrainingPage> createState() => _StudentTrainingPageState();
 }
 
-class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTickerProviderStateMixin {
+class _StudentTrainingPageState extends State<StudentTrainingPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final SessionsController _sessionsController = Get.put(SessionsController());
   final CoursesController _coursesController = Get.put(CoursesController());
@@ -49,7 +50,10 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: isVerySmall ? 12 : (isMobile ? 20 : 40), vertical: isMobile ? 20 : 40),
+          padding: EdgeInsets.symmetric(
+            horizontal: isVerySmall ? 12 : (isMobile ? 20 : 40),
+            vertical: isMobile ? 20 : 40,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -67,7 +71,7 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
                   ],
                 ),
               ],
-              
+
               const SizedBox(height: 32),
 
               // 2. SEARCH BAR
@@ -80,10 +84,14 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
 
               // 4. CONTENT
               Obx(() {
-                if (_sessionsController.isLoading.value || _coursesController.isLoading.value) {
-                  return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
+                if (_sessionsController.isLoading.value ||
+                    _coursesController.isLoading.value) {
+                  return const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
                 }
-                
+
                 return _buildSessionsList(
                   isAvailableOnly: _tabController.index == 0,
                   isMobile: isMobile,
@@ -102,14 +110,18 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
       children: [
         Row(
           children: [
-            const Icon(Icons.school_rounded, color: Color(0xFF2563EB), size: 32),
+            const Icon(
+              Icons.school_rounded,
+              color: Color(0xFF2563EB),
+              size: 32,
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 "Mes Sessions",
                 style: TextStyle(
-                  fontSize: isMobile ? 28 : 36, 
-                  fontWeight: FontWeight.w900, 
+                  fontSize: isMobile ? 28 : 36,
+                  fontWeight: FontWeight.w900,
                   color: const Color(0xFF0F172A),
                   letterSpacing: -0.5,
                 ),
@@ -121,8 +133,8 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
         const Text(
           "Retrouvez ici les sessions de formation liées aux cours que vous suivez.",
           style: TextStyle(
-            fontSize: 15, 
-            color: Color(0xFF64748B), 
+            fontSize: 15,
+            color: Color(0xFF64748B),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -130,32 +142,62 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
     );
   }
 
+  // Statistiques en haut : nombre de sessions disponibles à rejoindre vs nombre de sessions déjà inscrites
   Widget _buildStats(bool isMobile) {
     return Obx(() {
       final userId = _authController.currentUser.value?['id'];
-      
+
       // Filtrer les sessions appartenant aux cours de l'étudiant
       final enrolledSessions = _sessionsController.sessions.where((s) {
         if (s.courseId == null) return false;
-        return _coursesController.enrolledCourseIds.contains(int.tryParse(s.courseId!)) || 
-               _coursesController.enrolledCourseDocumentIds.contains(s.courseId);
+        // ✅ FILTRE STRICT : Uniquement les sessions des cours auxquels l'étudiant est DÉJÀ inscrit
+        return _coursesController.enrolledCourseIds.contains(
+              int.tryParse(s.courseId!),
+            ) ||
+            _coursesController.enrolledCourseDocumentIds.contains(s.courseId);
       }).toList();
 
-      final availableCount = enrolledSessions.where((s) => userId != null && !s.attendeeIds.contains(userId)).length;
-      final myInscriptionsCount = enrolledSessions.where((s) => userId != null && s.attendeeIds.contains(userId)).length;
-      
+      final availableCount = enrolledSessions
+          .where((s) => userId != null && !s.attendeeIds.contains(userId))
+          .length;
+      final myInscriptionsCount = enrolledSessions
+          .where((s) => userId != null && s.attendeeIds.contains(userId))
+          .length;
+
       return Row(
-        mainAxisAlignment: isMobile ? MainAxisAlignment.start : MainAxisAlignment.end,
+        mainAxisAlignment: isMobile
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.end,
         children: [
-          _buildStatBox(myInscriptionsCount.toString(), "Mes sessions", const Color(0xFFEFF6FF), const Color(0xFF2563EB), isMobile),
+          _buildStatBox(
+            myInscriptionsCount.toString(),
+            "Mes sessions",
+            const Color(0xFFEFF6FF),
+            const Color(0xFF2563EB),
+            isMobile,
+          ),
           const SizedBox(width: 12),
-          _buildStatBox(availableCount.toString(), "À rejoindre", Colors.white, const Color(0xFF1E293B), isMobile, hasBorder: true),
+          _buildStatBox(
+            availableCount.toString(),
+            "À rejoindre",
+            Colors.white,
+            const Color(0xFF1E293B),
+            isMobile,
+            hasBorder: true,
+          ),
         ],
       );
     });
   }
 
-  Widget _buildStatBox(String value, String label, Color bgColor, Color textColor, bool isMobile, {bool hasBorder = false}) {
+  Widget _buildStatBox(
+    String value,
+    String label,
+    Color bgColor,
+    Color textColor,
+    bool isMobile, {
+    bool hasBorder = false,
+  }) {
     return Container(
       width: isMobile ? 105 : 120,
       padding: EdgeInsets.symmetric(vertical: isMobile ? 12 : 20),
@@ -166,9 +208,23 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
       ),
       child: Column(
         children: [
-          Text(value, style: TextStyle(fontSize: isMobile ? 20 : 24, fontWeight: FontWeight.w900, color: textColor)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isMobile ? 20 : 24,
+              fontWeight: FontWeight.w900,
+              color: textColor,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w500, color: const Color(0xFF64748B))),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isMobile ? 10 : 11,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
+            ),
+          ),
         ],
       ),
     );
@@ -181,7 +237,11 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: TextField(
@@ -226,7 +286,14 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
         decoration: BoxDecoration(
           color: isActive ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: isActive ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : null,
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                  ),
+                ]
+              : null,
         ),
         child: Center(
           child: Text(
@@ -234,7 +301,9 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
             style: TextStyle(
               fontSize: isMobile ? 13 : 15,
               fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              color: isActive ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+              color: isActive
+                  ? const Color(0xFF0F172A)
+                  : const Color(0xFF64748B),
             ),
           ),
         ),
@@ -242,31 +311,40 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
     );
   }
 
-  Widget _buildSessionsList({required bool isAvailableOnly, required bool isMobile}) {
+  Widget _buildSessionsList({
+    required bool isAvailableOnly,
+    required bool isMobile,
+  }) {
     return Obx(() {
       final userId = _authController.currentUser.value?['id'];
-      
+
       // ✅ FILTRE STRICT : Uniquement les sessions des cours auxquels l'étudiant est DÉJÀ inscrit
       final studentSessions = _sessionsController.sessions.where((s) {
         if (s.courseId == null) return false; // Session sans cours => exclue
-        return _coursesController.enrolledCourseIds.contains(int.tryParse(s.courseId!)) || 
-               _coursesController.enrolledCourseDocumentIds.contains(s.courseId);
+        return _coursesController.enrolledCourseIds.contains(
+              int.tryParse(s.courseId!),
+            ) ||
+            _coursesController.enrolledCourseDocumentIds.contains(s.courseId);
       }).toList();
 
       // Filtrer par recherche textuelle
       final searchFiltered = studentSessions.where((s) {
         final query = _sessionsController.searchQuery.value.toLowerCase();
         if (query.isEmpty) return true;
-        return s.title.toLowerCase().contains(query) || 
-               (s.courseName?.toLowerCase().contains(query) ?? false);
+        return s.title.toLowerCase().contains(query) ||
+            (s.courseName?.toLowerCase().contains(query) ?? false);
       }).toList();
 
       // Séparer selon l'onglet actif :
       // Onglet 0 ("À rejoindre") = sessions du cours inscrit, mais pas encore rejointes
       // Onglet 1 ("Inscrit")     = sessions du cours inscrit auxquelles l'étudiant participe
-      final displaySessions = isAvailableOnly 
-          ? searchFiltered.where((s) => userId != null && !s.attendeeIds.contains(userId)).toList()
-          : searchFiltered.where((s) => userId != null && s.attendeeIds.contains(userId)).toList();
+      final displaySessions = isAvailableOnly
+          ? searchFiltered
+                .where((s) => userId != null && !s.attendeeIds.contains(userId))
+                .toList()
+          : searchFiltered
+                .where((s) => userId != null && s.attendeeIds.contains(userId))
+                .toList();
 
       if (displaySessions.isEmpty) {
         return _buildEmptyState(isAvailableOnly, isMobile);
@@ -277,7 +355,11 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
         physics: const NeverScrollableScrollPhysics(),
         itemCount: displaySessions.length,
         separatorBuilder: (context, index) => const SizedBox(height: 20),
-        itemBuilder: (context, index) => _buildSessionCard(displaySessions[index], showUnenroll: !isAvailableOnly, isMobile: isMobile),
+        itemBuilder: (context, index) => _buildSessionCard(
+          displaySessions[index],
+          showUnenroll: !isAvailableOnly,
+          isMobile: isMobile,
+        ),
       );
     });
   }
@@ -290,8 +372,14 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
           Icon(Icons.event_note_rounded, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 24),
           Text(
-            isAvailableOnly ? "Aucune nouvelle session à rejoindre" : "Vous n'êtes inscrit à aucune session",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+            isAvailableOnly
+                ? "Aucune nouvelle session à rejoindre"
+                : "Vous n'êtes inscrit à aucune session",
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF64748B),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
@@ -304,9 +392,13 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
     );
   }
 
-  Widget _buildSessionCard(TrainingSession session, {required bool showUnenroll, required bool isMobile}) {
+  Widget _buildSessionCard(
+    TrainingSession session, {
+    required bool showUnenroll,
+    required bool isMobile,
+  }) {
     final bool isOnline = session.type == SessionType.enLigne;
-    
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(isMobile ? 20 : 32),
@@ -315,7 +407,11 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 5)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
         ],
       ),
       child: Column(
@@ -330,26 +426,41 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
                   children: [
                     Text(
                       session.title,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       session.courseName ?? "Cours Inconnu",
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6)),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF3B82F6),
+                      ),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
-                  color: isOnline ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
+                  color: isOnline
+                      ? const Color(0xFFEFF6FF)
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   session.typeLabel,
                   style: TextStyle(
-                    color: isOnline ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                    color: isOnline
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFF64748B),
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -362,9 +473,21 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
             spacing: 24,
             runSpacing: 12,
             children: [
-              _buildInfoItem(Icons.calendar_today_rounded, DateFormat('d MMM yyyy', 'fr_FR').format(session.startDate ?? DateTime.now())),
-              _buildInfoItem(Icons.access_time_rounded, DateFormat('HH:mm').format(session.startDate ?? DateTime.now())),
-              _buildInfoItem(Icons.people_alt_outlined, "${session.currentParticipants}/${session.maxParticipants}"),
+              _buildInfoItem(
+                Icons.calendar_today_rounded,
+                DateFormat(
+                  'd MMM yyyy',
+                  'fr_FR',
+                ).format(session.startDate ?? DateTime.now()),
+              ),
+              _buildInfoItem(
+                Icons.access_time_rounded,
+                DateFormat('HH:mm').format(session.startDate ?? DateTime.now()),
+              ),
+              _buildInfoItem(
+                Icons.people_alt_outlined,
+                "${session.currentParticipants}/${session.maxParticipants}",
+              ),
               if (session.instructorName != null)
                 _buildInfoItem(Icons.person_rounded, session.instructorName!),
             ],
@@ -372,33 +495,62 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
           const SizedBox(height: 24),
           if (showUnenroll && isOnline && session.meetingLink != null) ...[
             TextButton.icon(
-              onPressed: session.isExpired ? null : () async {
-                if (session.meetingLink != null) {
-                  final Uri url = Uri.parse(session.meetingLink!);
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  } else {
-                    Get.snackbar("Erreur", "Impossible d'ouvrir le lien : ${session.meetingLink}");
-                  }
-                }
-              },
+              onPressed: session.isExpired
+                  ? null
+                  : () async {
+                      if (session.meetingLink != null) {
+                        final Uri url = Uri.parse(session.meetingLink!);
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        } else {
+                          Get.snackbar(
+                            "Erreur",
+                            "Impossible d'ouvrir le lien : ${session.meetingLink}",
+                          );
+                        }
+                      }
+                    },
               icon: const Icon(Icons.link, size: 18),
-              label: Text(session.isExpired ? "Lien expiré" : "Rejoindre la réunion"),
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF2563EB)),
+              label: Text(
+                session.isExpired ? "Lien expiré" : "Rejoindre la réunion",
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF2563EB),
+              ),
             ),
           ],
           const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerRight,
-            child: session.isExpired 
-              ? const Text("SESSION TERMINÉE", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12))
-              : (showUnenroll 
-                  ? _buildActionButton("Se désinscrire", const Color(0xFFEF4444), () => _showUnenrollmentDialog(session))
-                  : _buildActionButton(
-                      session.currentParticipants >= session.maxParticipants ? "Complet" : "Participer", 
-                      session.currentParticipants >= session.maxParticipants ? Colors.grey.shade400 : const Color(0xFF2563EB), 
-                      session.currentParticipants >= session.maxParticipants ? null : () => _showEnrollmentDialog(session)
-                    )),
+            child: session.isExpired
+                ? const Text(
+                    "SESSION TERMINÉE",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  )
+                : (showUnenroll
+                      ? _buildActionButton(
+                          "Se désinscrire",
+                          const Color(0xFFEF4444),
+                          () => _showUnenrollmentDialog(session),
+                        )
+                      : _buildActionButton(
+                          session.currentParticipants >= session.maxParticipants
+                              ? "Complet"
+                              : "Participer",
+                          session.currentParticipants >= session.maxParticipants
+                              ? Colors.grey.shade400
+                              : const Color(0xFF2563EB),
+                          session.currentParticipants >= session.maxParticipants
+                              ? null
+                              : () => _showEnrollmentDialog(session),
+                        )),
           ),
         ],
       ),
@@ -411,7 +563,14 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
       children: [
         Icon(icon, size: 16, color: const Color(0xFF64748B)),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
       ],
     );
   }
@@ -428,11 +587,11 @@ class _StudentTrainingPageState extends State<StudentTrainingPage> with SingleTi
         disabledBackgroundColor: Colors.grey.shade200,
       ),
       child: Text(
-        label, 
+        label,
         style: TextStyle(
           fontWeight: FontWeight.bold,
           color: onTap == null ? Colors.grey : Colors.white,
-        )
+        ),
       ),
     );
   }

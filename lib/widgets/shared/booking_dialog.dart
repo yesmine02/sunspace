@@ -34,11 +34,6 @@ class BookingDialog extends StatelessWidget {
       controller.numberOfPeople.value = initialParticipants ?? 1;
       controller.hasChosenStartTime.value = false;
       controller.hasChosenEndTime.value = false;
-
-      controller.fetchSpaceReservationsOnDay(
-        space.documentId ?? space.id.toString(),
-        controller.startDateTime.value,
-      );
     });
 
     return Dialog(
@@ -88,10 +83,6 @@ class BookingDialog extends StatelessWidget {
               _buildDateTimePicker(context, controller),
               const SizedBox(height: 16),
 
-              // Nouvel Emploi du temps (Schedule)
-              _buildScheduleView(controller),
-              const SizedBox(height: 24),
-
               // 1b. Nombre de personnes
               const Text(
                 "Nombre de participants",
@@ -132,19 +123,18 @@ class BookingDialog extends StatelessWidget {
                           .inMinutes /
                       60.0;
                   final displayHours = hours < 1.0 ? 1.0 : hours;
-                  final int participants = controller.numberOfPeople.value;
 
                   return Column(
                     children: [
                       if (controller.isMonthly.value)
                         _buildPriceRow(
-                          "Espace (${space.monthlyPrice.toInt()} TND/mois x $participants pers)",
-                          "${(space.monthlyPrice * participants).toInt()} TND",
+                          "Prix de l'espace",
+                          "${space.monthlyPrice.toInt()} TND/mois",
                         )
                       else
                         _buildPriceRow(
-                          "Espace (${space.hourlyPrice.toInt()} TND/h x ${displayHours.toStringAsFixed(displayHours == displayHours.toInt() ? 0 : 1)}h x $participants pers)",
-                          "${(displayHours * space.hourlyPrice * participants).toInt()} TND",
+                          "Espace (${space.hourlyPrice.toInt()} TND/h x ${displayHours.toStringAsFixed(displayHours == displayHours.toInt() ? 0 : 1)}h)",
+                          "${(displayHours * space.hourlyPrice).toInt()} TND",
                         ),
 
                       if (controller.selectedServices.isNotEmpty)
@@ -172,138 +162,134 @@ class BookingDialog extends StatelessWidget {
 
               // Bouton final
               Obx(() {
-                return SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: controller.isLoading.value
-                        ? null
-                        : () async {
-                            // Vérification capacité max
-                            if (controller.numberOfPeople.value > space.capacity) {
-                              Get.dialog(
-                                AlertDialog(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                // 1. Vérification Capacité Max
+                final bool capacityExceeded =
+                    controller.numberOfPeople.value > space.capacity;
+
+                // 2. Vérification Chevauchements (Places restantes sur le créneau)
+                int occupied = 0;
+                final start = controller.startDateTime.value;
+                final end = controller.endDateTime.value;
+
+                for (var res in controller.spaceReservationsOnDay) {
+                  if (start.isBefore(res.endDateTime) &&
+                      end.isAfter(res.startDateTime)) {
+                    occupied += res.numberOfPeople;
+                  }
+                }
+
+                final int remaining = space.capacity - occupied;
+                final bool slotFull =
+                    controller.numberOfPeople.value > remaining;
+
+                return Column(
+                  children: [
+                    if (capacityExceeded || slotFull)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.red.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red.shade700,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  capacityExceeded
+                                      ? "Capacité max dépassée (${space.capacity} places)."
+                                      : "Salle complète sur ce créneau (Il reste $remaining places).",
+                                  style: TextStyle(
+                                    color: Colors.red.shade700,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
                                   ),
-                                  title: Row(
-                                    children: [
-                                      Icon(Icons.people_alt_rounded, color: Colors.red.shade600),
-                                      const SizedBox(width: 10),
-                                      const Text("Capacité dépassée"),
-                                    ],
-                                  ),
-                                  content: Text(
-                                    "Le nombre de participants dépasse la capacité maximale de la salle (${space.capacity} places).",
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Get.back(),
-                                      child: const Text(
-                                        "D'accord",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blue,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                 ),
-                              );
-                              return;
-                            }
-
-                            // Vérification chevauchement / places restantes
-                            int occupied = 0;
-                            final start = controller.startDateTime.value;
-                            final end = controller.endDateTime.value;
-                            for (var res in controller.spaceReservationsOnDay) {
-                              if (start.isBefore(res.endDateTime) &&
-                                  end.isAfter(res.startDateTime)) {
-                                occupied += res.numberOfPeople;
-                              }
-                            }
-                            final int remaining = space.capacity - occupied;
-                            if (controller.numberOfPeople.value > remaining) {
-                              Get.dialog(
-                                AlertDialog(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  title: Row(
-                                    children: [
-                                      Icon(Icons.event_busy_rounded, color: Colors.orange.shade700),
-                                      const SizedBox(width: 10),
-                                      const Text("Créneau complet"),
-                                    ],
-                                  ),
-                                  content: Text(
-                                    "La salle est complète sur ce créneau. Il reste $remaining place(s) disponible(s).",
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Get.back(),
-                                      child: const Text(
-                                        "D'accord",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blue,
-                                        ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed:
+                            (controller.isLoading.value ||
+                                capacityExceeded ||
+                                slotFull)
+                            ? null
+                            : () async {
+                                // Validation des champs de paiement si affichés
+                                if (showPayment && !isStudent) {
+                                  if (controller.cardNameController.text
+                                          .trim()
+                                          .isEmpty ||
+                                      controller.cardNumberController.text
+                                          .trim()
+                                          .isEmpty ||
+                                      controller.cardExpiryController.text
+                                          .trim()
+                                          .isEmpty ||
+                                      controller.cardCvcController.text
+                                          .trim()
+                                          .isEmpty) {
+                                    Get.snackbar(
+                                      "Champs obligatoires",
+                                      "Veuillez remplir toutes les informations de paiement par carte.",
+                                      backgroundColor: Colors.red.shade700,
+                                      colorText: Colors.white,
+                                      snackPosition: SnackPosition.TOP,
+                                      icon: const Icon(
+                                        Icons.warning_amber_rounded,
+                                        color: Colors.white,
                                       ),
-                                    ),
-                                  ],
+                                      margin: const EdgeInsets.all(12),
+                                    );
+                                    return;
+                                  }
+                                }
+
+                                bool success = await controller
+                                    .createReservation(space);
+                                if (success) {
+                                  Get.back(result: true);
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF007AFF),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          disabledBackgroundColor: Colors.grey.shade300,
+                        ),
+                        child: controller.isLoading.value
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
                                 ),
-                              );
-                              return;
-                            }
-
-                            // Validation des champs de paiement si affichés
-                            if (showPayment && !isStudent) {
-                              if (controller.cardNameController.text.trim().isEmpty ||
-                                  controller.cardNumberController.text.trim().isEmpty ||
-                                  controller.cardExpiryController.text.trim().isEmpty ||
-                                  controller.cardCvcController.text.trim().isEmpty) {
-                                Get.snackbar(
-                                  "Champs obligatoires",
-                                  "Veuillez remplir toutes les informations de paiement par carte.",
-                                  backgroundColor: Colors.red.shade700,
-                                  colorText: Colors.white,
-                                  snackPosition: SnackPosition.TOP,
-                                  icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
-                                  margin: const EdgeInsets.all(12),
-                                );
-                                return;
-                              }
-                            }
-
-                            bool success = await controller.createReservation(space);
-                            if (success) {
-                              Get.back(result: true);
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF007AFF),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                              )
+                            : const Text(
+                                "Réserver",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
-                    child: controller.isLoading.value
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            "Réserver",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
+                  ],
                 );
               }),
             ],
@@ -332,13 +318,8 @@ class BookingDialog extends StatelessWidget {
           const Spacer(),
           IconButton(
             onPressed: () {
-              if (controller.numberOfPeople.value > 1) {
+              if (controller.numberOfPeople.value > 1)
                 controller.numberOfPeople.value--;
-                controller.calculateTotal(
-                  hourlyPrice: space.hourlyPrice,
-                  monthlyPrice: space.monthlyPrice,
-                );
-              }
             },
             icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
           ),
@@ -350,13 +331,8 @@ class BookingDialog extends StatelessWidget {
           ),
           IconButton(
             onPressed: () {
-              if (controller.numberOfPeople.value < space.capacity) {
+              if (controller.numberOfPeople.value < space.capacity)
                 controller.numberOfPeople.value++;
-                controller.calculateTotal(
-                  hourlyPrice: space.hourlyPrice,
-                  monthlyPrice: space.monthlyPrice,
-                );
-              }
             },
             icon: const Icon(Icons.add_circle_outline, color: Colors.green),
           ),
@@ -469,10 +445,6 @@ class BookingDialog extends StatelessWidget {
                   newStart.add(end.difference(start)),
                   space.hourlyPrice,
                   space.monthlyPrice,
-                );
-                controller.fetchSpaceReservationsOnDay(
-                  space.documentId ?? space.id.toString(),
-                  newStart,
                 );
               }
             },
@@ -673,19 +645,16 @@ class BookingDialog extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: isTotal ? 16 : 14,
-                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-                color: isTotal
-                    ? const Color(0xFF1E3A8A)
-                    : const Color(0xFF1E40AF),
-              ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 16 : 14,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              color: isTotal
+                  ? const Color(0xFF1E3A8A)
+                  : const Color(0xFF1E40AF),
             ),
           ),
-          const SizedBox(width: 8),
           Text(
             value,
             style: TextStyle(
@@ -699,80 +668,5 @@ class BookingDialog extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  /// Affiche l'emploi du temps (réservations existantes) pour le jour sélectionné.
-  Widget _buildScheduleView(BookingController controller) {
-    return Obx(() {
-      final reservations = controller.spaceReservationsOnDay;
-      final dateLabel =
-          DateFormat(
-                "Aujourd'hui",
-                'fr',
-              ).format(controller.startDateTime.value) ==
-              DateFormat("Aujourd'hui", 'fr').format(DateTime.now())
-          ? "Aujourd'hui"
-          : DateFormat('dd/MM', 'fr').format(controller.startDateTime.value);
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Emploi du temps du $dateLabel",
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF334155),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade100),
-            ),
-            child: reservations.isEmpty
-                ? const Center(
-                    child: Text(
-                      "Aucune réservation pour cette date",
-                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                    ),
-                  )
-                : Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: reservations.map((res) {
-                      final start = DateFormat(
-                        'HH:mm',
-                      ).format(res.startDateTime);
-                      final end = DateFormat('HH:mm').format(res.endDateTime);
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDBEAFE),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFF93C5FD)),
-                        ),
-                        child: Text(
-                          "$start - $end",
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E40AF),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-          ),
-        ],
-      );
-    });
   }
 }

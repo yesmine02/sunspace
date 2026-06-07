@@ -134,6 +134,34 @@ class _AddAssocSessionDialogState extends State<AddAssocSessionDialog> {
       return;
     }
 
+    // Validation : session en ligne — même jour obligatoire
+    if (_selectedType == SessionType.enLigne) {
+      if (!isStart && _startDate != null) {
+        if (date.year != _startDate!.year ||
+            date.month != _startDate!.month ||
+            date.day != _startDate!.day) {
+          Get.snackbar(
+            "Jour invalide",
+            "Une session en ligne ne peut pas dépasser un seul jour. Veuillez choisir une heure de fin le même jour que le début.",
+            backgroundColor: Colors.orange[100],
+            colorText: Colors.orange[900],
+            duration: const Duration(seconds: 4),
+          );
+          return;
+        }
+      }
+      if (isStart && _endDate != null) {
+        // Si on change la date de début, forcer la date de fin au même jour
+        _endDate = DateTime(
+          dt.year,
+          dt.month,
+          dt.day,
+          _endDate!.hour,
+          _endDate!.minute,
+        );
+      }
+    }
+
     setState(() {
       if (isStart) {
         _startDate = dt;

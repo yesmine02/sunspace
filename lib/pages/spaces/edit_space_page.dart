@@ -29,7 +29,6 @@ class _EditSpacePageState extends State<EditSpacePage> {
   // Contrôleurs de texte initialisés avec les données actuelles
   late TextEditingController _nameController;
   late TextEditingController _locationController;
-  late TextEditingController _descriptionController;
   
   // Variables d'état pour les sélections
   late SpaceType _selectedType;
@@ -50,7 +49,6 @@ class _EditSpacePageState extends State<EditSpacePage> {
     // Remplissage des champs avec les valeurs existantes
     _nameController = TextEditingController(text: _originalSpace.name);
     _locationController = TextEditingController(text: _originalSpace.location);
-    _descriptionController = TextEditingController(text: _originalSpace.description);
     
     _selectedType = _originalSpace.type;
     _selectedStatus = _originalSpace.status;
@@ -65,7 +63,6 @@ class _EditSpacePageState extends State<EditSpacePage> {
   void dispose() {
     _nameController.dispose();
     _locationController.dispose();
-    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -288,15 +285,6 @@ class _EditSpacePageState extends State<EditSpacePage> {
                             ),
                           ],
                         ),
-                    const SizedBox(height: 32),
-
-                    // Description de l'espace
-                    _buildTextField(
-                      label: 'Description',
-                      controller: _descriptionController,
-                      hint: 'Description détaillée de l\'espace...',
-                      maxLines: 4,
-                    ),
                     const SizedBox(height: 40),
 
                     // Bouton de validation des modifications
@@ -488,7 +476,7 @@ class _EditSpacePageState extends State<EditSpacePage> {
   }
 
   // Procédure de soumission : création d'un objet Space mis à jour
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final updatedSpace = Space(
         id: _originalSpace.id,                  // On conserve l'ID original
@@ -503,11 +491,30 @@ class _EditSpacePageState extends State<EditSpacePage> {
         monthlyPrice: _monthlyPrice,
         reservations: _originalSpace.reservations,
         status: _selectedStatus,
-        description: _descriptionController.text,
+        createdAt: _originalSpace.createdAt,
+        updatedAt: _originalSpace.updatedAt,
       );
       
-      // Enregistrement des modifications via le contrôleur
-      spacesController.updateSpace(updatedSpace);
+      // Attendre que la mise à jour soit terminée sur le serveur
+      final success = await spacesController.updateSpace(updatedSpace);
+
+      if (success) {
+        // Retourner l'espace mis à jour à la page précédente (ViewSpacePage)
+        // pour qu'elle se rafraîchisse automatiquement
+        Get.back(result: updatedSpace);
+        
+        // Afficher le message de succès avec un léger délai pour éviter qu'il soit fermé par Get.back()
+        Future.delayed(const Duration(milliseconds: 300), () {
+          Get.snackbar(
+            'Succès',
+            'L\'espace "${updatedSpace.name}" a été mis à jour avec succès.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFFDCFCE7),
+            colorText: const Color(0xFF166534),
+            duration: const Duration(seconds: 3),
+          );
+        });
+      }
     }
   }
 }

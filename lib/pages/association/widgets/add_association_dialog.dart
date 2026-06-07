@@ -305,8 +305,10 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                               ? null
                               : _submit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2563EB),
-                            foregroundColor: Colors.white,
+                            backgroundColor: const Color(
+                              0xFF2563EB,
+                            ), // Couleur de fond
+                            foregroundColor: Colors.white, // Couleur du texte
                             padding: const EdgeInsets.symmetric(
                               horizontal: 24,
                               vertical: 16,
@@ -327,7 +329,9 @@ class _AddAssociationDialogState extends State<AddAssociationDialog> {
                                 )
                               : const Text(
                                   'Enregistrer',
-                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ), // Style du texte du bouton
                                 ),
                         ),
                       ),

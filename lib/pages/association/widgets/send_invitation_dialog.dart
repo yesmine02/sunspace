@@ -156,7 +156,9 @@ class _SendInvitationDialogState extends State<SendInvitationDialog> {
                       horizontal: 24,
                       vertical: 16,
                     ),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    side: const BorderSide(
+                      color: Color(0xFFE2E8F0),
+                    ), // Couleur de la bordure
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -164,7 +166,7 @@ class _SendInvitationDialogState extends State<SendInvitationDialog> {
                   child: const Text(
                     'Annuler',
                     style: TextStyle(
-                      color: Color(0xFF475569),
+                      color: Color(0xFF475569), // Couleur du texte
                       fontWeight: FontWeight.bold,
                     ),
                   ),

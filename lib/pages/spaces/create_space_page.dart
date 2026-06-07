@@ -26,7 +26,6 @@ class _CreateSpacePageState extends State<CreateSpacePage> {
   // Contrôleurs de texte pour les champs de saisie
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
   
   // Valeurs par défaut pour les types et statuts
   SpaceType _selectedType = SpaceType.espaceDeTravail;
@@ -259,15 +258,6 @@ class _CreateSpacePageState extends State<CreateSpacePage> {
                         ),
                     const SizedBox(height: 32),
 
-                    // Champ Description
-                    _buildTextField(
-                      label: 'Description',
-                      controller: _descriptionController,
-                      hint: 'Description détaillée de l\'espace...',
-                      maxLines: 4,
-                    ),
-                    const SizedBox(height: 40),
-
                     // Bouton final de création
                     SizedBox(
                       width: isMobile ? double.infinity : 180,
@@ -473,7 +463,8 @@ class _CreateSpacePageState extends State<CreateSpacePage> {
         monthlyPrice: _monthlyPrice,
         reservations: 0,
         status: _selectedStatus,
-        description: _descriptionController.text,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
       
       // Enregistrement via le contrôleur

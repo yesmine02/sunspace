@@ -8,19 +8,40 @@ import 'package:get/get.dart';
 import '../../data/models/space.dart';
 import '../../routing/app_routes.dart';
 
-class ViewSpacePage extends StatelessWidget {
+class ViewSpacePage extends StatefulWidget {
   const ViewSpacePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<ViewSpacePage> createState() => _ViewSpacePageState();
+}
+
+class _ViewSpacePageState extends State<ViewSpacePage> {
+  late Space _space;
+
+  @override
+  void initState() {
+    super.initState();
     // Récupération de l'objet Space passé via Get.toNamed
-    final Space space = Get.arguments as Space;
-    
+    _space = Get.arguments as Space;
+  }
+
+  // Ouvre la page de modification et met à jour l'espace si modifié
+  Future<void> _openEditPage() async {
+    final result = await Get.toNamed(AppRoutes.EDIT_SPACE, arguments: _space);
+    if (result != null && result is Space) {
+      setState(() {
+        _space = result; // Mise à jour automatique de l'affichage
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Détection du mode mobile
     final bool isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // Fond gris clair légèrement bleuté
+      backgroundColor: const Color(0xFFF1F5F9), // Fond gris clair légèrement bleué
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(
           horizontal: isMobile ? 16.0 : 40.0, 
@@ -30,18 +51,18 @@ class ViewSpacePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Section En-tête : Nom, badges et bouton modifier
-            _buildHeader(context, space, isMobile),
+            _buildHeader(context, _space, isMobile),
             const SizedBox(height: 32),
 
             isMobile 
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildGeneralInfo(space, isMobile),
+                    _buildGeneralInfo(_space, isMobile),
                     const SizedBox(height: 24),
-                    _buildPricingCard(space),
+                    _buildPricingCard(_space),
                     const SizedBox(height: 24),
-                    _buildSystemInfoCard(),
+                    _buildSystemInfoCard(_space),
                   ],
                 )
               : Row(
@@ -50,16 +71,16 @@ class ViewSpacePage extends StatelessWidget {
                     // Colonne de gauche : Informations générales et Description
                     Expanded(
                       flex: 2,
-                      child: _buildGeneralInfo(space, false),
+                      child: _buildGeneralInfo(_space, false),
                     ),
                     const SizedBox(width: 24),
                     // Colonne de droite : Tarification & Infos Système
                     Expanded(
                       child: Column(
                         children: [
-                          _buildPricingCard(space),
+                          _buildPricingCard(_space),
                           const SizedBox(height: 24),
-                          _buildSystemInfoCard(),
+                          _buildSystemInfoCard(_space),
                         ],
                       ),
                     ),
@@ -114,7 +135,7 @@ class ViewSpacePage extends StatelessWidget {
                 ),
                 // Bouton Modifier (icône seule sur mobile)
                 ElevatedButton(
-                  onPressed: () => Get.toNamed(AppRoutes.EDIT_SPACE, arguments: space),
+                  onPressed: () => _openEditPage(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
@@ -163,7 +184,7 @@ class ViewSpacePage extends StatelessWidget {
             ),
             // Bouton Modifier
             ElevatedButton.icon(
-              onPressed: () => Get.toNamed(AppRoutes.EDIT_SPACE, arguments: space),
+              onPressed: () => _openEditPage(),
               icon: const Icon(Icons.edit, size: 18),
               label: const Text('Modifier'),
               style: ElevatedButton.styleFrom(
@@ -293,18 +314,6 @@ class ViewSpacePage extends StatelessWidget {
                   ),
                 ],
               ),
-          const SizedBox(height: 32),
-          const Text(
-            'Description',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            space.description.isNotEmpty 
-                ? space.description 
-                : 'Aucune description disponible pour cet espace.',
-            style: TextStyle(color: Colors.grey[600], height: 1.5, fontSize: 15),
-          ),
         ],
       ),
     );
@@ -403,7 +412,12 @@ class ViewSpacePage extends StatelessWidget {
   }
 
   // Widget : Carte d'informations système (Dates de création/mise à jour)
-  Widget _buildSystemInfoCard() {
+  Widget _buildSystemInfoCard(Space space) {
+    String formatDate(DateTime? date) {
+      if (date == null) return 'Inconnue';
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -418,9 +432,9 @@ class ViewSpacePage extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
-          _buildSystemRow(Icons.calendar_today_outlined, 'Créé le 11/02/2026'),
+          _buildSystemRow(Icons.calendar_today_outlined, 'Créé le ${formatDate(space.createdAt)}'),
           const SizedBox(height: 16),
-          _buildSystemRow(Icons.history, 'Mis à jour le 11/02/2026'),
+          _buildSystemRow(Icons.history, 'Mis à jour le ${formatDate(space.updatedAt)}'),
         ],
       ),
     );

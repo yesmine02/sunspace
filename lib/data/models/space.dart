@@ -39,7 +39,8 @@ class Space {
   final double monthlyPrice;   // Tarif par mois (en TND)
   final int reservations;      // Nombre de réservations
   final SpaceStatus status;    // Statut actuel de l'espace
-  final String description;    // Description détaillée
+  final DateTime? createdAt;   // Date de création
+  final DateTime? updatedAt;   // Date de dernière mise à jour
 
   // Constructeur — les champs "required" sont obligatoires
   Space({
@@ -55,7 +56,8 @@ class Space {
     required this.monthlyPrice,
     this.reservations = 0,
     required this.status,
-    this.description = '',
+    this.createdAt,
+    this.updatedAt,
   });
 
   // Convertit le texte du type reçu du serveur Strapi en enum SpaceType
@@ -116,7 +118,9 @@ class Space {
       final res = resValue is int ? resValue : int.tryParse(resValue?.toString() ?? '0') ?? 0;
       
       final statusStr = (json['availability_status'] ?? json['status'])?.toString();
-      final desc = json['description']?.toString() ?? '';
+      
+      final createdAtStr = json['createdAt']?.toString();
+      final updatedAtStr = json['updatedAt']?.toString();
 
       return Space(
         id: id,
@@ -131,7 +135,8 @@ class Space {
         monthlyPrice: mPrice,
         reservations: res,
         status: _parseStatus(statusStr),
-        description: desc,
+        createdAt: createdAtStr != null ? DateTime.tryParse(createdAtStr) : null,
+        updatedAt: updatedAtStr != null ? DateTime.tryParse(updatedAtStr) : null,
       );
     } catch (e) {
       print("Erreur fatale dans Space.fromJson: $e sur le JSON: $json");
@@ -152,9 +157,9 @@ class Space {
       'hourly_rate': hourlyPrice,
       'daily_rate': dailyPrice,
       'monthly_rate': monthlyPrice,
-      'reservations': reservations,
       'availability_status': statusString,
-      'description': description,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
@@ -171,7 +176,6 @@ class Space {
         'daily_rate': dailyPrice,
         'monthly_rate': monthlyPrice,
         'availability_status': statusString,
-        'description': description,
       }
     };
   }

@@ -116,7 +116,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
 
                 // Description
                 _buildLabel('Description'),
-                _buildTextField(_descriptionController, 'Une brève description du cours...', maxLines: 3),
+                _buildTextField(_descriptionController, 'Une brève description du cours...', maxLines: 3, isRequired: false),
                 const SizedBox(height: 20),
 
                 // Niveau et Prix (Côte à côte sur Desktop, Colonne sur Mobile)
@@ -220,7 +220,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {int maxLines = 1, bool isTitle = false}) {
+  Widget _buildTextField(TextEditingController controller, String hint, {int maxLines = 1, bool isTitle = false, bool isRequired = true}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
@@ -234,8 +234,8 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       validator: (val) {
-        if (val == null || val.isEmpty) return 'Ce champ est requis';
-        if (isTitle && RegExp(r'[0-9]').hasMatch(val)) {
+        if (isRequired && (val == null || val.isEmpty)) return 'Ce champ est requis';
+        if (isTitle && val != null && RegExp(r'[0-9]').hasMatch(val)) {
           return 'Le titre ne doit pas contenir de chiffres';
         }
         return null;

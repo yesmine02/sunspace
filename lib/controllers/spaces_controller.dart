@@ -171,48 +171,47 @@ class SpacesController extends GetxController {
   // ══════════════════════════════════════════════
   // MODIFIER un espace sur le serveur (PUT)
   // ══════════════════════════════════════════════
-  Future<void> updateSpace(Space space) async {
+  Future<bool> updateSpace(Space space) async {
     try {
       String? token = await _getToken();
       if (token == null) {
         _showError('Token non disponible. Veuillez vous reconnecter.');
-        return;
+        return false;
       }
 
       // Strapi v5 utilise le documentId (pas l'id numérique) pour modifier un espace
       final String? docId = space.documentId;
       if (docId == null || docId.isEmpty) {
         _showError('Impossible de modifier : documentId manquant.');
-        return;
+        return false;
       }
 
       // Envoie les nouvelles données au serveur via PUT /api/spaces/{documentId}
+      print('PUT Request URL: $_baseUrl/$docId');
+      print('PUT Request Body: ${jsonEncode(space.toStrapiJson())}');
       final response = await http.put(
         Uri.parse('$_baseUrl/$docId'),
         headers: _headers(token),
         body: jsonEncode(space.toStrapiJson()),
       );
+      print('PUT Response Status: ${response.statusCode}');
+      print('PUT Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         // Recharge la liste depuis le serveur pour refléter les modifications
         await loadSpaces();
-        Get.back(); // Ferme la page d'édition
-        Get.snackbar(
-          'Succès',
-          'L\'espace "${space.name}" a été mis à jour avec succès.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Color(0xFFDCFCE7),
-          colorText: Color(0xFF166534),
-        );
+        return true;
       } else {
         print(
           'Erreur modification espace: ${response.statusCode} - ${response.body}',
         );
         _showError('Erreur lors de la modification (${response.statusCode})');
+        return false;
       }
     } catch (e) {
       print('Erreur réseau modification espace: $e');
       _showError('Impossible de se connecter au serveur.');
+      return false;
     }
   }
 
@@ -271,14 +270,15 @@ class SpacesController extends GetxController {
   // UTILITAIRES
   // ══════════════════════════════════════════════
 
-  // Affiche un message d'erreur rouge en bas de l'écran
+  // Affiche un message d'erreur rouge
   void _showError(String message) {
-    Get.snackbar(
-      'Erreur',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Color(0xFFFEE2E2),
-      colorText: Color(0xFF991B1B),
+    Get.defaultDialog(
+      title: 'Erreur',
+      middleText: message,
+      textConfirm: 'OK',
+      confirmTextColor: Colors.white,
+      buttonColor: Colors.red,
+      onConfirm: () => Get.back(),
     );
   }
 

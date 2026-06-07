@@ -1,5 +1,5 @@
 // ===============================================
-// Page de Gestion des Formations (CoursesPage)
+// Page de Gestion des cours (CoursesPage)
 // C'est ici que l'enseignant gère ses cours.
 // On y retrouve la liste, la recherche et les actions.
 // ===============================================

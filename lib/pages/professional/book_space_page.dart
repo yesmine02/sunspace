@@ -942,8 +942,12 @@ class _BookSpacePageState extends State<BookSpacePage> {
                             color: isSelected
                                 ? const Color(0xFF007AFF)
                                 : (isAvailable
-                                      ? const Color(0xFFDCFCE7)
-                                      : Colors.grey.shade100),
+                                      ? const Color(
+                                          0xFFDCFCE7,
+                                        ) // Vert clair pour disponible
+                                      : Colors
+                                            .grey
+                                            .shade100), // Gris très clair pour indisponible
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isSelected

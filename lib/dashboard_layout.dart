@@ -67,7 +67,7 @@ class DashboardLayout extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
-
+      // 🔹 Barre de navigation inférieure pour mobile
       bottomNavigationBar: isDesktop
           ? null
           : BottomNavigationBar(

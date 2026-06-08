@@ -5,6 +5,7 @@ import 'controllers/auth_controller.dart';
 import 'controllers/notification_controller.dart';
 import 'controllers/associations_controller.dart';
 import 'controllers/equipments_controller.dart';
+import 'controllers/spaces_controller.dart';
 import 'data/local/secure_storage.dart';
 import 'services/session_service.dart';
 import 'routing/app_pages.dart';
@@ -22,6 +23,7 @@ void main() async {
   Get.put(NotificationController());
   Get.put(AssociationsController());
   Get.put(EquipmentsController());
+  Get.put(SpacesController());
 
   // --- DÉCONNEXION FORCÉE AU DÉMARRAGE (Demande de l'utilisateur) ---
   await SecureStorage.clearAll();

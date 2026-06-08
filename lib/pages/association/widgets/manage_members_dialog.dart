@@ -156,6 +156,7 @@ class _ManageMembersDialogState extends State<ManageMembersDialog>
                         ),
                       ],
                     ),
+                    // Styles personnalisés pour les onglets
                     labelColor: const Color(0xFF0F172A),
                     unselectedLabelColor: const Color(0xFF64748B),
                     labelStyle: const TextStyle(

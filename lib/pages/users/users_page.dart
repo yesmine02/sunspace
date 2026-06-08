@@ -19,27 +19,27 @@ class UsersPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 32.0),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: 32.0,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            isMobile 
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildHeaderTitle(),
-                    const SizedBox(height: 16),
-                    _buildAddButton(),
-                  ],
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildHeaderTitle(),
-                    _buildAddButton(),
-                  ],
-                ),
+            isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildHeaderTitle(),
+                      const SizedBox(height: 16),
+                      _buildAddButton(),
+                    ],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [_buildHeaderTitle(), _buildAddButton()],
+                  ),
             const SizedBox(height: 32),
 
             // Search Bar
@@ -72,11 +72,21 @@ class UsersPage extends StatelessWidget {
             // Users List (Table on Desktop, Cards on Mobile)
             Obx(() {
               if (controller.isLoading.value) {
-                return const Center(child: Padding(padding: EdgeInsets.all(50), child: CircularProgressIndicator()));
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(50),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
               }
 
               if (controller.filteredUsers.isEmpty) {
-                return const Center(child: Padding(padding: EdgeInsets.all(50), child: Text('Aucun utilisateur trouvé')));
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(50),
+                    child: Text('Aucun utilisateur trouvé'),
+                  ),
+                );
               }
 
               if (isMobile) {
@@ -85,7 +95,11 @@ class UsersPage extends StatelessWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: controller.filteredUsers.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) => _buildUserCard(context, controller.filteredUsers[index], controller),
+                  itemBuilder: (context, index) => _buildUserCard(
+                    context,
+                    controller.filteredUsers[index],
+                    controller,
+                  ),
                 );
               }
 
@@ -101,24 +115,81 @@ class UsersPage extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        minWidth: MediaQuery.of(context).size.width - (horizontalPadding * 2),
+                        minWidth:
+                            MediaQuery.of(context).size.width -
+                            (horizontalPadding * 2),
                       ),
                       child: DataTable(
                         headingRowHeight: 56,
                         dataRowHeight: 80,
                         horizontalMargin: 24,
                         columnSpacing: 24,
-                        headingRowColor: WidgetStateProperty.all(const Color(0xFFFDFDFD)),
+                        headingRowColor: WidgetStateProperty.all(
+                          const Color(0xFFFDFDFD),
+                        ),
                         dividerThickness: 1,
                         columns: const [
-                          DataColumn(label: Text('Utilisateur', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                          DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                          DataColumn(label: Text('Rôle', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                          DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                          DataColumn(label: Text('Inscrit le', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
+                          DataColumn(
+                            label: Text(
+                              'Utilisateur',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Email',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Rôle',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Statut',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Inscrit le',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Actions',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
                         ],
-                        rows: controller.filteredUsers.map((user) => _buildUserRow(context, user, controller)).toList(),
+                        rows: controller.filteredUsers
+                            .map(
+                              (user) =>
+                                  _buildUserRow(context, user, controller),
+                            )
+                            .toList(),
                       ),
                     ),
                   ),
@@ -131,8 +202,12 @@ class UsersPage extends StatelessWidget {
     );
   }
 
-  Widget _buildUserCard(BuildContext context, User user, UsersController controller) {
-    final String dateStr = user.createdAt != null 
+  Widget _buildUserCard(
+    BuildContext context,
+    User user,
+    UsersController controller,
+  ) {
+    final String dateStr = user.createdAt != null
         ? DateFormat('dd MMM yyyy').format(DateTime.parse(user.createdAt!))
         : '-';
 
@@ -143,7 +218,11 @@ class UsersPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -158,7 +237,10 @@ class UsersPage extends StatelessWidget {
                   children: [
                     Text(
                       user.username ?? '-',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     Text(
                       user.email ?? '-',
@@ -168,15 +250,22 @@ class UsersPage extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: (user.confirmed ?? false) ? const Color(0xFFDCFCE7) : Colors.orange[50],
+                  color: (user.confirmed ?? false)
+                      ? const Color(0xFFDCFCE7)
+                      : Colors.orange[50],
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   (user.confirmed ?? false) ? 'Confirmé' : 'Attente',
                   style: TextStyle(
-                    color: (user.confirmed ?? false) ? const Color(0xFF166534) : Colors.orange[900],
+                    color: (user.confirmed ?? false)
+                        ? const Color(0xFF166534)
+                        : Colors.orange[900],
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -191,13 +280,33 @@ class UsersPage extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('RÔLE', style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  Text(
+                    'RÔLE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[400],
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.shield_outlined, size: 14, color: Colors.blue[300]),
+                      Icon(
+                        Icons.shield_outlined,
+                        size: 14,
+                        color: Colors.blue[300],
+                      ),
                       const SizedBox(width: 4),
-                      Text(user.roleName.isNotEmpty ? user.roleName : 'Authenticated', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                      Text(
+                        user.roleName.isNotEmpty
+                            ? user.roleName
+                            : 'Authenticated',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -205,9 +314,23 @@ class UsersPage extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('INSCRIT LE', style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  Text(
+                    'INSCRIT LE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[400],
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(dateStr, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  Text(
+                    dateStr,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -280,105 +403,129 @@ class UsersPage extends StatelessWidget {
     );
   }
 
-  DataRow _buildUserRow(BuildContext context, User user, UsersController controller) {
-    final String dateStr = user.createdAt != null 
+  DataRow _buildUserRow(
+    BuildContext context,
+    User user,
+    UsersController controller,
+  ) {
+    final String dateStr = user.createdAt != null
         ? DateFormat('dd/MM/yyyy').format(DateTime.parse(user.createdAt!))
         : '-';
 
-    return DataRow(cells: [
-      // Utilisateur
-      DataCell(
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              user.username ?? '-',
-              style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
-            ),
-            Row(
-              children: [
-                Text(
-                  'ID: ${user.id}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+    return DataRow(
+      cells: [
+        // Utilisateur
+        DataCell(
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                user.username ?? '-',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
                 ),
-                const SizedBox(width: 4),
-                InkWell(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: user.id.toString()));
-                    Get.snackbar('Copié', 'ID copié dans le presse-papier', 
-                      snackPosition: SnackPosition.BOTTOM,
-                      duration: const Duration(seconds: 1));
-                  },
-                  child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      // Email
-      DataCell(
-        Row(
-          children: [
-            Icon(Icons.mail_outline, size: 16, color: Colors.grey[400]),
-            const SizedBox(width: 8),
-            Text(user.email ?? '-', style: TextStyle(color: Colors.grey[600])),
-          ],
-        ),
-      ),
-      // Role
-      DataCell(
-        Row(
-          children: [
-            Icon(Icons.shield_outlined, size: 16, color: Colors.blue[300]),
-            const SizedBox(width: 8),
-            Text(user.roleName.isNotEmpty ? user.roleName : 'Authenticated', style: TextStyle(color: Colors.grey[700])),
-          ],
-        ),
-      ),
-      // Status
-      DataCell(
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: (user.confirmed ?? false) ? const Color(0xFFDCFCE7) : Colors.orange[50],
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            (user.confirmed ?? false) ? 'Confirmé' : 'Non confirmé',
-            style: TextStyle(
-              color: (user.confirmed ?? false) ? const Color(0xFF166534) : Colors.orange[900],
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+              ),
+              Row(
+                children: [
+                  Text(
+                    'ID: ${user.id}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(
+                        ClipboardData(text: user.id.toString()),
+                      );
+                      Get.snackbar(
+                        'Copié',
+                        'ID copié dans le presse-papier',
+                        snackPosition: SnackPosition.BOTTOM,
+                        duration: const Duration(seconds: 1),
+                      );
+                    },
+                    child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-      ),
-      // Created At
-      DataCell(Text(dateStr, style: TextStyle(color: Colors.grey[600]))),
-      // Actions
-      DataCell(
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              color: Colors.grey[600],
-              onPressed: () {
-                Get.dialog(EditUserDialog(user: user));
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, size: 20),
-              color: Colors.grey[600],
-              onPressed: () {
-                _showDeleteConfirmation(user, controller);
-              },
-            ),
-          ],
+        // Email
+        DataCell(
+          Row(
+            children: [
+              Icon(Icons.mail_outline, size: 16, color: Colors.grey[400]),
+              const SizedBox(width: 8),
+              Text(
+                user.email ?? '-',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
         ),
-      ),
-    ]);
+        // Role
+        DataCell(
+          Row(
+            children: [
+              Icon(Icons.shield_outlined, size: 16, color: Colors.blue[300]),
+              const SizedBox(width: 8),
+              Text(
+                user.roleName.isNotEmpty ? user.roleName : 'Authenticated',
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+            ],
+          ),
+        ),
+        // Status
+        DataCell(
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: (user.confirmed ?? false)
+                  ? const Color(0xFFDCFCE7)
+                  : Colors.orange[50],
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              (user.confirmed ?? false) ? 'Confirmé' : 'Non confirmé',
+              style: TextStyle(
+                color: (user.confirmed ?? false)
+                    ? const Color(0xFF166534)
+                    : Colors.orange[900],
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        // Created At
+        DataCell(Text(dateStr, style: TextStyle(color: Colors.grey[600]))),
+        // Actions
+        DataCell(
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                color: Colors.grey[600],
+                onPressed: () {
+                  Get.dialog(EditUserDialog(user: user));
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20),
+                color: Colors.grey[600],
+                onPressed: () {
+                  _showDeleteConfirmation(user, controller);
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   void _showDeleteConfirmation(User user, UsersController controller) {
@@ -387,10 +534,7 @@ class UsersPage extends StatelessWidget {
         title: const Text('Supprimer l\'utilisateur'),
         content: Text('Êtes-vous sûr de vouloir supprimer ${user.username} ?'),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Annuler'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Annuler')),
           TextButton(
             onPressed: () {
               if (user.id != null) {

@@ -583,7 +583,7 @@ class EquipmentsPage extends StatelessWidget {
           _buildStatCard(
             'Disponible',
             '$available',
-            const Color(0xFF166534),
+            const Color(0xFF166534), //couleur verte pour disponible
             isMobile,
           ),
           _buildStatCard(
@@ -628,12 +628,15 @@ class EquipmentsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          ), // 3enwen sghir
           const SizedBox(height: 16),
           Text(
             value,
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 28, // 3enwen kbir
               fontWeight: FontWeight.bold,
               color: valueColor,
             ),

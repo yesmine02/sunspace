@@ -33,7 +33,9 @@ class AssociationsController extends GetxController {
     final auth = Get.find<AuthController>();
     final myId = auth.currentUser.value?['id'];
     if (myId == null) return false;
-    return associations.any((a) => a.admin?.id == myId);
+    return associations.any(
+      (a) => a.admin?.id == myId,
+    ); //✅ Vérifie si l'utilisateur actuel est admin d'au moins une association
   }
 
   /// Vérifie si l'utilisateur actuel est membre d'au moins une association

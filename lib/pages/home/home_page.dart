@@ -51,7 +51,7 @@ class HomePage extends StatelessWidget {
 }
 
 // ============================================================
-// TABLEAU DE BORD MODERNE (POUR PROS, ÉTUDIANTS & AUTHENTICATED)
+// TABLEAU DE BORD MODERNE (POUR PROS, ÉTUDIANTS )
 // ============================================================
 class _ModernDashboard extends StatelessWidget {
   final NotificationController notifController;
@@ -699,6 +699,7 @@ class _AdminDashboard extends StatelessWidget {
                 Colors.orange,
                 '+12% vs mois dernier',
               ),
+
               const SizedBox(height: 15),
               _buildStatCard(
                 'Cours publiés',
@@ -745,7 +746,7 @@ class _AdminDashboard extends StatelessWidget {
                   title,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: Colors.grey[600], //color
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -814,7 +815,7 @@ class _AdminDashboard extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () => Get.toNamed(AppRoutes.RESERVATIONS),
                 child: const Row(
                   children: [
                     Text('Voir tout'),
@@ -838,7 +839,7 @@ class _AdminDashboard extends StatelessWidget {
             'Bob Dupont',
             '2026-01-28 14:00 - 16:00',
             'Confirmée',
-            Colors.green,
+            Colors.green, // Réservations confirmées en vert
           ),
         ],
       ),
@@ -862,7 +863,8 @@ class _AdminDashboard extends StatelessWidget {
                 space,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  fontSize:
+                      15, //taille légèrement augmentée pour plus de visibilité
                 ),
               ),
               const SizedBox(height: 4),
@@ -876,7 +878,9 @@ class _AdminDashboard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.1),
+            color: statusColor.withOpacity(
+              0.1,
+            ), // background color plus clair pour le badge
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -929,10 +933,6 @@ class _AdminDashboard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.arrow_forward, size: 20),
               ),
             ],
           ),
@@ -1013,6 +1013,46 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   Widget _buildQuickActionsAdmin(BuildContext context) {
+    final AuthController authController = Get.find<AuthController>();
+    final bool isSpaceManager = authController.isSpaceManager;
+
+    final List<Map<String, dynamic>> actions = [
+      {
+        'label': 'Nouvel espace',
+        'icon': Icons.business_outlined,
+        'onTap': () {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => Dialog.fullscreen(child: const CreateSpacePage()),
+          );
+        },
+      },
+      if (!isSpaceManager) ...[
+        {
+          'label': 'Nouveau cours',
+          'icon': Icons.menu_book_outlined,
+          'onTap': () => Get.toNamed(AppRoutes.COURSES),
+        },
+        {
+          'label': 'Utilisateurs',
+          'icon': Icons.people_outline,
+          'onTap': () => Get.toNamed(AppRoutes.USERS),
+        },
+        {
+          'label': 'Associations',
+          'icon': Icons.groups_outlined,
+          'onTap': () => Get.toNamed(AppRoutes.ASSOC_LIST),
+        },
+      ] else ...[
+        {
+          'label': 'Équipements',
+          'icon': Icons.build_outlined,
+          'onTap': () => Get.toNamed(AppRoutes.EQUIPMENTS),
+        },
+      ],
+    ];
+
     return Container(
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
@@ -1036,43 +1076,27 @@ class _AdminDashboard extends StatelessWidget {
           const SizedBox(height: 20),
           LayoutBuilder(
             builder: (context, constraints) {
-              int crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
-              return GridView.count(
+              int crossAxisCount = constraints.maxWidth > 600
+                  ? actions.length
+                  : 2;
+              return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: crossAxisCount,
-                mainAxisSpacing: 15,
-                crossAxisSpacing: 15,
-                childAspectRatio: constraints.maxWidth > 600 ? 1.8 : 1.5,
-                children: [
-                  _buildQuickActionItemAdmin(
-                    'Nouvel espace',
-                    Icons.business_outlined,
-                    () {
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (ctx) =>
-                            Dialog.fullscreen(child: const CreateSpacePage()),
-                      );
-                    },
-                  ),
-                  _buildQuickActionItemAdmin(
-                    'Nouveau cours',
-                    Icons.menu_book_outlined,
-                    () => Get.toNamed(AppRoutes.COURSES),
-                  ),
-                  _buildQuickActionItemAdmin(
-                    'Utilisateurs',
-                    Icons.people_outline,
-                    () => Get.toNamed(AppRoutes.USERS),
-                  ),
-                  _buildQuickActionItemAdmin(
-                    'Analytiques',
-                    Icons.analytics_outlined,
-                    () => Get.toNamed(AppRoutes.ANALYTICS),
-                  ),
-                ],
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  mainAxisSpacing: 15,
+                  crossAxisSpacing: 15,
+                  childAspectRatio: constraints.maxWidth > 600 ? 1.8 : 1.5,
+                ),
+                itemCount: actions.length,
+                itemBuilder: (context, index) {
+                  final action = actions[index];
+                  return _buildQuickActionItemAdmin(
+                    action['label'] as String,
+                    action['icon'] as IconData,
+                    action['onTap'] as VoidCallback,
+                  );
+                },
               );
             },
           ),
@@ -1174,8 +1198,8 @@ Widget _buildActionItem({
                   title,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: Color(0xFF0F172A),
+                    fontSize: 15, //taille du texte
+                    color: Color(0xFF0F172A), //couleur du texte
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1211,9 +1235,9 @@ Widget _buildOptimizeTimeCard() {
         const Text(
           'Optimisez votre temps',
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.white, //couleur de texte
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            fontSize: 18, //taille de texte
           ),
         ),
         const SizedBox(height: 10),
@@ -1384,7 +1408,7 @@ class _AuthenticatedDashboard extends StatelessWidget {
           Text(
             'Tableau de bord',
             style: const TextStyle(
-              fontSize: 28,
+              fontSize: 28, //
               fontWeight: FontWeight.bold,
               color: Color(0xFF0F172A),
             ),

@@ -468,6 +468,7 @@ class SessionsPage extends StatelessWidget {
             ),
             columns: const [
               DataColumn(label: Text('Titre')),
+              DataColumn(label: Text('Cours')),
               DataColumn(label: Text('Type')),
               DataColumn(label: Text('Début')),
               DataColumn(label: Text('Fin')),
@@ -494,15 +495,6 @@ class SessionsPage extends StatelessWidget {
                       child: Text(
                         session.courseName ?? '-',
                         overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  DataCell(
-                    Text(
-                      session.instructorName ?? '-',
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontStyle: FontStyle.italic,
                       ),
                     ),
                   ),

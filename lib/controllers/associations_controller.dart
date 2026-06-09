@@ -276,6 +276,7 @@ class AssociationsController extends GetxController {
     }
   }
 
+  //✅ Crée une association via l'API Strapi
   Future<bool> createAssociation(Map<String, dynamic> data) async {
     isLoading.value = true;
     try {
@@ -321,6 +322,7 @@ class AssociationsController extends GetxController {
     }
   }
 
+  //✅ Met à jour une association via son documentId
   Future<bool> updateAssociation(
     String documentId,
     Map<String, dynamic> data,

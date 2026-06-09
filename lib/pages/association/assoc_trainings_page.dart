@@ -52,8 +52,12 @@ class AssocTrainingsPage extends StatelessWidget {
           final int? myId = int.tryParse(
             authController.currentUser.value?['id']?.toString() ?? '',
           );
-          final bool canManage = activeAssoc?.admin?.id == myId;
-          final int? assocAdminId = activeAssoc?.admin?.id;
+          final bool canManage =
+              activeAssoc?.admin?.id ==
+              myId; // L'utilisateur peut gérer les formations s'il est l'admin de l'association active
+          final int? assocAdminId = activeAssoc
+              ?.admin
+              ?.id; // ID de l'admin de l'association active, utilisé pour filtrer les sessions d'association (seules celles créées par cet admin sont affichées)
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,

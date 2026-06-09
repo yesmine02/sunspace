@@ -33,6 +33,7 @@ class AssignmentsController extends GetxController {
     ever(searchQuery, (_) => _filterAssignments());
   }
 
+  // 1. Récupération des devoirs (GET) avec filtrage selon le rôle et gestion du cache local
   Future<void> fetchAssignments() async {
     try {
       isLoading(true);
@@ -120,6 +121,7 @@ class AssignmentsController extends GetxController {
   }
 
   // 2. Recherche locale
+  // Permet de filtrer les devoirs déjà chargés en mémoire sans faire de requête à Strapi à chaque frappe.
   void updateSearch(String query) {
     searchQuery.value = query;
   }

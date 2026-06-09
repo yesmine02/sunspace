@@ -487,15 +487,15 @@ class _InstructorDashboard extends StatelessWidget {
         'active': true,
       },
       {
-        'label': 'Mes Formations',
+        'label': 'Mes Cours',
         'icon': Icons.menu_book_outlined,
         'route': AppRoutes.COURSES,
         'active': false,
       },
       {
-        'label': 'Catalogue',
-        'icon': Icons.school_outlined,
-        'route': AppRoutes.COURSE_CATALOG,
+        'label': 'Paramètres',
+        'icon': Icons.settings_outlined,
+        'route': AppRoutes.SETTINGS,
         'active': false,
       },
       {
@@ -1030,9 +1030,9 @@ class _AdminDashboard extends StatelessWidget {
       },
       if (!isSpaceManager) ...[
         {
-          'label': 'Nouveau cours',
-          'icon': Icons.menu_book_outlined,
-          'onTap': () => Get.toNamed(AppRoutes.COURSES),
+          'label': 'Équipements',
+          'icon': Icons.build_outlined,
+          'onTap': () => Get.toNamed(AppRoutes.EQUIPMENTS),
         },
         {
           'label': 'Utilisateurs',
@@ -1041,7 +1041,7 @@ class _AdminDashboard extends StatelessWidget {
         },
         {
           'label': 'Associations',
-          'icon': Icons.groups_outlined,
+          'icon': Icons.groups,
           'onTap': () => Get.toNamed(AppRoutes.ASSOC_LIST),
         },
       ] else ...[
